@@ -17,6 +17,15 @@ def replace_array_elems_by_id(existing, replace_with):
 
     return to_return
 
+def remove_array_elems_by_id(existing, to_remove):
+    existing = util.clone_array(existing)
+    result = existing
+    for elem in to_remove:
+        result.remove(elem)
+
+    return result
+
+
 class MockTableData(object):
     def __init__(self, data):
         self.data = data
@@ -31,6 +40,11 @@ class MockTableData(object):
         if not isinstance(new_rows, list):
             new_rows = [new_rows]
         return MockTableData(util.cat(self.data, new_rows))
+
+    def remove_by_id(self, to_remove):
+        if not isinstance(to_remove, list):
+            to_remove = [to_remove]
+        return MockTableData(remove_array_elems_by_id(self.data, to_remove))
 
     def get_rows(self):
         return self.data
@@ -69,6 +83,10 @@ class MockDbData(object):
         new_table = self.get_table(table_name).update_by_id(elem_list)
         return self.set_table(table_name, new_table)
 
+    def remove_by_id_in_table(self, table_name, elem_list):
+        new_table = self.get_table(table_name).remove_by_id(elem_list)
+        return self.set_table(table_name, new_table)
+
 class MockDb(object):
     def __init__(self, dbs_by_name):
         self.dbs_by_name = dbs_by_name
@@ -103,6 +121,10 @@ class MockDb(object):
 
     def update_by_id_in_table_in_db(self, db_name, table_name, elem_list):
         new_db_data = self.get_db(db_name).update_by_id_in_table(table_name, elem_list)
+        return self.set_db(db_name, new_db_data)
+
+    def remove_by_id_in_table_in_db(self, db_name, table_name, elem_list):
+        new_db_data = self.get_db(db_name).remove_by_id_in_table(table_name, elem_list)
         return self.set_db(db_name, new_db_data)
 
 def objects_from_pods(data):

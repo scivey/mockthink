@@ -82,6 +82,10 @@ def plain_obj_of_make_obj(make_obj_instance):
     return {k: plain_val_of_datum(v) for k, v in make_obj_instance.optargs.iteritems()}
 
 
+@handles_type(r_ast.MakeArray)
+def handle_make_array(node):
+    return mt_ast.MakeArray([type_dispatch(elem) for elem in node.args])
+
 @handles_type(r_ast.MakeObj)
 def handle_make_obj(node):
     return mt_ast.MakeObj({k: type_dispatch(v) for k, v in node.optargs.iteritems()})
@@ -179,6 +183,20 @@ def handle_merge(node):
     left = type_dispatch(args[0])
     to_merge = type_dispatch(args[1])
     return mt_ast.MergePoly(left, to_merge)
+
+
+@handles_type(r_ast.Delete)
+def handle_delete(node):
+    left = type_dispatch(node.args[0])
+    return mt_ast.Delete(left)
+
+@handles_type(r_ast.GetAll)
+def handle_get_all(node):
+    args = node.args
+    left = type_dispatch(args[0])
+    assert(isinstance(args[1], r_ast.Datum))
+    to_get = mt_ast.RDatum([plain_val_of_datum(datum) for datum in args[1:]])
+    return mt_ast.GetAll(left, to_get)
 
 def rewrite_query(query):
     return type_dispatch(query)

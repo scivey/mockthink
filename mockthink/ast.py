@@ -67,6 +67,10 @@ class RVar(MonExp):
     def do_run(self, symbol_name, arg, scope):
         return scope.get_sym(symbol_name)
 
+class Not(MonExp):
+    def do_run(self, left, arg, scope):
+        return not (left.run(arg, scope))
+
 class BinExp(RBase):
     def __init__(self, left, right):
         self.left = left
@@ -105,6 +109,14 @@ class Get(BinExp):
                 break
         return res
 
+class GetAll(BinExp):
+    def do_run(self, left, right, arg, scope):
+        res = []
+        to_find = set(right)
+        for elem in left:
+            if util.getter('id', elem) in to_find:
+                res.append(elem)
+        return res
 
 class BinOp(BinExp):
     def do_run(self, left, right, arg, scope):
@@ -142,7 +154,6 @@ class Div(BinOp):
 
 class Mod(BinOp):
     binop = operator.mod
-
 
 def db_data_extend(original_data, extend_with):
     to_return = util.obj_clone(original_data)
@@ -206,6 +217,16 @@ class UpdateWithObj(UpdateBase):
             pprint(elem)
             return ext_fn(elem)
         return update_fn
+
+class Delete(RBase):
+    def __init__(self, left):
+        self.left = left
+
+    def run(self, arg, scope):
+        to_remove = self.left.run(arg, scope)
+        current_table = self.find_table_scope()
+        current_db = self.find_db_scope()
+        return arg.remove_by_id_in_table_in_db(current_db, current_table, to_remove)
 
 class RFunc(RBase):
     def __init__(self, param_names, body):
@@ -393,7 +414,6 @@ class OuterJoin(RBase):
         right = self.right.run(arg, scope)
         return do_outer_join(outer_pred, left, right)
 
-
 class MakeObj(RBase):
     def __init__(self, vals):
         self.vals = vals
@@ -402,3 +422,10 @@ class MakeObj(RBase):
         result = {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
         return result
 
+class MakeArray(RBase):
+    def __init__(self, vals):
+        self.vals = vals
+
+    def run(self, arg, scope):
+        result = [elem.run(arg, scope) for elem in self.vals]
+        return result

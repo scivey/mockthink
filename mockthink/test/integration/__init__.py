@@ -82,7 +82,7 @@ def as_db_and_table(db_name, table_name, data):
     }
 
 
-class TestGetting(MockTest):
+class TestGet(MockTest):
     def get_data(self):
         data = [
             {'id': 'joe-id', 'name': 'joe'},
@@ -93,6 +93,35 @@ class TestGetting(MockTest):
     def test_get_one_by_id(self, conn):
         result = r.db('x').table('people').get('bob-id').run(conn)
         self.assertEqual({'id': 'bob-id', 'name': 'bob'}, result)
+
+
+class TestGetAll(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'sam-id', 'name': 'sam'},
+            {'id': 'anne-id', 'name': 'anne'},
+            {'id': 'joe-id', 'name': 'joe'},
+            {'id': 'bob-id', 'name': 'bob'}
+        ]
+        return as_db_and_table('x', 'people', data)
+
+    def test_get_all_by_id(self, conn):
+        expected = [
+            {'id': 'anne-id', 'name': 'anne'},
+            {'id': 'joe-id', 'name': 'joe'},
+        ]
+        result = r.db('x').table('people').get_all('anne-id', 'joe-id').run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
+
+    def test_get_all_just_one(self, conn):
+        expected = [
+            {'id': 'bob-id', 'name': 'bob'},
+        ]
+        result = r.db('x').table('people').get_all('bob-id').run(conn)
+        self.assertEqual(expected, result)
+
+
 
 class TestFiltering(MockTest):
     def get_data(self):
@@ -705,10 +734,37 @@ class TestMerge(MockTest):
         result = r.db('jezebel').table('things').map(
             lambda d: d['x'].merge({'nested': d['y']})
         ).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
 
+class TestDelete(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'sam-id', 'name': 'sam'},
+            {'id': 'joe-id', 'name': 'joe'},
+            {'id': 'tom-id', 'name': 'tom'},
+            {'id': 'sally-id', 'name': 'sally'}
+        ]
+        return as_db_and_table('ephemeral', 'people', data)
 
+    def test_delete_one(self, conn):
+        expected = [
+            {'id': 'sam-id', 'name': 'sam'},
+            {'id': 'tom-id', 'name': 'tom'},
+            {'id': 'sally-id', 'name': 'sally'}
+        ]
+        r.db('ephemeral').table('people').get('joe-id').delete().run(conn)
+        result = r.db('ephemeral').table('people').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    # def test_delete_n(self, conn):
+    #     expected = [
+    #         {'id': 'sally-id', 'name': 'sally'},
+    #         {'id': 'joe-id', 'name': 'joe'}
+    #     ]
+    #     r.db('ephemeral').table('people').get_all('sam-id', 'tom-id').delete().run(conn)
+    #     result = r.db('ephemeral').table('people').run(conn)
+    #     self.assertEqUnordered(expected, list(result))
 
 def run_tests(conn):
     for test_name, test_fn in TESTS.iteritems():
