@@ -106,27 +106,28 @@ class Get(BinExp):
         return res
 
 
-class BinCompr(BinExp):
+class BinOp(BinExp):
     def do_run(self, left, right, arg, scope):
-        return self.__class__.comparator(left, right)
+        return self.__class__.binop(left, right)
 
-class Gt(BinCompr):
-    comparator = operator.gt
 
-class Gte(BinCompr):
-    comparator = operator.ge
+class Gt(BinOp):
+    binop = operator.gt
 
-class Lt(BinCompr):
-    comparator = operator.lt
+class Gte(BinOp):
+    binop = operator.ge
 
-class Lte(BinCompr):
-    comparator = operator.le
+class Lt(BinOp):
+    binop = operator.lt
 
-class Eq(BinCompr):
-    comparator = operator.eq
+class Lte(BinOp):
+    binop = operator.le
 
-class Neq(BinCompr):
-    comparator = operator.ne
+class Eq(BinOp):
+    binop = operator.eq
+
+class Neq(BinOp):
+    binop = operator.ne
 
 def db_data_extend(original_data, extend_with):
     to_return = util.obj_clone(original_data)
