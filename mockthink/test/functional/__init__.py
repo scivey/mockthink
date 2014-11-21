@@ -811,6 +811,13 @@ class TestDelete(MockTest):
     #     result = r.db('ephemeral').table('people').run(conn)
     #     self.assertEqUnordered(expected, list(result))
 
+
+
+
+
+
+
+
 def run_tests(conn):
     for test_name, test_fn in TESTS.iteritems():
         test_fn(conn)
