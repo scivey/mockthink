@@ -1,10 +1,6 @@
 from pprint import pprint
 import rethinkdb.ast as r_ast
 from . import ast as mt_ast
-# from rethinkdb import ql2_pb2 as rql_proto
-# pTerm = rql_proto.Term.TermType
-# pQuery = rql_proto.Query.QueryType
-# pDatum = rql_proto.Datum.DatumType
 from . import util
 
 class UnexpectedTermSequence(Exception):
@@ -32,9 +28,6 @@ def handle_generic_binop(Mt_Constructor, node):
 @util.curry2
 def handle_generic_monop(Mt_Constructor, node):
     return Mt_Constructor(type_dispatch(node.args[0]))
-
-
-
 
 NORMAL_MONOPS = {
     r_ast.Var: mt_ast.RVar,
@@ -89,7 +82,6 @@ def plain_list_of_make_array(make_array_instance):
 def plain_obj_of_make_obj(make_obj_instance):
     assert(isinstance(make_obj_instance, r_ast.MakeObj))
     return {k: plain_val_of_datum(v) for k, v in make_obj_instance.optargs.iteritems()}
-
 
 @handles_type(r_ast.MakeArray)
 def handle_make_array(node):
@@ -153,7 +145,6 @@ def handle_has_fields(node):
     left = type_dispatch(args[0])
     return mt_ast.HasFields(left, attrs)
 
-
 @handles_type(r_ast.Without)
 def handle_without(node):
     args = node.args
@@ -198,8 +189,6 @@ def handle_outer_join(node):
     assert(isinstance(args[2], r_ast.Func))
     pred = type_dispatch(args[2])
     return mt_ast.OuterJoin(left, pred, right)
-
-
 
 @handles_type(r_ast.GetAll)
 def handle_get_all(node):

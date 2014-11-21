@@ -425,3 +425,176 @@ class HasFields(RBase):
         if (isinstance(left, dict)):
             return match_fn(left)
         return filter(match_fn, left)
+
+
+
+class Between(RBase):
+    pass
+
+class Zip(RBase):
+    pass
+
+class ConcatMap(RBase):
+    pass
+
+class OrderBy(RBase):
+    pass
+
+class Skip(RBase):
+    pass
+
+class Limit(RBase):
+    pass
+
+class Slice(RBase):
+    pass
+
+class Nth(RBase):
+    pass
+
+class IndexesOf(RBase):
+    pass
+
+class Union(RBase):
+    pass
+
+class Sample(RBase):
+    pass
+
+class Distinct(RBase):
+    pass
+
+class Group(RBase):
+    pass
+
+class UnGroup(RBase):
+    pass
+
+class Count(RBase):
+    pass
+
+class Contains(RBase):
+    pass
+
+class Reduce(RBase):
+    pass
+
+class Sum(RBase):
+    pass
+
+class Avg(RBase):
+    pass
+
+class Min(RBase):
+    pass
+
+class Max(RBase):
+    pass
+
+class Row(RBase):
+    pass
+
+class Append(RBase):
+    pass
+
+class Prepend(RBase):
+    pass
+
+class Difference(RBase):
+    pass
+
+class SetInsert(RBase):
+    pass
+
+class SetUnion(RBase):
+    pass
+
+class SetIntersection(RBase):
+    pass
+
+class SetDifference(RBase):
+    pass
+
+class InsertAt(RBase):
+    pass
+
+class SpliceAt(RBase):
+    pass
+
+class DeleteAt(RBase):
+    pass
+
+class ChangeAt(RBase):
+    pass
+
+class Keys(RBase):
+    pass
+
+class Literal(RBase):
+    pass
+
+class StrMatch(RBase):
+    pass
+
+class StrSplit(RBase):
+    pass
+
+class StrUpcase(RBase):
+    pass
+
+class StrDowncase(RBase):
+    pass
+
+class Random(RBase):
+    pass
+
+class And(RBase):
+    pass
+
+class Or(RBase):
+    pass
+
+class Args(RBase):
+    pass
+
+class Binary(RBase):
+    pass
+
+class Do(RBase):
+    pass
+
+class Branch(RBase):
+    pass
+
+class ForEach(RBase):
+    pass
+
+class RError(RBase):
+    pass
+
+class RDefault(RBase):
+    pass
+
+class RExpr(RBase):
+    pass
+
+class Js(RBase):
+    pass
+
+class CoerceTo(RBase):
+    pass
+
+class TypeOf(RBase):
+    pass
+
+class Info(RBase):
+    pass
+
+class Json(RBase):
+    pass
+
+class Http(RBase):
+    pass
+
+class Uuid(RBase):
+    pass
