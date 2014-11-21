@@ -120,7 +120,7 @@ def handle_pluck(node):
         attrs = [plain_val_of_datum(datum) for datum in args[1:]]
 
     left = type_dispatch(args[0])
-    return mt_ast.PluckMap(left, attrs)
+    return mt_ast.PluckPoly(left, attrs)
 
 
 def rewrite_query(query):

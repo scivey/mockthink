@@ -154,6 +154,27 @@ class TestPlucking(MockTest):
         result = r.db('x').table('people').pluck('id', 'hobby').run(conn)
         self.assertEqUnordered(expected, list(result))
 
+    def test_pluck_missing_attr_list(self, conn):
+        expected = [
+            {'id': 'joe-id', 'hobby': 'guitar'},
+            {'id': 'bob-id', 'hobby': 'pseudointellectualism'},
+            {'id': 'bill-id'},
+            {'id': 'kimye-id', 'hobby': 'being kimye'}
+        ]
+        result = r.db('x').table('people').pluck(['id', 'hobby']).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_sub_pluck(self, conn):
+        expected = [
+            {'id': 'joe-id', 'hobby': 'guitar'},
+            {'id': 'bob-id', 'hobby': 'pseudointellectualism'},
+            {'id': 'bill-id'},
+            {'id': 'kimye-id', 'hobby': 'being kimye'}
+        ]
+        result = r.db('x').table('people').map(lambda p: p.pluck('id', 'hobby')).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+
 
 class TestUpdating(MockTest):
     pass

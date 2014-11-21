@@ -261,9 +261,18 @@ class WithoutMap(MapBase):
             return without_fn(elem)
         return map_fn
 
-class PluckMap(MapBase):
-    def get_map_fn(self):
-        pluck_fn = util.pluck_with(*self.right)
-        def map_fn(elem, scope):
-            return pluck_fn(elem)
-        return map_fn
+class PluckPoly(RBase):
+    def __init__(self, left, attrs):
+        self.left = left
+        self.attrs = attrs
+
+    def run(self, arg, scope):
+        left = self.left.run(arg, scope)
+        map_fn = util.pluck_with(*self.attrs)
+        if isinstance(left, dict):
+            return map_fn(left)
+        elif hasattr(left, '__iter__'):
+            return map(map_fn, left)
+        else:
+            pprint(left)
+            raise Exception('unexpected type')
