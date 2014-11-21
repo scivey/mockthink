@@ -1,106 +1,19 @@
 import operator
+from . import util
 from pprint import pprint
+def replace_array_elems_by_id(existing, replace_with):
+    elem_index_by_id = {}
+    for index in xrange(0, len(existing)):
+        elem = existing[index]
+        elem_index_by_id[util.getter('id')(elem)] = index
 
-def curry2(func):
-    def out(x, *args):
-        if len(args):
-            return func(x, args[0])
-        def out2(y):
-            return func(x, y)
-        return out2
-    return out
+    to_return = util.clone_array(existing)
 
-def curry3(func):
-    def out(x, *args):
-        if len(args) == 2:
-            return func(x, *args)
-        def out2(y, *args):
-            if len(args):
-                return func(x, y, args[0])
-            def out3(z):
-                return func(x, y, z)
-            return out3
-        return out2
-    return out
+    for elem in replace_with:
+        index = elem_index_by_id[util.getter('id')(elem)]
+        to_return[index] = elem
 
-def extend(*dicts):
-    out = {}
-    for one_dict in dicts:
-        out.update(one_dict)
-    return out
-
-@curry2
-def extend_with(a_dict, to_extend):
-    return extend(to_extend, a_dict)
-
-@curry2
-def map_with(fn, a_list):
-    return map(fn, a_list)
-
-@curry2
-def maybe_map_with(fn, thing):
-    if isinstance(thing, list):
-        return map(fn, thing)
-    return fn(thing)
-
-def is_simple(x):
-    return not (isinstance(x, (list, dict)))
-
-@curry2
-def nth(n, things):
-    return things[n]
-
-@curry2
-def getter(key, thing):
-    if isinstance(thing, dict):
-        return thing.get(key, None)
-    else:
-        return getattr(thing, key, None)
-
-@curry3
-def match_attr(key, val, thing):
-    return getter(key, thing) == val
-
-@curry2
-def match_attrs(to_match, to_test):
-    match = True
-    for k, v in to_match.iteritems():
-        if getter(k)(to_test) != v:
-            match = False
-            break
-    return match
-
-@curry2
-def filter_with(func, things):
-    return filter(func, things)
-
-@curry2
-def find_first(pred, things):
-    result = None
-    for thing in things:
-        if pred(thing):
-            result = thing
-            break
-    return result
-
-def pipeline(*funcs):
-    def out(x):
-        result = x
-        for f in funcs:
-            result = f(result)
-        return result
-    return out
-
-def pluck_with(*attrs):
-    def inner_pluck(thing):
-        return {k: v for k,v in thing.iteritems() if k in attrs}
-    return inner_pluck
-
-def get_by_id(id):
-    return find_first(match_attr('id', id))
-
-def as_obj(pairs):
-    return {p[0]: p[1] for p in pairs}
+    return to_return
 
 class NotInScopeErr(Exception):
     def __init__(self, msg):
@@ -227,7 +140,7 @@ class Get(BinExp):
     def do_run(self, left, right, arg, scope):
         res = None
         for elem in left:
-            if getter('id', elem) == right:
+            if util.getter('id', elem) == right:
                 res = elem
                 break
         return res
@@ -255,35 +168,11 @@ class Eq(BinCompr):
 class Neq(BinCompr):
     comparator = operator.ne
 
-def clone_array(x):
-    return [elem for elem in x]
-
-def replace_array_elems_by_id(existing, replace_with):
-    elem_index_by_id = {}
-    for index in xrange(0, len(existing)):
-        elem = existing[index]
-        elem_index_by_id[getter('id')(elem)] = index
-
-    to_return = clone_array(existing)
-
-    for elem in replace_with:
-        index = elem_index_by_id[getter('id')(elem)]
-        to_return[index] = elem
-
-    return to_return
-
-@curry2
-def without(bad_attrs, thing):
-    return {k: v for k, v in thing.iteritems() if k not in bad_attrs}
-
-def obj_clone(a_dict):
-    return {k: v for k, v in a_dict.iteritems()}
-
 def db_data_extend(original_data, extend_with):
-    to_return = obj_clone(original_data)
-    to_return['dbs'] = obj_clone(to_return['dbs'])
+    to_return = util.obj_clone(original_data)
+    to_return['dbs'] = util.obj_clone(to_return['dbs'])
     for one_db, one_db_data in extend_with['dbs'].iteritems():
-        new_db_data = obj_clone(to_return['dbs'][one_db])
+        new_db_data = util.obj_clone(to_return['dbs'][one_db])
         for one_table, one_table_data in extend_with['dbs'][one_db]['tables'].iteritems():
             new_db_data['tables'][one_table] = one_table_data
         to_return['dbs'][one_db] = new_db_data
@@ -393,7 +282,7 @@ class UpdateWithFunc(UpdateBase):
 
 class UpdateWithObj(UpdateBase):
     def get_update_fn(self):
-        ext_fn = extend_with(self.right)
+        ext_fn = util.extend_with(self.right)
         def update_fn(elem, scope):
             return ext_fn(elem)
         return update_fn
@@ -404,7 +293,7 @@ class RFunc(RBase):
         self.body = body
 
     def run(self, args, scope):
-        bound = as_obj(zip(self.param_names, args))
+        bound = util.as_obj(zip(self.param_names, args))
         call_scope = scope.push(bound)
         return self.body.run(None, call_scope)
 
@@ -435,7 +324,7 @@ class FilterWithObj(FilterBase):
     def get_filter_fn(self):
         to_match = self.right
         def filt(elem, scope):
-            return match_attrs(to_match)(elem)
+            return util.match_attrs(to_match)(elem)
         return filt
 
 class MapBase(RBase):
@@ -462,125 +351,14 @@ class MapWithRFunc(MapBase):
 class WithoutMap(MapBase):
     def get_map_fn(self):
         bad_attrs = self.right
-        without_fn = without(bad_attrs)
+        without_fn = util.without(bad_attrs)
         def map_fn(elem, scope):
             return without_fn(elem)
         return map_fn
 
 class PluckMap(MapBase):
     def get_map_fn(self):
-        pluck_fn = pluck_with(*self.right)
+        pluck_fn = util.pluck_with(*self.right)
         def map_fn(elem, scope):
             return pluck_fn(elem)
         return map_fn
-
-
-
-# class Filter(BinExp):
-#     def do_run(self, left, right, arg, scope):
-#         out = []
-#         for elem in left:
-#             if right.run([elem], scope):
-#                 out.append(elem)
-#         return out
-
-
-query1 = FilterWithFunc(
-    RTable(
-        RDb(RDatum('fonz')),
-        RDatum('wabbits')
-    ),
-    RFunc(
-        ['x'],
-        Gt(
-            Bracket(RVar(RDatum('x')), RDatum('age')),
-            RDatum(20)
-        )
-    )
-)
-
-query2 = Get(
-    RTable(
-        RDb(RDatum('fonz')),
-        RDatum('wabbits')
-    ),
-    RDatum('joe-id'),
-)
-
-query3 = FilterWithObj(
-    RTable(
-        RDb(RDatum('fonz')),
-        RDatum('wabbits')
-    ),
-    {'name': 'smith'}
-)
-
-query4 = UpdateWithObj(
-    RTable(
-        RDb(RDatum('fonz')),
-        RDatum('wabbits')
-    ),
-    {
-        'is_wabbit': True
-    }
-)
-
-
-query5 = MapWithRFunc(
-    RTable(
-        RDb(RDatum('fonz')),
-        RDatum('wabbits')
-    ),
-    RFunc(
-        ['x'],
-        Gt(
-            Bracket(RVar(RDatum('x')), RDatum('age')),
-            RDatum(20)
-        )
-    )
-)
-
-query6 = WithoutMap(
-    RTable(
-        RDb(RDatum('fonz')),
-        RDatum('wabbits')
-    ),
-    ['age']
-)
-
-
-
-class MockDb(object):
-    def __init__(self, data):
-        self.data = data
-
-    def run_query(self, query):
-        result = query.run(self.data, Scope({}))
-        if hasattr(result, 'dbs'):
-            self.data = result
-        return result
-
-data = {
-    'dbs': {
-        'fonz': {
-            'tables': {
-                'wabbits': [
-                    {'id': 'steve-id', 'name': 'steve', 'age': 26},
-                    {'id': 'joe-id', 'name': 'joe', 'age': 15},
-                    {'id': 'todd-id', 'name': 'todd', 'age': 65},
-                    {'id': 'smith-id', 'name': 'smith', 'age': 34},
-                    {'id': 'tim-id', 'name': 'tim', 'age': 19}
-                ]
-            }
-        }
-    }
-}
-res = query1.run(data, Scope({}))
-pprint(res)
-pprint(query2.run(data, Scope({})))
-pprint(query3.run(data, Scope({})))
-pprint(query4.run(data, Scope({})))
-
-pprint(query1.run(data, Scope({})))
-pprint(query5.run(data, Scope({})))
-pprint(query6.run(data, Scope({})))
