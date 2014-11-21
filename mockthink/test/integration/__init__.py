@@ -1,3 +1,5 @@
+import argparse
+import sys
 from pprint import pprint
 import rethinkdb as r
 from mockthink.db import MockThink, MockThinkConn
@@ -8,8 +10,8 @@ def real_stock_data_load(data, connection):
     for db_name, db_data in data['dbs'].iteritems():
         r.db_create(db_name).run(connection)
         for table_name, table_data in db_data['tables'].iteritems():
-            r.db(db_name).table_create(table_name).run(conn)
-            r.db(db_name).table(table_name).insert(table_data)
+            r.db(db_name).table_create(table_name).run(connection)
+            r.db(db_name).table(table_name).insert(table_data).run(connection)
 
 def mock_stock_data_load(data, connection):
     connection.reset_data(data)
@@ -17,8 +19,8 @@ def mock_stock_data_load(data, connection):
 def load_stock_data(data, connection):
     if isinstance(connection, MockThinkConn):
         return mock_stock_data_load(data, connection)
-    else:
-        pass
+    elif isinstance(connection, r.net.Connection):
+        return real_stock_data_load(data, connection)
 
 
 TESTS = {}
@@ -139,7 +141,7 @@ class TestMapping(MockTest):
             True, False, True, False
         ]
         result = r.db('x').table('people').map(lambda p: p['age'] > 20).run(conn)
-        self.assertEqual(expected, list(result))
+        self.assertEqUnordered(expected, list(result))
 
 class TestPlucking(MockTest):
     def get_data(self):
@@ -204,14 +206,14 @@ class TestPlucking2(MockTest):
                 }
             },
         ]
-        return as_db_and_table('some-db', 'things', data)
+        return as_db_and_table('some_db', 'things', data)
 
     def test_sub_sub(self, conn):
         expected = [
             {'a': 'a-1', 'd': 'd-1'},
             {'a': 'a-2', 'd': 'd-2'}
         ]
-        result = r.db('some-db').table('things').map(lambda t: t['values'].pluck('a', 'd')).run(conn)
+        result = r.db('some_db').table('things').map(lambda t: t['values'].pluck('a', 'd')).run(conn)
         self.assertEqUnordered(expected, list(result))
 
     def test_sub_sub_list(self, conn):
@@ -219,7 +221,7 @@ class TestPlucking2(MockTest):
             {'a': 'a-1', 'd': 'd-1'},
             {'a': 'a-2', 'd': 'd-2'}
         ]
-        result = r.db('some-db').table('things').map(lambda t: t['values'].pluck('a', 'd')).run(conn)
+        result = r.db('some_db').table('things').map(lambda t: t['values'].pluck('a', 'd')).run(conn)
         self.assertEqUnordered(expected, list(result))
 
 
@@ -296,14 +298,14 @@ class TestWithout2(MockTest):
                 }
             },
         ]
-        return as_db_and_table('some-db', 'things', data)
+        return as_db_and_table('some_db', 'things', data)
 
     def test_sub_sub(self, conn):
         expected = [
             {'b': 'b-1', 'c': 'c-1'},
             {'b': 'b-2', 'c': 'c-2'}
         ]
-        result = r.db('some-db').table('things').map(lambda t: t['values'].without('a', 'd')).run(conn)
+        result = r.db('some_db').table('things').map(lambda t: t['values'].without('a', 'd')).run(conn)
         self.assertEqUnordered(expected, list(result))
 
     def test_sub_sub_list(self, conn):
@@ -311,7 +313,7 @@ class TestWithout2(MockTest):
             {'b': 'b-1', 'c': 'c-1'},
             {'b': 'b-2', 'c': 'c-2'}
         ]
-        result = r.db('some-db').table('things').map(lambda t: t['values'].without(['a', 'd'])).run(conn)
+        result = r.db('some_db').table('things').map(lambda t: t['values'].without(['a', 'd'])).run(conn)
         self.assertEqUnordered(expected, list(result))
 
 
@@ -339,16 +341,16 @@ class TestBracket(MockTest):
                 }
             },
         ]
-        return as_db_and_table('some-db', 'things', data)
+        return as_db_and_table('some_db', 'things', data)
 
     def test_one_level(self, conn):
         expected = ['other-1', 'other-2']
-        result = r.db('some-db').table('things').map(lambda t: t['other_val']).run(conn)
+        result = r.db('some_db').table('things').map(lambda t: t['other_val']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
     def test_nested(self, conn):
         expected = ['c-1', 'c-2']
-        result = r.db('some-db').table('things').map(lambda t: t['values']['c']).run(conn)
+        result = r.db('some_db').table('things').map(lambda t: t['values']['c']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
 class TestMath(MockTest):
@@ -365,46 +367,46 @@ class TestMath(MockTest):
                 'y': 3
             }
         ]
-        return as_db_and_table('math-db', 'points', data)
+        return as_db_and_table('math_db', 'points', data)
 
     def test_add_method(self, conn):
         expected = [35, 103]
-        result = r.db('math-db').table('points').map(lambda t: t['x'].add(t['y'])).run(conn)
+        result = r.db('math_db').table('points').map(lambda t: t['x'].add(t['y'])).run(conn)
         self.assertEqUnordered(expected, list(result))
 
     def test_add_oper(self, conn):
         expected = [35, 103]
-        result = r.db('math-db').table('points').map(lambda t: t['x'] + t['y']).run(conn)
+        result = r.db('math_db').table('points').map(lambda t: t['x'] + t['y']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
     def test_sub_method(self, conn):
         expected = [-15, 97]
-        result = r.db('math-db').table('points').map(lambda t: t['x'].sub(t['y'])).run(conn)
+        result = r.db('math_db').table('points').map(lambda t: t['x'].sub(t['y'])).run(conn)
         self.assertEqUnordered(expected, list(result))
 
     def test_sub_oper(self, conn):
         expected = [-15, 97]
-        result = r.db('math-db').table('points').map(lambda t: t['x'] - t['y']).run(conn)
+        result = r.db('math_db').table('points').map(lambda t: t['x'] - t['y']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
     def test_mul_method(self, conn):
         expected = [250, 300]
-        result = r.db('math-db').table('points').map(lambda t: t['x'].mul(t['y'])).run(conn)
+        result = r.db('math_db').table('points').map(lambda t: t['x'].mul(t['y'])).run(conn)
         self.assertEqUnordered(expected, list(result))
 
     def test_mul_oper(self, conn):
         expected = [250, 300]
-        result = r.db('math-db').table('points').map(lambda t: t['x'] * t['y']).run(conn)
+        result = r.db('math_db').table('points').map(lambda t: t['x'] * t['y']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
     def test_div_method(self, conn):
         expected = [250, 300]
-        result = r.db('math-db').table('points').map(lambda t: t['x'].mul(t['y'])).run(conn)
+        result = r.db('math_db').table('points').map(lambda t: t['x'].mul(t['y'])).run(conn)
         self.assertEqUnordered(expected, list(result))
 
     def test_mul_oper(self, conn):
         expected = [250, 300]
-        result = r.db('math-db').table('points').map(lambda t: t['x'] * t['y']).run(conn)
+        result = r.db('math_db').table('points').map(lambda t: t['x'] * t['y']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
 
@@ -601,10 +603,26 @@ class TestOuterJoin(MockTest):
         self.assertEqUnordered(expected, list(result))
 
 
-
-if __name__ == '__main__':
-    think = MockThink(as_db_and_table('nothing', 'nothing', []))
-    conn = think.get_conn()
+def run_tests(conn):
     for test_name, test_fn in TESTS.iteritems():
         test_fn(conn)
 
+def run_tests_with_mockthink():
+    think = MockThink(as_db_and_table('nothing', 'nothing', []))
+    run_tests(think.get_conn())
+
+def run_tests_with_rethink():
+    conn = r.connect('localhost', 28015)
+    run_tests(conn)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    runners = {
+        'mockthink': run_tests_with_mockthink,
+        'rethink': run_tests_with_rethink
+    }
+
+    parser.add_argument('--run', default='mockthink')
+    args = parser.parse_args(sys.argv[1:])
+    runners[args.run]()
