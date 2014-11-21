@@ -1,5 +1,5 @@
 import operator
-from pack.ast import *
+from mockthink.ast import *
 from pprint import pprint
 
 query1 = FilterWithFunc(
