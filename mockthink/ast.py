@@ -110,7 +110,6 @@ class BinOp(BinExp):
     def do_run(self, left, right, arg, scope):
         return self.__class__.binop(left, right)
 
-
 class Gt(BinOp):
     binop = operator.gt
 
@@ -128,6 +127,22 @@ class Eq(BinOp):
 
 class Neq(BinOp):
     binop = operator.ne
+
+class Add(BinOp):
+    binop = operator.add
+
+class Sub(BinOp):
+    binop = operator.sub
+
+class Mul(BinOp):
+    binop = operator.mul
+
+class Div(BinOp):
+    binop = operator.div
+
+class Mod(BinOp):
+    binop = operator.mod
+
 
 def db_data_extend(original_data, extend_with):
     to_return = util.obj_clone(original_data)

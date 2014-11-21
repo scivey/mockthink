@@ -40,10 +40,15 @@ NORMAL_BINOPS = {
     r_ast.Eq: mt_ast.Eq,
     r_ast.Ne: mt_ast.Neq,
     r_ast.Gt: mt_ast.Gt,
+    r_ast.Add: mt_ast.Add,
+    r_ast.Sub: mt_ast.Sub,
+    r_ast.Mul: mt_ast.Mul,
+    r_ast.Div: mt_ast.Div,
+    r_ast.Mod: mt_ast.Mod,
     r_ast.Bracket: mt_ast.Bracket,
     r_ast.Table: mt_ast.RTable,
     r_ast.Get: mt_ast.Get,
-    r_ast.Map: mt_ast.MapWithRFunc
+    r_ast.Map: mt_ast.MapWithRFunc,
 }
 
 for r_type, mt_type in NORMAL_BINOPS.iteritems():
