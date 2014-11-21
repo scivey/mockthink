@@ -21,8 +21,6 @@ def load_stock_data(data, connection):
         pass
 
 
-
-
 TESTS = {}
 
 def register_test(Constructor, class_name, tests):
@@ -119,7 +117,46 @@ class TestFiltering(MockTest):
         result = r.db('x').table('people').filter({'age': 35}).run(conn)
         self.assertEqual(expected, list(result))
 
+class TestMapping(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'joe-id', 'name': 'joe', 'age': 28},
+            {'id': 'bob-id', 'name': 'bob', 'age': 19},
+            {'id': 'bill-id', 'name': 'bill', 'age': 35},
+            {'id': 'kimye-id', 'name': 'kimye', 'age': 17}
+        ]
+        return as_db_and_table('x', 'people', data)
 
+    def test_map_gt(self, conn):
+        expected = [
+            True, False, True, False
+        ]
+        result = r.db('x').table('people').map(lambda p: p['age'] > 20).run(conn)
+        self.assertEqual(expected, list(result))
+
+class TestPlucking(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'joe-id', 'name': 'joe', 'hobby': 'guitar'},
+            {'id': 'bob-id', 'name': 'bob', 'hobby': 'pseudointellectualism'},
+            {'id': 'bill-id', 'name': 'bill'},
+            {'id': 'kimye-id', 'name': 'kimye', 'hobby': 'being kimye'}
+        ]
+        return as_db_and_table('x', 'people', data)
+
+    def test_pluck_missing_attr(self, conn):
+        expected = [
+            {'id': 'joe-id', 'hobby': 'guitar'},
+            {'id': 'bob-id', 'hobby': 'pseudointellectualism'},
+            {'id': 'bill-id'},
+            {'id': 'kimye-id', 'hobby': 'being kimye'}
+        ]
+        result = r.db('x').table('people').pluck('id', 'hobby').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+
+class TestUpdating(MockTest):
+    pass
 
 
 if __name__ == '__main__':

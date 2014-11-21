@@ -110,6 +110,19 @@ def handle_update(node):
     else:
         raise UnexpectedTermSequence('unknown sequence for UPDATE -> %s' % args[1])
 
+@handles_type(r_ast.Pluck)
+def handle_pluck(node):
+    args = node.args
+    if isinstance(args[1], r_ast.MakeArray):
+        attrs = plain_list_of_make_array(args[1])
+    else:
+        assert(isinstance(args[1], r_ast.Datum))
+        attrs = [plain_val_of_datum(datum) for datum in args[1:]]
+
+    left = type_dispatch(args[0])
+    return mt_ast.PluckMap(left, attrs)
+
+
 def rewrite_query(query):
     return type_dispatch(query)
 
