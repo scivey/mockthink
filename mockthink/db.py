@@ -22,7 +22,7 @@ class MockTableData(object):
     def replace_all(self, new_data):
         return MockTableData(new_data)
 
-    def replace_by_id(self, new_data):
+    def update_by_id(self, new_data):
         return MockTableData(replace_array_elems_by_id(self.data, new_data))
 
     def insert(self, new_rows):
@@ -63,6 +63,10 @@ class MockDbData(object):
         new_table = self.get_table(table_name).insert(elem_list)
         return self.set_table(table_name, new_table)
 
+    def update_by_id_in_table(self, table_name, elem_list):
+        new_table = self.get_table(table_name).update_by_id(elem_list)
+        return self.set_table(table_name, new_table)
+
 class MockDb(object):
     def __init__(self, dbs_by_name):
         self.dbs_by_name = dbs_by_name
@@ -92,7 +96,11 @@ class MockDb(object):
         return self.set_db(db_name, new_db)
 
     def insert_into_table_in_db(self, db_name, table_name, elem_list):
-        new_db_data = self.get_by(db_name).insert_into_table(table_name, elem_list)
+        new_db_data = self.get_db(db_name).insert_into_table(table_name, elem_list)
+        return self.set_db(db_name, new_db_data)
+
+    def update_by_id_in_table_in_db(self, db_name, table_name, elem_list):
+        new_db_data = self.get_db(db_name).update_by_id_in_table(table_name, elem_list)
         return self.set_db(db_name, new_db_data)
 
 def objects_from_pods(data):

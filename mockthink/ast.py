@@ -187,16 +187,10 @@ class UpdateBase(RBase):
         self.left = left
         self.right = right
     def run(self, arg, scope):
-        to_update = self.left.run(arg, scope)
-        map_fn = self.get_update_fn()
-        updated = map_with_scope(map_fn, scope, to_update)
+        updated = map_with_scope(self.get_update_fn(), scope, self.left.run(arg, scope))
         current_table = self.find_table_scope()
         current_db = self.find_db_scope()
-        print "\n\t [ %s : %s ]\n" % (current_db, current_table)
-        original = arg['dbs'][current_db]['tables'][current_table]
-        replaced = replace_array_elems_by_id(original, updated)
-        to_return = set_db_table(arg, current_db, current_table, replaced)
-        return to_return
+        return arg.update_by_id_in_table_in_db(current_db, current_table, updated)
 
 class UpdateWithFunc(UpdateBase):
     def get_update_fn(self):
