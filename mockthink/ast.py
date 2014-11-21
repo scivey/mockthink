@@ -3,19 +3,12 @@ from . import util
 from .scope import Scope
 
 from pprint import pprint
-def replace_array_elems_by_id(existing, replace_with):
-    elem_index_by_id = {}
-    for index in xrange(0, len(existing)):
-        elem = existing[index]
-        elem_index_by_id[util.getter('id')(elem)] = index
 
-    to_return = util.clone_array(existing)
+def map_with_scope(map_fn, scope, to_map):
+    return map(lambda elem: map_fn(elem, scope), to_map)
 
-    for elem in replace_with:
-        index = elem_index_by_id[util.getter('id')(elem)]
-        to_return[index] = elem
-
-    return to_return
+def filter_with_scope(filter_fn, scope, to_filter):
+    return filter(lambda elem: filter_fn(elem, scope), to_filter)
 
 class RBase(object):
     def __init__(self, *args):
@@ -156,31 +149,6 @@ def set_db_table(db_data, db_name, table_name, table_data):
     }
     return db_data_extend(db_data, ext_with)
 
-
-
-
-class MockDbAction(object):
-    pass
-
-class MockDbTableUpdate(MockDbAction):
-    def __init__(self, db_name, table_name, data):
-        self.db_name = db_name
-        self.table_name = table_name
-        self.data = data
-
-    # def __call__(self, db_data):
-    #     original = db_data['dbs'][self.db_name]['tables'][self.table_name]
-    #     replaced = replace_array_elems_by_id(original, self.data)
-    #     result = extend(db_data, {
-    #         'dbs':
-    #     })
-
-
-def map_with_scope(map_fn, scope, to_map):
-    return map(lambda elem: map_fn(elem, scope), to_map)
-
-def filter_with_scope(filter_fn, scope, to_filter):
-    return filter(lambda elem: filter_fn(elem, scope), to_filter)
 
 class UpdateBase(RBase):
     def __init__(self, left, right):
