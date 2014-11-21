@@ -61,7 +61,8 @@ class MockTest(Base):
             print 'AssertionError: expected %s to equal %s' % (x, y)
             raise e
 
-
+    def assertEqUnordered(self, x, y, msg=''):
+        return self.assertEqual(x, y, msg)
 
 def as_db_and_table(db_name, table_name, data):
     return {
@@ -86,6 +87,37 @@ class TestGetting(MockTest):
     def test_get_one_by_id(self, conn):
         result = r.db('x').table('people').get('bob-id').run(conn)
         self.assertEqual({'id': 'bob-id', 'name': 'bob'}, result)
+
+class TestFiltering(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'joe-id', 'name': 'joe', 'age': 28},
+            {'id': 'bob-id', 'name': 'bob', 'age': 19},
+            {'id': 'bill-id', 'name': 'bill', 'age': 35},
+            {'id': 'kimye-id', 'name': 'kimye', 'age': 17}
+        ]
+        return as_db_and_table('x', 'people', data)
+
+    def test_filter_lambda_gt(self, conn):
+        expected = [
+            {'id': 'joe-id', 'name': 'joe', 'age': 28},
+            {'id': 'bill-id', 'name': 'bill', 'age': 35}
+        ]
+        result = r.db('x').table('people').filter(lambda p: p['age'] > 20).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_filter_lambda_lt(self, conn):
+        expected = [
+            {'id': 'bob-id', 'name': 'bob', 'age': 19},
+            {'id': 'kimye-id', 'name': 'kimye', 'age': 17}
+        ]
+        result = r.db('x').table('people').filter(lambda p: p['age'] < 20).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_filter_dict_match(self, conn):
+        expected = [{'id': 'bill-id', 'name': 'bill', 'age': 35}]
+        result = r.db('x').table('people').filter({'age': 35}).run(conn)
+        self.assertEqual(expected, list(result))
 
 
 
