@@ -50,6 +50,15 @@ def is_simple(x):
     return not (isinstance(x, (list, dict)))
 
 @curry2
+def has_attrs(attr_list, thing):
+    result = True
+    for attr in attr_list:
+        if attr not in thing:
+            result = False
+            break
+    return result
+
+@curry2
 def nth(n, things):
     return things[n]
 

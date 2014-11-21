@@ -36,8 +36,6 @@ def handle_generic_monop(Mt_Constructor, node):
 
 
 
-
-
 NORMAL_MONOPS = {
     r_ast.Var: mt_ast.RVar,
     r_ast.DB: mt_ast.RDb,
@@ -141,6 +139,19 @@ def handle_pluck(node):
 
     left = type_dispatch(args[0])
     return mt_ast.PluckPoly(left, attrs)
+
+@handles_type(r_ast.HasFields)
+def handle_has_fields(node):
+    args = node.args
+    if isinstance(args[1], r_ast.MakeArray):
+        attrs = mt_ast.RDatum(plain_list_of_make_array(args[1]))
+    else:
+        assert(isinstance(args[1], r_ast.Datum))
+        attrs = mt_ast.RDatum([plain_val_of_datum(datum) for datum in args[1:]])
+
+    left = type_dispatch(args[0])
+    return mt_ast.HasFields(left, attrs)
+
 
 @handles_type(r_ast.Without)
 def handle_without(node):
