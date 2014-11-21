@@ -1,4 +1,3 @@
-
 def curry2(func):
     def out(x, *args):
         if len(args):
@@ -25,6 +24,12 @@ def extend(*dicts):
     out = {}
     for one_dict in dicts:
         out.update(one_dict)
+    return out
+
+def cat(*lists):
+    out = []
+    for one_list in lists:
+        out.extend(one_list)
     return out
 
 @curry2

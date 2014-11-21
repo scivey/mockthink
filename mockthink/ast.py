@@ -1,5 +1,7 @@
 import operator
 from . import util
+from .scope import Scope
+
 from pprint import pprint
 def replace_array_elems_by_id(existing, replace_with):
     elem_index_by_id = {}
@@ -14,44 +16,6 @@ def replace_array_elems_by_id(existing, replace_with):
         to_return[index] = elem
 
     return to_return
-
-class NotInScopeErr(Exception):
-    def __init__(self, msg):
-        print msg
-        self.msg = msg
-
-class Scope(object):
-    def __init__(self, values):
-        self.values = values
-
-    def get_sym(self, x):
-        result = None
-        if x in self.values:
-            result = self.values[x]
-        elif hasattr(self, 'parent'):
-            result = self.parent.get_sym(x)
-        if result == None:
-            msg = "symbol not defined: %s" % x
-            raise NotInScopeErr(msg)
-        return result
-
-    def push(self, vals):
-        scope = Scope(vals)
-        scope.parent = self
-        return scope
-
-    def get_flattened(self):
-        vals = {k: v for k, v in self.values.iteritems()}
-        if not hasattr(self, 'parent'):
-            return vals
-        parent_vals = self.parent.get_flattened()
-        parent_vals.update(vals)
-        return parent_vals
-
-    def log(self):
-        pprint(self.get_flattened())
-
-
 
 class RBase(object):
     def __init__(self, *args):
@@ -72,8 +36,6 @@ class RBase(object):
         elif hasattr(self, 'left'):
             result = self.left.find_db_scope()
         return result
-
-
 
 class RDatum(RBase):
     def __init__(self, val):
@@ -103,7 +65,7 @@ class MonExp(RBase):
 
 class RDb(MonExp):
     def do_run(self, db_name, arg, scope):
-        return arg['dbs'][db_name]
+        return arg.get_db(db_name)
 
     def get_db_name(self):
         return self.left.run(None, Scope({}))
@@ -130,7 +92,7 @@ class RTable(BinExp):
         return self.right.run(None, Scope({}))
 
     def do_run(self, data, table_name, arg, scope):
-        return data['tables'][table_name]
+        return data.get_table(table_name)
 
 class Bracket(BinExp):
     def do_run(self, thing, thing_attr, arg, scope):
@@ -195,44 +157,6 @@ def set_db_table(db_data, db_name, table_name, table_data):
     return db_data_extend(db_data, ext_with)
 
 
-# class MockDbData(object):
-#     def __init__(self, data):
-#         self.data = data
-
-#     def get_data(self):
-#         return self.data
-
-#     def _extend_with(self, data):
-#         to_return = obj_clone(self.data)
-#         to_return['dbs'] = obj_clone(to_return['dbs'])
-#         for one_db, one_db_data in data['dbs'].iteritems():
-#             new_db_data = obj_clone(to_return['dbs'][one_db])
-#             for one_table, one_table_data in new_table_data.iteritems():
-#                 new_db_data['tables'][one_table] = one_table_data
-#             to_return['dbs'][one_db] = new_db_data
-#         return MockDbData(to_return)
-
-#     def get_db(self, db_name):
-#         return self.data['dbs'][db_name]
-
-#     def get_table(self, db_name, table_name):
-#         return self.get_db(db_name)['tables'][table_name]
-
-#     def set_table(self, db_name, table_name, table_data):
-#         ext_with = {
-#             'dbs': {
-#                 db_name: {
-#                     'tables': {
-#                         table_name: table_data
-#                     }
-#                 }
-#             }
-#         }
-#         return self._extend_with(ext_with)
-
-#     def replace_table(self, db_name, table_name, table_data):
-#         to_return = self.data
-#         existing = self.get_table(db_name, table_name)
 
 
 class MockDbAction(object):

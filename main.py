@@ -1,5 +1,6 @@
 import operator
 from mockthink.ast import *
+from mockthink import db
 from pprint import pprint
 
 query1 = FilterWithFunc(
@@ -66,17 +67,6 @@ query6 = WithoutMap(
 )
 
 
-
-class MockDb(object):
-    def __init__(self, data):
-        self.data = data
-
-    def run_query(self, query):
-        result = query.run(self.data, Scope({}))
-        if hasattr(result, 'dbs'):
-            self.data = result
-        return result
-
 data = {
     'dbs': {
         'fonz': {
@@ -92,12 +82,13 @@ data = {
         }
     }
 }
-res = query1.run(data, Scope({}))
-pprint(res)
-pprint(query2.run(data, Scope({})))
-pprint(query3.run(data, Scope({})))
-pprint(query4.run(data, Scope({})))
 
-pprint(query1.run(data, Scope({})))
-pprint(query5.run(data, Scope({})))
-pprint(query6.run(data, Scope({})))
+mockthink = db.MockThink(data)
+pprint(mockthink.run_query(query1))
+# pprint(query2.run(data, Scope({})))
+# pprint(query3.run(data, Scope({})))
+# pprint(query4.run(data, Scope({})))
+
+# pprint(query1.run(data, Scope({})))
+# pprint(query5.run(data, Scope({})))
+# pprint(query6.run(data, Scope({})))
