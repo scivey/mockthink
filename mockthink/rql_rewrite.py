@@ -81,6 +81,11 @@ def plain_obj_of_make_obj(make_obj_instance):
     assert(isinstance(make_obj_instance, r_ast.MakeObj))
     return {k: plain_val_of_datum(v) for k, v in make_obj_instance.optargs.iteritems()}
 
+
+@handles_type(r_ast.MakeObj)
+def handle_make_obj(node):
+    return mt_ast.MakeObj({k: type_dispatch(v) for k, v in node.optargs.iteritems()})
+
 @handles_type(r_ast.Func)
 def handle_func(node):
     func_params = plain_list_of_make_array(node.args[0])
@@ -172,16 +177,7 @@ def handle_outer_join(node):
 def handle_merge(node):
     args = node.args
     left = type_dispatch(args[0])
-    if isinstance(args[1], r_ast.MakeObj):
-        to_merge = mt_ast.RDatum(plain_obj_of_make_obj(args[1]))
-    else:
-        to_merge = type_dispatch(args[1])
-    print 'to_merge'
-    print to_merge
-    pprint(to_merge)
-    print 'left'
-    print(left)
-    pprint(left)
+    to_merge = type_dispatch(args[1])
     return mt_ast.MergePoly(left, to_merge)
 
 def rewrite_query(query):

@@ -687,6 +687,26 @@ class TestMerge(MockTest):
         pprint(result)
         self.assertEqUnordered(expected, result)
 
+    def test_merge_nested_with_prop2(self, conn):
+        expected = [
+            {
+                'x-val': 'x-val-1',
+                'nested': {
+                    'y-val': 'y-val-1'
+                }
+            },
+            {
+                'x-val': 'x-val-2',
+                'nested': {
+                    'y-val': 'y-val-2'
+                }
+            }
+        ]
+        result = r.db('jezebel').table('things').map(
+            lambda d: d['x'].merge({'nested': d['y']})
+        ).run(conn)
+        self.assertEqUnordered(expected, result)
+
 
 
 

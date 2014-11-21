@@ -392,3 +392,13 @@ class OuterJoin(RBase):
         left = self.left.run(arg, scope)
         right = self.right.run(arg, scope)
         return do_outer_join(outer_pred, left, right)
+
+
+class MakeObj(RBase):
+    def __init__(self, vals):
+        self.vals = vals
+
+    def run(self, arg, scope):
+        result = {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
+        return result
+
