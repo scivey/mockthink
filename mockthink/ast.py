@@ -34,6 +34,9 @@ class RDatum(RBase):
     def __init__(self, val):
         self.val = val
 
+    def __str__(self):
+        return "<DATUM: %s>" % self.val
+
     def run(self, arg, scope):
         return self.val
 
@@ -42,12 +45,19 @@ class RSym(RBase):
     def __init__(self, sym):
         self.sym = sym
 
+    def __str__(self):
+        return "<SYM: %s>" % self.sym
+
     def run(self, arg, scope):
         return scope.get_sym(self.sym)
 
 class MonExp(RBase):
     def __init__(self, left):
         self.left = left
+
+    def __str__(self):
+        class_name = self.__class__.__name__
+        return "<%s: %s>" % (class_name, self.left)
 
     def do_run(self, left, arg, scope):
         pass
@@ -71,6 +81,11 @@ class BinExp(RBase):
     def __init__(self, left, right):
         self.left = left
         self.right = right
+
+    def __str__(self):
+        class_name = self.__class__.__name__
+        return "<%s: (%s, %s)>" % (class_name, self.left, self.right)
+
 
     def do_run(self, left, right, arg, scope):
         pass
@@ -151,6 +166,10 @@ def set_db_table(db_data, db_name, table_name, table_data):
 
 
 class UpdateBase(RBase):
+
+    def __str__(self):
+        return "<Update: (%s, %s)>" % (self.left, self.right)
+
     def __init__(self, left, right):
         self.left = left
         self.right = right
@@ -178,6 +197,10 @@ class RFunc(RBase):
         self.param_names = param_names
         self.body = body
 
+    def __str__(self):
+        params = ", ".join(self.param_names)
+        return "<RFunc: [%s] { %s }>" % (params, self.body)
+
     def run(self, args, scope):
         bound = util.as_obj(zip(self.param_names, args))
         call_scope = scope.push(bound)
@@ -187,6 +210,9 @@ class FilterBase(RBase):
     def __init__(self, left, right):
         self.left = left
         self.right = right
+
+    def __str__(self):
+        return "<Filter: (%s, %s)>" % (self.left, self.right)
 
     def get_filter_fn(self):
         pass
@@ -217,6 +243,9 @@ class MapBase(RBase):
     def __init__(self, left, right):
         self.left = left
         self.right = right
+
+    def __str__(self):
+        return "<Map: (%s, %s)>" % (self.left, self.right)
 
     def get_map_fn(self):
         pass

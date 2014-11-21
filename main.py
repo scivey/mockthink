@@ -1,6 +1,8 @@
 import operator
 from mockthink.ast import *
 from mockthink import db
+from mockthink.rql_rewrite import rewrite_query
+import rethinkdb as r
 from pprint import pprint
 
 query1 = FilterWithFunc(
@@ -67,6 +69,11 @@ query6 = WithoutMap(
 )
 
 
+query7 = RTable(
+    RDb(RDatum('fonz')),
+    RDatum('wabbits')
+)
+
 data = {
     'dbs': {
         'fonz': {
@@ -84,11 +91,15 @@ data = {
 }
 
 mockthink = db.MockThink(data)
-pprint(mockthink.run_query(query1))
-# pprint(query2.run(data, Scope({})))
-# pprint(query3.run(data, Scope({})))
-# pprint(query4.run(data, Scope({})))
+# for query in [query1, query2, query3, query4, query5, query6, query7]:
+#     pprint(mockthink.run_query(query))
 
-# pprint(query1.run(data, Scope({})))
-# pprint(query5.run(data, Scope({})))
-# pprint(query6.run(data, Scope({})))
+# mockthink.reset()
+# pprint(mockthink.run_query(query7))
+
+rql1 = r.db('fonz').table('wabbits').filter(lambda d: d['age'] > 26)
+rql2 = r.db('fonz').table('wabbits')
+
+query = rewrite_query(rql1)
+# mockthink.pprint_query_ast(query)
+pprint(mockthink.run_query(query))

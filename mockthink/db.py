@@ -1,4 +1,5 @@
 from . import util
+from . import ast
 from .scope import Scope
 
 def replace_array_elems_by_id(existing, replace_with):
@@ -120,8 +121,14 @@ class MockThink(object):
     def run_query(self, query):
         result = query.run(self.data, Scope({}))
         if isinstance(result, MockDb):
-            self.data = mockDb
+            self.data = result
+        elif isinstance(result, MockTableData):
+            result = result.get_rows()
         return result
+
+    def pprint_query_ast(self, query):
+        foo = "%s" % query
+        print foo
 
     def reset(self):
         self.data = objects_from_pods(self.initial_data)
