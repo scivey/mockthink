@@ -310,6 +310,20 @@ class PluckPoly(RBase):
             pprint(left)
             raise Exception('unexpected type')
 
+def MergePoly(RBase):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def run(self, arg, scope):
+        assert(isinstance(self.right, dict))
+        map_fn = lambda d: util.extend(d, self.right)
+        left = self.left.run(arg, scope)
+        if isinstance(left, dict):
+            return map_fn(left)
+        return map(map_fn, left)
+
+
 
 def do_eq_join(left_field, left, right_field, right):
     out = []

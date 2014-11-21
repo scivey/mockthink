@@ -168,6 +168,12 @@ def handle_outer_join(node):
     pred = type_dispatch(args[2])
     return mt_ast.OuterJoin(left, pred, right)
 
+@handles_type(r_ast.Merge)
+def handle_merge(node):
+    args = node.args
+    left = type_dispatch(args[0])
+    assert(isinstance(args[1], r_ast.MakeObj))
+    return mt_ast.Merge(left, plain_obj_of_make_obj(args[1]))
 
 def rewrite_query(query):
     return type_dispatch(query)
