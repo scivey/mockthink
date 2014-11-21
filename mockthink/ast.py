@@ -179,11 +179,18 @@ class UpdateBase(RBase):
     def __init__(self, left, right):
         self.left = left
         self.right = right
+
     def run(self, arg, scope):
-        updated = map_with_scope(self.get_update_fn(), scope, self.left.run(arg, scope))
+        update_fn = self.get_update_fn()
+        left = self.left.run(arg, scope)
+        pprint(left)
+        if isinstance(left, dict):
+            result = [update_fn(left, scope)]
+        else:
+            result = map_with_scope(update_fn, scope, left)
         current_table = self.find_table_scope()
         current_db = self.find_db_scope()
-        return arg.update_by_id_in_table_in_db(current_db, current_table, updated)
+        return arg.update_by_id_in_table_in_db(current_db, current_table, result)
 
 class UpdateWithFunc(UpdateBase):
     def get_update_fn(self):
@@ -193,8 +200,10 @@ class UpdateWithFunc(UpdateBase):
 
 class UpdateWithObj(UpdateBase):
     def get_update_fn(self):
+        pprint(self.right)
         ext_fn = util.extend_with(self.right)
         def update_fn(elem, scope):
+            pprint(elem)
             return ext_fn(elem)
         return update_fn
 

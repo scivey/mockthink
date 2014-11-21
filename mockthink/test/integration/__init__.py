@@ -345,11 +345,77 @@ class TestBracket(MockTest):
         result = r.db('some-db').table('things').map(lambda t: t['values']['c']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
+class TestMath(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'pt-1',
+                'x': 10,
+                'y': 25
+            },
+            {
+                'id': 'pt-2',
+                'x': 100,
+                'y': 3
+            }
+        ]
+        return as_db_and_table('math-db', 'points', data)
+
+    def test_add_method(self, conn):
+        expected = [35, 103]
+        result = r.db('math-db').table('points').map(lambda t: t['x'].add(t['y'])).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_add_oper(self, conn):
+        expected = [35, 103]
+        result = r.db('math-db').table('points').map(lambda t: t['x'] + t['y']).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_sub_method(self, conn):
+        expected = [-15, 97]
+        result = r.db('math-db').table('points').map(lambda t: t['x'].sub(t['y'])).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_sub_oper(self, conn):
+        expected = [-15, 97]
+        result = r.db('math-db').table('points').map(lambda t: t['x'] - t['y']).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_mul_method(self, conn):
+        expected = [250, 300]
+        result = r.db('math-db').table('points').map(lambda t: t['x'].mul(t['y'])).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_mul_oper(self, conn):
+        expected = [250, 300]
+        result = r.db('math-db').table('points').map(lambda t: t['x'] * t['y']).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_div_method(self, conn):
+        expected = [250, 300]
+        result = r.db('math-db').table('points').map(lambda t: t['x'].mul(t['y'])).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_mul_oper(self, conn):
+        expected = [250, 300]
+        result = r.db('math-db').table('points').map(lambda t: t['x'] * t['y']).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
 
 
 class TestUpdating(MockTest):
-    pass
+    def get_data(self):
+        data = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        return as_db_and_table('things', 'muppets', data)
 
+    def test_update_one(self, conn):
+        expected = {'id': 'kermit-id', 'species': 'green frog', 'name': 'Kermit'}
+        r.db('things').table('muppets').get('kermit-id').update({'species': 'green frog'}).run(conn)
+        result = r.db('things').table('muppets').get('kermit-id').run(conn)
+        self.assertEqual(expected, result)
 
 if __name__ == '__main__':
     think = MockThink(as_db_and_table('nothing', 'nothing', []))
