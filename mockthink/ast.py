@@ -320,6 +320,14 @@ def do_eq_join(left_field, left, right_field, right):
             out.append({'left': elem, 'right': match})
     return out
 
+def do_inner_join(pred, left, right):
+    out = []
+    for left_elem in left:
+        for right_elem in right:
+            if pred(left_elem, right_elem):
+                out.append({'left': left_elem, 'right': right_elem})
+    return out
+
 class EqJoin(RBase):
     def __init__(self, left, field_name, right):
         self.left = left
@@ -331,3 +339,16 @@ class EqJoin(RBase):
         pprint(left)
         pprint(right)
         return do_eq_join(self.field_name, left, 'id', right)
+
+class InnerJoin(RBase):
+    def __init__(self, left, pred, right):
+        self.left = left
+        self.right = right
+        self.pred = pred
+
+    def run(self, arg, scope):
+        def inner_pred(x, y):
+            return self.pred.run([x, y], scope)
+        left = self.left.run(arg, scope)
+        right = self.right.run(arg, scope)
+        return do_inner_join(inner_pred, left, right)

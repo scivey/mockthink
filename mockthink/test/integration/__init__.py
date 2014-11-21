@@ -488,6 +488,42 @@ class Test_Eq_Join(MockTest):
         result = r.db('jezebel').table('employees').eq_join('person', r.db('jezebel').table('people')).run(conn)
         self.assertEqUnordered(expected, list(result))
 
+class Test_Inner_join(MockTest):
+    def get_data(self):
+        return common_join_data()
+
+    def test_inner_join_1(self, conn):
+        expected = [
+            {
+                'left': {
+                    'id': 'joe-emp-id',
+                    'person': 'joe-id',
+                    'job': 'lawyer-id'
+                },
+                'right': {
+                    'id': 'joe-id',
+                    'name': 'Joe'
+                }
+            },
+            {
+                'left': {
+                    'id': 'arnold-emp-id',
+                    'person': 'arnold-id',
+                    'job': 'nurse-id'
+                },
+                'right': {
+                    'id': 'arnold-id',
+                    'name': 'Arnold'
+                }
+            }
+        ]
+        result = r.db('jezebel').table('employees').inner_join(
+            r.db('jezebel').table('people'),
+            lambda employee, person: employee['person'] == person['id']
+        ).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+
 
 
 if __name__ == '__main__':
