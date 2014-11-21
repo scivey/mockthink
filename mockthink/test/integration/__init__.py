@@ -56,11 +56,17 @@ class MockTest(Base):
         try:
             assert(x == y)
         except AssertionError as e:
-            print 'AssertionError: expected %s to equal %s' % (x, y)
+            print 'AssertionError: expected %r to equal %r' % (x, y)
+            pprint(x)
+            pprint(y)
             raise e
 
     def assertEqUnordered(self, x, y, msg=''):
-        return self.assertEqual(x, y, msg)
+        for x_elem in x:
+            if x_elem not in y:
+                msg = 'assertEqUnordered: match not found for %s' % x_elem
+                print 'AssertionError: %s' % msg
+                raise AssertionError(msg)
 
 def as_db_and_table(db_name, table_name, data):
     return {
@@ -456,7 +462,7 @@ def common_join_data():
     }
     return data
 
-class Test_Eq_Join(MockTest):
+class TestEqJoin(MockTest):
     def get_data(self):
         return common_join_data()
 
@@ -488,7 +494,7 @@ class Test_Eq_Join(MockTest):
         result = r.db('jezebel').table('employees').eq_join('person', r.db('jezebel').table('people')).run(conn)
         self.assertEqUnordered(expected, list(result))
 
-class Test_Inner_join(MockTest):
+class TestInnerJoin(MockTest):
     def get_data(self):
         return common_join_data()
 
@@ -523,6 +529,76 @@ class Test_Inner_join(MockTest):
         ).run(conn)
         self.assertEqUnordered(expected, list(result))
 
+class TestOuterJoin(MockTest):
+    def get_data(self):
+        people = [
+            {'id': 'sam-id', 'name': 'Sam'},
+            {'id': 'miguel-id', 'name': 'Miguel'},
+            {'id': 'mark-id', 'name': 'Mark'}
+        ]
+        pets = [
+            {'id': 'pet1-id', 'name': 'Pet1', 'owner': 'miguel-id'},
+            {'id': 'pet2-id', 'name': 'Pet2', 'owner': 'mark-id'},
+            {'id': 'pet3-id', 'name': 'Pet3', 'owner': 'miguel-id'},
+        ]
+        return {
+            'dbs': {
+                'awesomesauce': {
+                    'tables': {
+                        'pets': pets,
+                        'people': people
+                    }
+                }
+            }
+        }
+
+    def test_outer_join_1(self, conn):
+        expected = [
+            {
+                'left': {
+                    'id': 'miguel-id',
+                    'name': 'Miguel'
+                },
+                'right': {
+                    'id': 'pet1-id',
+                    'name': 'Pet1',
+                    'owner': 'miguel-id'
+                }
+            },
+            {
+                'left': {
+                    'id': 'miguel-id',
+                    'name': 'Miguel'
+                },
+                'right': {
+                    'id': 'pet3-id',
+                    'name': 'Pet3',
+                    'owner': 'miguel-id'
+                }
+            },
+            {
+                'left': {
+                    'id': 'mark-id',
+                    'name': 'Mark'
+                },
+                'right': {
+                    'id': 'pet2-id',
+                    'name': 'Pet2',
+                    'owner': 'mark-id'
+                }
+            },
+            {
+                'left': {
+                    'id': 'sam-id',
+                    'name': 'Sam'
+                }
+            }
+        ]
+        result = r.db('awesomesauce').table('people').outer_join(
+            r.db('awesomesauce').table('pets'),
+            lambda person, pet: pet['owner'] == person['id']
+        ).run(conn)
+        self.assertEqUnordered(expected, list(result))
 
 
 

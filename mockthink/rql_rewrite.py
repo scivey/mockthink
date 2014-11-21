@@ -159,6 +159,14 @@ def handle_inner_join(node):
     pred = type_dispatch(args[2])
     return mt_ast.InnerJoin(left, pred, right)
 
+@handles_type(r_ast.OuterJoin)
+def handle_outer_join(node):
+    args = node.args
+    left = type_dispatch(args[0])
+    right = type_dispatch(args[1])
+    assert(isinstance(args[2], r_ast.Func))
+    pred = type_dispatch(args[2])
+    return mt_ast.OuterJoin(left, pred, right)
 
 
 def rewrite_query(query):
