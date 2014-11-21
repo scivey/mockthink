@@ -1,0 +1,146 @@
+import argparse
+import sys
+from pprint import pprint
+import rethinkdb as r
+from mockthink.db import MockThink, MockThinkConn
+from mockthink.test.common import make_test_registry, AssertionMixin
+from mockthink.test.common import as_db_and_table
+
+
+TESTS = {}
+register_test = make_test_registry(TESTS)
+
+class Meta(type):
+    def __new__(cls, name, bases, attrs):
+        result = super(Meta, cls).__new__(cls, name, bases, attrs)
+        tests = [name for name in attrs.keys() if 'test' in name]
+        register_test(result, result.__name__, tests)
+        return result
+
+class Base(object):
+    __metaclass__ = Meta
+
+class MockTest(Base, AssertionMixin):
+    def get_data(self):
+        return {
+            'dbs': {
+                'default': {
+                    'tables': {}
+                }
+            }
+        }
+
+class TestThings(MockTest):
+    def get_data(self):
+        people_data = [
+            {'id': 'joe-id', 'name': 'joe', 'age': 26},
+            {'id': 'bob-id', 'name': 'bob', 'age': 19},
+            {'id': 'tim-id', 'name': 'tim', 'age': 53},
+            {'id': 'todd-id', 'name': 'todd', 'age': 17}
+        ]
+        job_data = [
+            {'id': 'lawyer-id', 'name': 'Lawyer'},
+            {'id': 'nurse-id', 'name': 'Nurse'},
+            {'id': 'assistant-id', 'name': 'Assistant'}
+        ]
+        employee_data = [
+            {'id': 'joe-employee-id', 'person': 'joe-id', 'job': 'lawyer-id'},
+            {'id': 'tim-employee-id', 'person': 'tim-id', 'job': 'nurse-id'},
+            {'id': 'bob-employee-id', 'person': 'bob-id', 'job': 'assistant-id'},
+            {'id': 'todd-employee-id', 'person': 'todd-id', 'job': 'lawyer-id'}
+        ]
+        return {
+            'dbs': {
+                'x': {
+                    'tables': {
+                        'people': people_data,
+                        'jobs': job_data,
+                        'employees': employee_data
+                    }
+                }
+            }
+        }
+
+    def test_join_filter_map(self, conn):
+        query = r.db('x').table('employees').eq_join(
+            'person', r.db('x').table('people')
+        ).filter(
+            lambda p: p['right']['age'] > 20
+        ).map(
+            lambda d: d['left'].merge({'person': d['right']['name']})
+        )
+        expected = [
+            {
+                'id': 'joe-employee-id',
+                'person': 'joe',
+                'job': 'lawyer-id'
+            },
+            {
+                'id': 'tim-employee-id',
+                'person': 'tim',
+                'job': 'nurse-id'
+            }
+        ]
+
+        self.assertEqUnordered(expected, list(query.run(conn)))
+
+    def test_multi_join(self, conn):
+        query = r.db('x').table('employees').eq_join(
+            'person', r.db('x').table('people')
+        ).map(
+            lambda d: d['left'].merge({'person': d['right']['name']})
+        ).eq_join(
+            'job', r.db('x').table('jobs')
+        ).map(
+            lambda d: d['left'].merge({'job': d['right']['name']})
+        )
+        expected = [
+            {
+                'id': 'joe-employee-id',
+                'person': 'joe',
+                'job': 'Lawyer'
+            },
+            {
+                'id': 'tim-employee-id',
+                'person': 'tim',
+                'job': 'Nurse'
+            },
+            {
+                'id': 'bob-employee-id',
+                'person': 'bob',
+                'job': 'Assistant'
+            },
+            {
+                'id': 'todd-employee-id',
+                'person': 'todd',
+                'job': 'Lawyer'
+            }
+        ]
+        result = query.run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
+
+
+def run_tests(conn):
+    for test_name, test_fn in TESTS.iteritems():
+        test_fn(conn)
+
+def run_tests_with_mockthink():
+    think = MockThink(as_db_and_table('nothing', 'nothing', []))
+    run_tests(think.get_conn())
+
+def run_tests_with_rethink():
+    conn = r.connect('localhost', 28015)
+    run_tests(conn)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    runners = {
+        'mockthink': run_tests_with_mockthink,
+        'rethink': run_tests_with_rethink
+    }
+
+    parser.add_argument('--run', default='mockthink')
+    args = parser.parse_args(sys.argv[1:])
+    runners[args.run]()
