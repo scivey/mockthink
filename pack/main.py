@@ -362,16 +362,21 @@ class MockDbTableUpdate(MockDbAction):
     #         'dbs':
     #     })
 
-class UpdateWithObj(RBase):
-    def __init__(self, left, update_with):
-        self.left = left
-        self.update_with = update_with
 
+def map_with_scope(map_fn, scope, to_map):
+    return map(lambda elem: map_fn(elem, scope), to_map)
+
+def filter_with_scope(filter_fn, scope, to_filter):
+    return filter(lambda elem: filter_fn(elem, scope), to_filter)
+
+class UpdateBase(RBase):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
     def run(self, arg, scope):
         to_update = self.left.run(arg, scope)
-        map_fn = extend_with(self.update_with)
-        pprint(arg)
-        updated = map(map_fn, to_update)
+        map_fn = self.get_update_fn()
+        updated = map_with_scope(map_fn, scope, to_update)
         current_table = self.find_table_scope()
         current_db = self.find_db_scope()
         print "\n\t [ %s : %s ]\n" % (current_db, current_table)
@@ -379,6 +384,19 @@ class UpdateWithObj(RBase):
         replaced = replace_array_elems_by_id(original, updated)
         to_return = set_db_table(arg, current_db, current_table, replaced)
         return to_return
+
+class UpdateWithFunc(UpdateBase):
+    def get_update_fn(self):
+        def update_fn(elem, scope):
+            return self.right.run([elem], scope)
+        return update_fn
+
+class UpdateWithObj(UpdateBase):
+    def get_update_fn(self):
+        ext_fn = extend_with(self.right)
+        def update_fn(elem, scope):
+            return ext_fn(elem)
+        return update_fn
 
 class RFunc(RBase):
     def __init__(self, param_names, body):
@@ -419,6 +437,42 @@ class FilterWithObj(FilterBase):
         def filt(elem, scope):
             return match_attrs(to_match)(elem)
         return filt
+
+class MapBase(RBase):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def get_map_fn(self):
+        pass
+
+    def run(self, arg, scope):
+        out = []
+        map_fn = self.get_map_fn()
+        for elem in self.left.run(arg, scope):
+            out.append(map_fn(elem, scope))
+        return out
+
+class MapWithRFunc(MapBase):
+    def get_map_fn(self):
+        def map_fn(elem, scope):
+            return self.right.run([elem], scope)
+        return map_fn
+
+class WithoutMap(MapBase):
+    def get_map_fn(self):
+        bad_attrs = self.right
+        without_fn = without(bad_attrs)
+        def map_fn(elem, scope):
+            return without_fn(elem)
+        return map_fn
+
+class PluckMap(MapBase):
+    def get_map_fn(self):
+        pluck_fn = pluck_with(*self.right)
+        def map_fn(elem, scope):
+            return pluck_fn(elem)
+        return map_fn
 
 
 
@@ -471,6 +525,31 @@ query4 = UpdateWithObj(
     }
 )
 
+
+query5 = MapWithRFunc(
+    RTable(
+        RDb(RDatum('fonz')),
+        RDatum('wabbits')
+    ),
+    RFunc(
+        ['x'],
+        Gt(
+            Bracket(RVar(RDatum('x')), RDatum('age')),
+            RDatum(20)
+        )
+    )
+)
+
+query6 = WithoutMap(
+    RTable(
+        RDb(RDatum('fonz')),
+        RDatum('wabbits')
+    ),
+    ['age']
+)
+
+
+
 class MockDb(object):
     def __init__(self, data):
         self.data = data
@@ -503,3 +582,5 @@ pprint(query3.run(data, Scope({})))
 pprint(query4.run(data, Scope({})))
 
 pprint(query1.run(data, Scope({})))
+pprint(query5.run(data, Scope({})))
+pprint(query6.run(data, Scope({})))
