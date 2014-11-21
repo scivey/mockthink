@@ -310,7 +310,8 @@ class PluckPoly(RBase):
             pprint(left)
             raise Exception('unexpected type')
 
-def MergePoly(RBase):
+
+class MergePoly(RBase):
     def __init__(self, left, right):
         self.left = left
         self.right = right
@@ -322,7 +323,6 @@ def MergePoly(RBase):
         if isinstance(left, dict):
             return map_fn(left)
         return map(map_fn, left)
-
 
 
 def do_eq_join(left_field, left, right_field, right):

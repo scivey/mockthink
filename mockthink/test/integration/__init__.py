@@ -603,6 +603,57 @@ class TestOuterJoin(MockTest):
         self.assertEqUnordered(expected, list(result))
 
 
+class TestMerge(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'id-1',
+                'x': {
+                    'x-val': 'x-val-1'
+                },
+                'y': {
+                    'y-val': 'y-val-1'
+                }
+            },
+            {
+                'id': 'id-2',
+                'x': {
+                    'x-val': 'x-val-2'
+                },
+                'y': {
+                    'y-val': 'y-val-2'
+                }
+            }
+        ]
+        return as_db_and_table('jezebel', 'things', data)
+
+    def test_merge_toplevel(self, conn):
+        expected = [
+            {
+                'id': 'id-1',
+                'x': {
+                    'x-val': 'x-val-1'
+                },
+                'y': {
+                    'y-val': 'y-val-1'
+                },
+                'z': 'Z-VALUE'
+            },
+            {
+                'id': 'id-2',
+                'x': {
+                    'x-val': 'x-val-2'
+                },
+                'y': {
+                    'y-val': 'y-val-2'
+                },
+                'z': 'Z-VALUE'
+            }
+        ]
+        result = r.db('jezebel').table('things').merge({'z': 'Z-VALUE'}).run(conn)
+        self.assertEqUnordered(expected, result)
+
+
 def run_tests(conn):
     for test_name, test_fn in TESTS.iteritems():
         test_fn(conn)

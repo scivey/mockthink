@@ -173,7 +173,14 @@ def handle_merge(node):
     args = node.args
     left = type_dispatch(args[0])
     assert(isinstance(args[1], r_ast.MakeObj))
-    return mt_ast.Merge(left, plain_obj_of_make_obj(args[1]))
+    to_merge = plain_obj_of_make_obj(args[1])
+    print 'to_merge'
+    print to_merge
+    pprint(to_merge)
+    print 'left'
+    print(left)
+    pprint(left)
+    return mt_ast.MergePoly(left, to_merge)
 
 def rewrite_query(query):
     return type_dispatch(query)
