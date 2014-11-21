@@ -253,13 +253,21 @@ class MapWithRFunc(MapBase):
             return self.right.run([elem], scope)
         return map_fn
 
-class WithoutMap(MapBase):
-    def get_map_fn(self):
-        bad_attrs = self.right
-        without_fn = util.without(bad_attrs)
-        def map_fn(elem, scope):
-            return without_fn(elem)
-        return map_fn
+class WithoutPoly(RBase):
+    def __init__(self, left, bad_attrs):
+        self.left = left
+        self.bad_attrs = bad_attrs
+
+    def run(self, arg, scope):
+        left = self.left.run(arg, scope)
+        map_fn = util.without(self.bad_attrs)
+        if isinstance(left, dict):
+            return map_fn(left)
+        elif util.is_iterable(left):
+            return map(map_fn, left)
+        else:
+            pprint(left)
+            raise Exception('unexpected type')
 
 class PluckPoly(RBase):
     def __init__(self, left, attrs):
@@ -271,7 +279,7 @@ class PluckPoly(RBase):
         map_fn = util.pluck_with(*self.attrs)
         if isinstance(left, dict):
             return map_fn(left)
-        elif hasattr(left, '__iter__'):
+        elif util.is_iterable(left):
             return map(map_fn, left)
         else:
             pprint(left)

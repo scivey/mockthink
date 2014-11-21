@@ -114,3 +114,6 @@ def without(bad_attrs, thing):
 
 def obj_clone(a_dict):
     return {k: v for k, v in a_dict.iteritems()}
+
+def is_iterable(x):
+    return hasattr(x, '__iter__')

@@ -117,6 +117,7 @@ class TestFiltering(MockTest):
         result = r.db('x').table('people').filter({'age': 35}).run(conn)
         self.assertEqual(expected, list(result))
 
+
 class TestMapping(MockTest):
     def get_data(self):
         data = [
@@ -172,6 +173,176 @@ class TestPlucking(MockTest):
             {'id': 'kimye-id', 'hobby': 'being kimye'}
         ]
         result = r.db('x').table('people').map(lambda p: p.pluck('id', 'hobby')).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+
+class TestPlucking2(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'thing-1',
+                'values': {
+                    'a': 'a-1',
+                    'b': 'b-1',
+                    'c': 'c-1',
+                    'd': 'd-1'
+                }
+            },
+            {
+                'id': 'thing-2',
+                'values': {
+                    'a': 'a-2',
+                    'b': 'b-2',
+                    'c': 'c-2',
+                    'd': 'd-2'
+                }
+            },
+        ]
+        return as_db_and_table('some-db', 'things', data)
+
+    def test_sub_sub(self, conn):
+        expected = [
+            {'a': 'a-1', 'd': 'd-1'},
+            {'a': 'a-2', 'd': 'd-2'}
+        ]
+        result = r.db('some-db').table('things').map(lambda t: t['values'].pluck('a', 'd')).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_sub_sub_list(self, conn):
+        expected = [
+            {'a': 'a-1', 'd': 'd-1'},
+            {'a': 'a-2', 'd': 'd-2'}
+        ]
+        result = r.db('some-db').table('things').map(lambda t: t['values'].pluck('a', 'd')).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+
+
+class TestWithout(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'joe-id', 'name': 'joe', 'hobby': 'guitar'},
+            {'id': 'bob-id', 'name': 'bob', 'hobby': 'pseudointellectualism'},
+            {'id': 'bill-id', 'name': 'bill'},
+            {'id': 'kimye-id', 'name': 'kimye', 'hobby': 'being kimye'}
+        ]
+        return as_db_and_table('x', 'people', data)
+
+    def test_without_missing_attr(self, conn):
+        expected = [
+            {'id': 'joe-id'},
+            {'id': 'bob-id'},
+            {'id': 'bill-id'},
+            {'id': 'kimye-id'}
+        ]
+        result = r.db('x').table('people').without('name', 'hobby').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_without_missing_attr_list(self, conn):
+        expected = [
+            {'id': 'joe-id'},
+            {'id': 'bob-id'},
+            {'id': 'bill-id'},
+            {'id': 'kimye-id'}
+        ]
+        result = r.db('x').table('people').without(['name', 'hobby']).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_sub_without(self, conn):
+        expected = [
+            {'id': 'joe-id'},
+            {'id': 'bob-id'},
+            {'id': 'bill-id'},
+            {'id': 'kimye-id'}
+        ]
+        result = r.db('x').table('people').map(lambda p: p.without('name', 'hobby')).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_sub_without_list(self, conn):
+        expected = [
+            {'id': 'joe-id'},
+            {'id': 'bob-id'},
+            {'id': 'bill-id'},
+            {'id': 'kimye-id'}
+        ]
+        result = r.db('x').table('people').map(lambda p: p.without(['name', 'hobby'])).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+class TestWithout2(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'thing-1',
+                'values': {
+                    'a': 'a-1',
+                    'b': 'b-1',
+                    'c': 'c-1',
+                    'd': 'd-1'
+                }
+            },
+            {
+                'id': 'thing-2',
+                'values': {
+                    'a': 'a-2',
+                    'b': 'b-2',
+                    'c': 'c-2',
+                    'd': 'd-2'
+                }
+            },
+        ]
+        return as_db_and_table('some-db', 'things', data)
+
+    def test_sub_sub(self, conn):
+        expected = [
+            {'b': 'b-1', 'c': 'c-1'},
+            {'b': 'b-2', 'c': 'c-2'}
+        ]
+        result = r.db('some-db').table('things').map(lambda t: t['values'].without('a', 'd')).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_sub_sub_list(self, conn):
+        expected = [
+            {'b': 'b-1', 'c': 'c-1'},
+            {'b': 'b-2', 'c': 'c-2'}
+        ]
+        result = r.db('some-db').table('things').map(lambda t: t['values'].without(['a', 'd'])).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+
+class TestBracket(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'thing-1',
+                'other_val': 'other-1',
+                'values': {
+                    'a': 'a-1',
+                    'b': 'b-1',
+                    'c': 'c-1',
+                    'd': 'd-1'
+                }
+            },
+            {
+                'id': 'thing-2',
+                'other_val': 'other-2',
+                'values': {
+                    'a': 'a-2',
+                    'b': 'b-2',
+                    'c': 'c-2',
+                    'd': 'd-2'
+                }
+            },
+        ]
+        return as_db_and_table('some-db', 'things', data)
+
+    def test_one_level(self, conn):
+        expected = ['other-1', 'other-2']
+        result = r.db('some-db').table('things').map(lambda t: t['other_val']).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_nested(self, conn):
+        expected = ['c-1', 'c-2']
+        result = r.db('some-db').table('things').map(lambda t: t['values']['c']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
 

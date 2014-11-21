@@ -62,10 +62,6 @@ for r_type, mt_type in NORMAL_MONOPS.iteritems():
 def handle_datum(node):
     return mt_ast.RDatum(node.data)
 
-@handles_type(r_ast.Without)
-def handle_without(node):
-    pass
-
 def plain_val_of_var(var_node):
     return var_node.args[0].data
 
@@ -121,6 +117,19 @@ def handle_pluck(node):
 
     left = type_dispatch(args[0])
     return mt_ast.PluckPoly(left, attrs)
+
+@handles_type(r_ast.Without)
+def handle_without(node):
+    args = node.args
+    if isinstance(args[1], r_ast.MakeArray):
+        attrs = plain_list_of_make_array(args[1])
+    else:
+        assert(isinstance(args[1], r_ast.Datum))
+        attrs = [plain_val_of_datum(datum) for datum in args[1:]]
+
+    left = type_dispatch(args[0])
+    return mt_ast.WithoutPoly(left, attrs)
+
 
 
 def rewrite_query(query):
