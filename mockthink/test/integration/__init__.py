@@ -487,7 +487,7 @@ class TestHasFields(MockTest):
             {'id': 'joe', 'first_name': 'Joe', 'age': 26},
             {'id': 'todd', 'first_name': 'Todd', 'last_name': 'Last', 'age': 35},
             {'id': 'phil', 'first_name': 'Phil', 'last_name': 'LastPhil'},
-            {'id': 'sam', 'first_name': 'Sam', 'last_name': 'SamLast', 'age': 35}
+            {'id': 'sam', 'first_name': 'Sam', 'last_name': 'SamLast', 'age': 31}
 
         ]
         return as_db_and_table('x', 'people', people)
@@ -495,10 +495,19 @@ class TestHasFields(MockTest):
     def test_has_fields_1(self, conn):
         expected = [
             {'id': 'todd', 'first_name': 'Todd', 'last_name': 'Last', 'age': 35},
-            {'id': 'sam', 'first_name': 'Sam', 'last_name': 'SamLast', 'age': 35}
+            {'id': 'sam', 'first_name': 'Sam', 'last_name': 'SamLast', 'age': 31}
         ]
         result = r.db('x').table('people').has_fields('last_name', 'age').run(conn)
         self.assertEqUnordered(expected, result)
+
+    def test_has_fields_array(self, conn):
+        expected = [
+            {'id': 'todd', 'first_name': 'Todd', 'last_name': 'Last', 'age': 35},
+            {'id': 'sam', 'first_name': 'Sam', 'last_name': 'SamLast', 'age': 31}
+        ]
+        result = r.db('x').table('people').has_fields(['last_name', 'age']).run(conn)
+        self.assertEqUnordered(expected, result)
+
 
 def common_join_data():
     people_data = [
