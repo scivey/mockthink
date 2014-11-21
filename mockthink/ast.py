@@ -63,6 +63,10 @@ class RDb(MonExp):
     def get_db_name(self):
         return self.left.run(None, Scope({}))
 
+class IsEmpty(MonExp):
+    def do_run(self, left, arg, scope):
+        return (len(left) == 0)
+
 class RVar(MonExp):
     def do_run(self, symbol_name, arg, scope):
         return scope.get_sym(symbol_name)
@@ -448,4 +452,3 @@ class HasFields(RBase):
         if (isinstance(left, dict)):
             return match_fn(left)
         return filter(match_fn, left)
-

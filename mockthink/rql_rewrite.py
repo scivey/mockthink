@@ -39,7 +39,8 @@ def handle_generic_monop(Mt_Constructor, node):
 NORMAL_MONOPS = {
     r_ast.Var: mt_ast.RVar,
     r_ast.DB: mt_ast.RDb,
-    r_ast.Delete: mt_ast.Delete
+    r_ast.Delete: mt_ast.Delete,
+    r_ast.IsEmpty: mt_ast.IsEmpty
 }
 
 for r_type, mt_type in NORMAL_MONOPS.iteritems():

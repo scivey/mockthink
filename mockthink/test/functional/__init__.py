@@ -732,6 +732,36 @@ class TestMerge(MockTest):
         self.assertEqUnordered(expected, list(result))
 
 
+class TestIsEmpty(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'id-1', 'things': []},
+            {'id': 'id-2', 'things': ['x', 'y']}
+        ]
+        return as_db_and_table('some_db', 'some_table', data)
+
+    def test_is_empty_nested(self, conn):
+        expected = [
+            {'id': 'id-1', 'things_empty': True, 'things': []},
+            {'id': 'id-2', 'things_empty': False, 'things': ['x', 'y']}
+        ]
+        result = r.db('some_db').table('some_table').map(
+            lambda d: d.merge({'things_empty': d['things'].is_empty()})
+        ).run(conn)
+        self.assertEqUnordered(expected, result)
+
+    def test_is_empty_toplevel_empty(self, conn):
+        result = r.db('some_db').table('some_table').filter({
+            'some_key': 'some-value'
+        }).is_empty().run(conn)
+        self.assertEqual(True, result)
+
+    def test_is_empty_toplevel_not_empty(self, conn):
+        result = r.db('some_db').table('some_table').has_fields('things').is_empty().run(conn)
+        self.assertEqual(False, result)
+
+
+
 class TestDelete(MockTest):
     def get_data(self):
         data = [
