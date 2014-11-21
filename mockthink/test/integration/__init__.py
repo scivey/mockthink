@@ -22,7 +22,6 @@ def load_stock_data(data, connection):
     elif isinstance(connection, r.net.Connection):
         return real_stock_data_load(data, connection)
 
-
 TESTS = {}
 
 def register_test(Constructor, class_name, tests):
@@ -438,6 +437,23 @@ class TestMath(MockTest):
         result = r.db('math_db').table('points').map(lambda t: t['x'] * t['y']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
+
+class TestReplace(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        return as_db_and_table('things', 'muppets', data)
+
+    def test_replace_one(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'name': 'Just Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        r.db('things').table('muppets').get('kermit-id').replace({'id': 'kermit-id', 'name': 'Just Kermit'}).run(conn)
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, result)
 
 
 class TestUpdating(MockTest):

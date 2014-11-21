@@ -118,6 +118,12 @@ class GetAll(BinExp):
                 res.append(elem)
         return res
 
+class Replace(BinExp):
+    def do_run(self, left, right, arg, scope):
+        current_table = self.find_table_scope()
+        current_db = self.find_db_scope()
+        return arg.update_by_id_in_table_in_db(current_db, current_table, right)
+
 class BinOp(BinExp):
     def do_run(self, left, right, arg, scope):
         return self.__class__.binop(left, right)
@@ -227,6 +233,7 @@ class Delete(RBase):
         current_table = self.find_table_scope()
         current_db = self.find_db_scope()
         return arg.remove_by_id_in_table_in_db(current_db, current_table, to_remove)
+
 
 class RFunc(RBase):
     def __init__(self, param_names, body):

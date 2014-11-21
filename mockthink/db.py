@@ -34,6 +34,8 @@ class MockTableData(object):
         return MockTableData(new_data)
 
     def update_by_id(self, new_data):
+        if not isinstance(new_data, list):
+            new_data = [new_data]
         return MockTableData(replace_array_elems_by_id(self.data, new_data))
 
     def insert(self, new_rows):

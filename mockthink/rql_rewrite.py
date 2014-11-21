@@ -33,6 +33,21 @@ def handle_generic_binop(Mt_Constructor, node):
 def handle_generic_monop(Mt_Constructor, node):
     return Mt_Constructor(type_dispatch(node.args[0]))
 
+
+
+
+
+
+NORMAL_MONOPS = {
+    r_ast.Var: mt_ast.RVar,
+    r_ast.DB: mt_ast.RDb,
+    r_ast.Delete: mt_ast.Delete
+}
+
+for r_type, mt_type in NORMAL_MONOPS.iteritems():
+    RQL_TYPE_HANDLERS[r_type] = handle_generic_monop(mt_type)
+
+
 NORMAL_BINOPS = {
     r_ast.Ge: mt_ast.Gte,
     r_ast.Lt: mt_ast.Lt,
@@ -49,18 +64,13 @@ NORMAL_BINOPS = {
     r_ast.Table: mt_ast.RTable,
     r_ast.Get: mt_ast.Get,
     r_ast.Map: mt_ast.MapWithRFunc,
+    r_ast.Replace: mt_ast.Replace,
+    r_ast.Merge: mt_ast.MergePoly
 }
 
 for r_type, mt_type in NORMAL_BINOPS.iteritems():
     RQL_TYPE_HANDLERS[r_type] = handle_generic_binop(mt_type)
 
-NORMAL_MONOPS = {
-    r_ast.Var: mt_ast.RVar,
-    r_ast.DB: mt_ast.RDb
-}
-
-for r_type, mt_type in NORMAL_MONOPS.iteritems():
-    RQL_TYPE_HANDLERS[r_type] = handle_generic_monop(mt_type)
 
 
 @handles_type(r_ast.Datum)
@@ -177,18 +187,7 @@ def handle_outer_join(node):
     pred = type_dispatch(args[2])
     return mt_ast.OuterJoin(left, pred, right)
 
-@handles_type(r_ast.Merge)
-def handle_merge(node):
-    args = node.args
-    left = type_dispatch(args[0])
-    to_merge = type_dispatch(args[1])
-    return mt_ast.MergePoly(left, to_merge)
 
-
-@handles_type(r_ast.Delete)
-def handle_delete(node):
-    left = type_dispatch(node.args[0])
-    return mt_ast.Delete(left)
 
 @handles_type(r_ast.GetAll)
 def handle_get_all(node):
