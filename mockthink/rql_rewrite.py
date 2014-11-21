@@ -7,19 +7,10 @@ from . import ast as mt_ast
 # pDatum = rql_proto.Datum.DatumType
 from . import util
 
-def rql_query_to_tree(query):
-    current_query = query
-    current_val = None
-    if isinstance(query, r_ast.Datum):
-        current_val = query.data
-    elif isinstance(query, r_ast.MakeObj):
-        current_val = {k: rql_query_to_tree(v) for k, v in query.iteritems()}
-    elif hasattr(current_query, 'args'):
-        current_val = map(rql_query_to_tree, current_query.args)
-        if len(current_val) == 1:
-            current_val = current_val[0]
-    # return [current_query.__class__.__name__, current_val]
-    return [current_query, current_val]
+class UnexpectedTermSequence(Exception):
+    def __init__(self, msg=''):
+        print msg
+        self.msg = msg
 
 RQL_TYPE_HANDLERS = {}
 
@@ -51,18 +42,15 @@ def handles_type(rql_type, func):
 def binop_map(Mt_Constructor, node):
     return Mt_Constructor(type_dispatch(node.args[0]), type_dispatch(node.args[1]))
 
-@handles_type(r_ast.Var)
-def handle_var(node):
-    return mt_ast.RVar(type_dispatch(node.args[0]))
 
-@handles_type(r_ast.Datum)
-def handle_datum(node):
-    return mt_ast.RDatum(node.data)
 
 @util.curry2
 def handle_generic_binop(Mt_Constructor, node):
     return Mt_Constructor(type_dispatch(node.args[0]), type_dispatch(node.args[1]))
 
+@util.curry2
+def handle_generic_monop(Mt_Constructor, node):
+    return Mt_Constructor(type_dispatch(node.args[0]))
 
 NORMAL_BINOPS = {
     r_ast.Ge: mt_ast.Gte,
@@ -72,14 +60,26 @@ NORMAL_BINOPS = {
     r_ast.Ne: mt_ast.Neq,
     r_ast.Gt: mt_ast.Gt,
     r_ast.Bracket: mt_ast.Bracket,
-    r_ast.Table: mt_ast.RTable
+    r_ast.Table: mt_ast.RTable,
+    r_ast.Get: mt_ast.Get,
+    r_ast.Map: mt_ast.MapWithRFunc
 }
 
 for r_type, mt_type in NORMAL_BINOPS.iteritems():
     RQL_TYPE_HANDLERS[r_type] = handle_generic_binop(mt_type)
 
+NORMAL_MONOPS = {
+    r_ast.Var: mt_ast.RVar,
+    r_ast.DB: mt_ast.RDb
+}
+
+for r_type, mt_type in NORMAL_MONOPS.iteritems():
+    RQL_TYPE_HANDLERS[r_type] = handle_generic_monop(mt_type)
 
 
+@handles_type(r_ast.Datum)
+def handle_datum(node):
+    return mt_ast.RDatum(node.data)
 
 @handles_type(r_ast.Without)
 def handle_without(node):
@@ -95,6 +95,10 @@ def plain_list_of_make_array(make_array_instance):
     assert(isinstance(make_array_instance, r_ast.MakeArray))
     return map(plain_val_of_datum, make_array_instance.args)
 
+def plain_obj_of_make_obj(make_obj_instance):
+    assert(isinstance(make_obj_instance, r_ast.MakeObj))
+    return {k: plain_val_of_datum(v) for k, v in make_obj_instance.optargs.iteritems()}
+
 @handles_type(r_ast.Func)
 def handle_func(node):
     func_params = plain_list_of_make_array(node.args[0])
@@ -103,23 +107,28 @@ def handle_func(node):
 
 @handles_type(r_ast.Filter)
 def handle_filter(node):
-    print 'HANDLE_FILTER'
     args = node.args
     if isinstance(args[1], r_ast.Func):
-        pprint(args[1])
         return mt_ast.FilterWithFunc(type_dispatch(args[0]), type_dispatch(args[1]))
+    elif isinstance(args[1], r_Ast.MakeObj):
+        filter_obj = plain_obj_of_make_obj(args[1])
+        left_seq = type_dispatch(args[0])
+        return mt_ast.FilterWithObj(left_seq, filter_obj)
+    else:
+        raise UnexpectedTermSequence('unknown sequence for FILTER -> %s' % args[1])
 
-    if type(parts[1]) == r_ast.Func:
-        pprint(parts)
-    return {'FILTER_TYPE_UNKNOWN': node}
-
-@handles_type(r_ast.DB)
-def handle_db(node):
-    return mt_ast.RDb(type_dispatch(node.args[0]))
+@handles_type(r_ast.Update)
+def handle_update(node):
+    args = node.args
+    if isinstance(args[1], r_ast.Func):
+        return handle_generic_binop(mt_ast.UpdateWithFunc, node)
+    elif isinstance(args[1], r_ast.MakeObj):
+        update_obj = plain_obj_of_make_obj(args[1])
+        left_seq = type_dispatch(args[0])
+        return mt_ast.UpdateWithObj(left_seq, update_obj)
+    else:
+        raise UnexpectedTermSequence('unknown sequence for UPDATE -> %s' % args[1])
 
 def rewrite_query(query):
-    pprint(query)
-    pprint(query.args)
     return type_dispatch(query)
 
-    # return type_dispatch(rql_query_to_tree(query)[0])

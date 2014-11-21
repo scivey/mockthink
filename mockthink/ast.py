@@ -41,16 +41,6 @@ class RDatum(RBase):
         return self.val
 
 
-class RSym(RBase):
-    def __init__(self, sym):
-        self.sym = sym
-
-    def __str__(self):
-        return "<SYM: %s>" % self.sym
-
-    def run(self, arg, scope):
-        return scope.get_sym(self.sym)
-
 class MonExp(RBase):
     def __init__(self, left):
         self.left = left

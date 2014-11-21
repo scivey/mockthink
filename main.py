@@ -100,6 +100,16 @@ mockthink = db.MockThink(data)
 rql1 = r.db('fonz').table('wabbits').filter(lambda d: d['age'] > 26)
 rql2 = r.db('fonz').table('wabbits')
 
+another = r.db('fonz').table('wabbits').update({
+    'is_wabbit': 'definitely'
+})
+
 query = rewrite_query(rql1)
 # mockthink.pprint_query_ast(query)
 pprint(mockthink.run_query(query))
+pprint(mockthink.run_query(rewrite_query(another)))
+pprint(mockthink.run_query(rewrite_query(rql2)))
+
+mockthink.reset()
+
+pprint(mockthink.run_query(rewrite_query(rql2)))
