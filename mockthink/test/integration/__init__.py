@@ -653,6 +653,24 @@ class TestMerge(MockTest):
         result = r.db('jezebel').table('things').merge({'z': 'Z-VALUE'}).run(conn)
         self.assertEqUnordered(expected, result)
 
+    def test_merge_nested(self, conn):
+        expected = [
+            {
+                'y-val': 'y-val-1',
+                'extra-y-val': 'extra'
+            },
+            {
+                'y-val': 'y-val-2',
+                'extra-y-val': 'extra'
+            }
+        ]
+        result = r.db('jezebel').table('things').map(
+            lambda d: d['y'].merge({'extra-y-val': 'extra'})
+        ).run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
+
+
 
 def run_tests(conn):
     for test_name, test_fn in TESTS.iteritems():
