@@ -172,8 +172,10 @@ def handle_outer_join(node):
 def handle_merge(node):
     args = node.args
     left = type_dispatch(args[0])
-    assert(isinstance(args[1], r_ast.MakeObj))
-    to_merge = plain_obj_of_make_obj(args[1])
+    if isinstance(args[1], r_ast.MakeObj):
+        to_merge = mt_ast.RDatum(plain_obj_of_make_obj(args[1]))
+    else:
+        to_merge = type_dispatch(args[1])
     print 'to_merge'
     print to_merge
     pprint(to_merge)

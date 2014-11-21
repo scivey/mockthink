@@ -317,8 +317,8 @@ class MergePoly(RBase):
         self.right = right
 
     def run(self, arg, scope):
-        assert(isinstance(self.right, dict))
-        map_fn = lambda d: util.extend(d, self.right)
+        extend_with = self.right.run(arg, scope)
+        map_fn = lambda d: util.extend(d, extend_with)
         left = self.left.run(arg, scope)
         if isinstance(left, dict):
             return map_fn(left)
