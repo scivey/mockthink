@@ -1,5 +1,6 @@
 from . import util
 from . import ast
+from .rql_rewrite import rewrite_query
 from .scope import Scope
 
 def replace_array_elems_by_id(existing, replace_with):
@@ -113,10 +114,22 @@ def objects_from_pods(data):
         dbs_by_name[db_name] = MockDbData(tables_by_name)
     return MockDb(dbs_by_name)
 
+class MockThinkConn(object):
+    def __init__(self, mockthink_parent):
+        self.mockthink_parent = mockthink_parent
+    def reset_data(self, data):
+        self.mockthink_parent._modify_initial_data(data)
+    def _start(self, rql_query, **global_optargs):
+        return self.mockthink_parent.run_query(rewrite_query(rql_query))
+
 class MockThink(object):
     def __init__(self, initial_data):
         self.initial_data = initial_data
         self.data = objects_from_pods(initial_data)
+
+    def _modify_initial_data(self, new_data):
+        self.initial_data = new_data
+        self.data = objects_from_pods(new_data)
 
     def run_query(self, query):
         result = query.run(self.data, Scope({}))
@@ -132,3 +145,7 @@ class MockThink(object):
 
     def reset(self):
         self.data = objects_from_pods(self.initial_data)
+
+    def get_conn(self):
+        conn = MockThinkConn(self)
+        return conn

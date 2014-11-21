@@ -14,22 +14,8 @@ class UnexpectedTermSequence(Exception):
 
 RQL_TYPE_HANDLERS = {}
 
-COUNT = {
-    'n': 0
-}
 def type_dispatch(rql_node):
-    # if COUNT['n'] >= 5:
-    #     return
-    COUNT['n'] += 1
-    print 'TYPE_DISPATCH: %s' % rql_node.__class__.__name__
-    handler = RQL_TYPE_HANDLERS[rql_node.__class__]
-    print handler.func_name
-    pprint(rql_node)
-    if hasattr(rql_node, 'args'):
-        pprint(rql_node.args)
-    result = handler(rql_node)
-    pprint(result)
-    return result
+    return RQL_TYPE_HANDLERS[rql_node.__class__](rql_node)
 
 @util.curry2
 def handles_type(rql_type, func):
@@ -38,11 +24,6 @@ def handles_type(rql_type, func):
         return func(node)
     RQL_TYPE_HANDLERS[rql_type] = handler
     return handler
-
-def binop_map(Mt_Constructor, node):
-    return Mt_Constructor(type_dispatch(node.args[0]), type_dispatch(node.args[1]))
-
-
 
 @util.curry2
 def handle_generic_binop(Mt_Constructor, node):
