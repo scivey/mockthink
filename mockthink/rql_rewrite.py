@@ -135,6 +135,21 @@ def handle_without(node):
     left = type_dispatch(args[0])
     return mt_ast.WithoutPoly(left, attrs)
 
+@handles_type(r_ast.EqJoin)
+def handle_eq_join(node):
+    args = node.args
+    assert(isinstance(args[1], r_ast.Datum))
+    field_name = plain_val_of_datum(args[1])
+    left = type_dispatch(args[0])
+    right = type_dispatch(args[2])
+    print 'EQ-JOIN'
+    pprint({
+        'left': left,
+        'field_name': field_name,
+        'right': right
+    })
+    return mt_ast.EqJoin(left, field_name, right)
+
 
 
 def rewrite_query(query):

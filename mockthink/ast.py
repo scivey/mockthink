@@ -309,3 +309,25 @@ class PluckPoly(RBase):
         else:
             pprint(left)
             raise Exception('unexpected type')
+
+
+def do_eq_join(left_field, left, right_field, right):
+    out = []
+    for elem in left:
+        lval = util.getter(left_field)(elem)
+        match = util.find_first(lambda d: util.getter(right_field)(d) == lval, right)
+        if match:
+            out.append({'left': elem, 'right': match})
+    return out
+
+class EqJoin(RBase):
+    def __init__(self, left, field_name, right):
+        self.left = left
+        self.field_name = field_name
+        self.right = right
+    def run(self, arg, scope):
+        left = self.left.run(arg, scope)
+        right = self.right.run(arg, scope)
+        pprint(left)
+        pprint(right)
+        return do_eq_join(self.field_name, left, 'id', right)

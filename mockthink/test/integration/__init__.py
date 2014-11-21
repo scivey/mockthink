@@ -417,6 +417,79 @@ class TestUpdating(MockTest):
         result = r.db('things').table('muppets').get('kermit-id').run(conn)
         self.assertEqual(expected, result)
 
+    def test_update_sequence(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit', 'is_muppet': 'very'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy', 'is_muppet': 'very'}
+        ]
+        r.db('things').table('muppets').update({'is_muppet': 'very'}).run(conn)
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqual(expected, list(result))
+
+
+def common_join_data():
+    people_data = [
+        {'id': 'joe-id', 'name': 'Joe'},
+        {'id': 'tom-id', 'name': 'Tom'},
+        {'id': 'arnold-id', 'name': 'Arnold'}
+    ]
+    job_data = [
+        {'id': 'lawyer-id', 'name': 'Lawyer'},
+        {'id': 'nurse-id', 'name': 'Nurse'},
+        {'id': 'semipro-wombat-id', 'name': 'Semi-Professional Wombat'}
+    ]
+    employee_data = [
+        {'id': 'joe-emp-id', 'person': 'joe-id', 'job': 'lawyer-id'},
+        {'id': 'arnold-emp-id', 'person': 'arnold-id', 'job': 'nurse-id'}
+    ]
+    data = {
+        'dbs': {
+            'jezebel': {
+                'tables': {
+                    'people': people_data,
+                    'jobs': job_data,
+                    'employees': employee_data
+                }
+            }
+        }
+
+    }
+    return data
+
+class Test_Eq_Join(MockTest):
+    def get_data(self):
+        return common_join_data()
+
+    def test_eq_join_1(self, conn):
+        expected = [
+            {
+                'left': {
+                    'id': 'joe-emp-id',
+                    'person': 'joe-id',
+                    'job': 'lawyer-id'
+                },
+                'right': {
+                    'id': 'joe-id',
+                    'name': 'Joe'
+                }
+            },
+            {
+                'left': {
+                    'id': 'arnold-emp-id',
+                    'person': 'arnold-id',
+                    'job': 'nurse-id'
+                },
+                'right': {
+                    'id': 'arnold-id',
+                    'name': 'Arnold'
+                }
+            }
+        ]
+        result = r.db('jezebel').table('employees').eq_join('person', r.db('jezebel').table('people')).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+
+
 if __name__ == '__main__':
     think = MockThink(as_db_and_table('nothing', 'nothing', []))
     conn = think.get_conn()
