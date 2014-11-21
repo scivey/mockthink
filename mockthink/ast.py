@@ -165,33 +165,6 @@ class Div(BinOp):
 class Mod(BinOp):
     binop = operator.mod
 
-def db_data_extend(original_data, extend_with):
-    to_return = util.obj_clone(original_data)
-    to_return['dbs'] = util.obj_clone(to_return['dbs'])
-    for one_db, one_db_data in extend_with['dbs'].iteritems():
-        new_db_data = util.obj_clone(to_return['dbs'][one_db])
-        for one_table, one_table_data in extend_with['dbs'][one_db]['tables'].iteritems():
-            new_db_data['tables'][one_table] = one_table_data
-        to_return['dbs'][one_db] = new_db_data
-    print "\n\t[ EXTENDING DB!! ]\n"
-    pprint(to_return)
-    pprint(extend_with)
-    print "\n\t [ /EXTENDING ]\n"
-    return to_return
-
-def set_db_table(db_data, db_name, table_name, table_data):
-    ext_with = {
-        'dbs': {
-            db_name: {
-                'tables': {
-                    table_name: table_data
-                }
-            }
-        }
-    }
-    return db_data_extend(db_data, ext_with)
-
-
 class UpdateBase(RBase):
 
     def __str__(self):
