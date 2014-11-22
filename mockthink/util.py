@@ -95,6 +95,12 @@ def match_attr_multi(key, good_vals, thing):
             break
     return result
 
+
+def ensure_list(x):
+    if not isinstance(x, list):
+        x = [x]
+    return x
+
 @curry2
 def match_attrs(to_match, to_test):
     match = True

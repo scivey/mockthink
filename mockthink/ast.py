@@ -227,27 +227,23 @@ class UpdateBase(object):
     def __init__(self, *args):
         pass
 
-    def update_table(self, result_sequence, arg):
+    def update_table(self, result_sequence, arg, scope):
         current_db = self.find_db_scope()
         current_table = self.find_table_scope()
+        result_sequence = util.ensure_list(result_sequence)
         return arg.update_by_id_in_table_in_db(current_db, current_table, result_sequence)
 
 class UpdateByFunc(ByFuncBase, UpdateBase):
     def do_run(self, sequence, map_fn, arg, scope):
-        return self.update_table(map(map_fn, sequence), arg)
+        return self.update_table(map(map_fn, sequence), arg, scope)
 
 class UpdateWithObj(BinExp, UpdateBase):
     def do_run(self, sequence, to_update, arg, scope):
-        map_fn = util.extend_with(to_update)
-        if isinstance(sequence, dict):
-            result = [map_fn(sequence)]
-        else:
-            result = map(map_fn, sequence)
-        return self.update_table(result, arg)
+        return self.update_table(util.maybe_map(util.extend_with(to_update), sequence), arg, scope)
 
 class Replace(BinExp, UpdateBase):
     def do_run(self, left, right, arg, scope):
-        return self.update_table(right, arg)
+        return self.update_table(right, arg, scope)
 
 class Delete(MonExp):
     def do_run(self, sequence, arg, scope):
