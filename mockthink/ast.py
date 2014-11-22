@@ -237,50 +237,15 @@ class MapWithRFunc(ByFuncBase):
 
 class WithoutPoly(BinExp):
     def do_run(self, left, attrs, arg, scope):
-        map_fn = util.without(attrs)
-        if isinstance(left, dict):
-            return map_fn(left)
-        elif util.is_iterable(left):
-            return map(map_fn, left)
+        return util.maybe_map(util.without(attrs), left)
 
 class PluckPoly(BinExp):
-    def do_run(self, sequence_or_obj, attrs, arg, scope):
-        pprint(attrs)
-        map_fn = util.pluck_with(*attrs)
-        if isinstance(sequence_or_obj, dict):
-            return map_fn(sequence_or_obj)
-        elif util.is_iterable(sequence_or_obj):
-            return map(map_fn, sequence_or_obj)
+    def do_run(self, left, attrs, arg, scope):
+        return util.maybe_map(util.pluck_with(*attrs), left)
 
-# class PluckPoly(RBase):
-#     def __init__(self, left, attrs):
-#         self.left = left
-#         self.attrs = attrs
-
-#     def run(self, arg, scope):
-#         left = self.left.run(arg, scope)
-#         map_fn = util.pluck_with(*self.attrs)
-#         if isinstance(left, dict):
-#             return map_fn(left)
-#         elif util.is_iterable(left):
-#             return map(map_fn, left)
-#         else:
-#             pprint(left)
-#             raise Exception('unexpected type')
-
-
-class MergePoly(RBase):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-    def run(self, arg, scope):
-        extend_with = self.right.run(arg, scope)
-        map_fn = lambda d: util.extend(d, extend_with)
-        left = self.left.run(arg, scope)
-        if isinstance(left, dict):
-            return map_fn(left)
-        return map(map_fn, left)
+class MergePoly(BinExp):
+    def do_run(self, left, ext_with, arg, scope):
+        return util.maybe_map(util.extend_with(ext_with), left)
 
 
 def do_eq_join(left_field, left, right_field, right):
