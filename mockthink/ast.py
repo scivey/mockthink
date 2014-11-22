@@ -231,25 +231,6 @@ class FilterWithObj(BinExp):
     def do_run(self, sequence, to_match, arg, scope):
         return filter(util.match_attrs(to_match), sequence)
 
-class MapBase(RBase):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-    def __str__(self):
-        return "<Map: (%s, %s)>" % (self.left, self.right)
-
-    def get_map_fn(self):
-        pass
-
-    def run(self, arg, scope):
-        out = []
-        map_fn = self.get_map_fn()
-        for elem in self.left.run(arg, scope):
-            out.append(map_fn(elem, scope))
-        return out
-
-
 class MapWithRFunc(ByFuncBase):
     def do_run(self, sequence, map_fn, arg, scope):
         return map(map_fn, sequence)
