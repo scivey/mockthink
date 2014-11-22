@@ -33,7 +33,8 @@ NORMAL_MONOPS = {
     r_ast.Var: mt_ast.RVar,
     r_ast.DB: mt_ast.RDb,
     r_ast.Delete: mt_ast.Delete,
-    r_ast.IsEmpty: mt_ast.IsEmpty
+    r_ast.IsEmpty: mt_ast.IsEmpty,
+    r_ast.Count: mt_ast.Count
 }
 
 for r_type, mt_type in NORMAL_MONOPS.iteritems():
@@ -172,23 +173,24 @@ def handle_eq_join(node):
     })
     return mt_ast.EqJoin(left, field_name, right)
 
-@handles_type(r_ast.InnerJoin)
-def handle_inner_join(node):
+
+
+
+def inner_or_outer_join(Mt_Constructor, node):
     args = node.args
     left = type_dispatch(args[0])
     right = type_dispatch(args[1])
     assert(isinstance(args[2], r_ast.Func))
     pred = type_dispatch(args[2])
-    return mt_ast.InnerJoin(left, pred, right)
+    return Mt_Constructor(left, pred, right)
+
+@handles_type(r_ast.InnerJoin)
+def handle_inner_join(node):
+    return inner_or_outer_join(mt_ast.InnerJoin, node)
 
 @handles_type(r_ast.OuterJoin)
 def handle_outer_join(node):
-    args = node.args
-    left = type_dispatch(args[0])
-    right = type_dispatch(args[1])
-    assert(isinstance(args[2], r_ast.Func))
-    pred = type_dispatch(args[2])
-    return mt_ast.OuterJoin(left, pred, right)
+    return inner_or_outer_join(mt_ast.OuterJoin, node)
 
 @handles_type(r_ast.GetAll)
 def handle_get_all(node):
@@ -207,6 +209,17 @@ def handle_group(node):
         return mt_ast.GroupByFunc(left, right)
     elif isinstance(args[1], r_ast.Datum):
         return mt_ast.GroupByField(left, right)
+    raise TypeError()
+
+@handles_type(r_ast.Max)
+def handle_max(node):
+    args = node.args
+    left = type_dispatch(args[0])
+    right = type_dispatch(args[1])
+    if isinstance(args[1], r_ast.Func):
+        return mt_ast.MaxByFunc(left, right)
+    elif isinstance(args[1], r_ast.Datum):
+        return mt_ast.MaxByField(left, right)
     raise TypeError()
 
 def rewrite_query(query):

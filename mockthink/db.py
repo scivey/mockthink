@@ -55,6 +55,9 @@ class MockTableData(object):
         for elem in self.data:
             yield elem
 
+    def __getitem__(self, index):
+        return self.data[index]
+
 class MockDbData(object):
     def __init__(self, tables_by_name):
         self.tables_by_name = tables_by_name

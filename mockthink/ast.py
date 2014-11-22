@@ -74,7 +74,11 @@ class RVar(MonExp):
 
 class Not(MonExp):
     def do_run(self, left, arg, scope):
-        return not (left.run(arg, scope))
+        return (not left)
+
+class Count(MonExp):
+    def do_run(self, left, arg, scope):
+        return len(left)
 
 class BinExp(RBase):
     def __init__(self, left, right):
@@ -450,6 +454,34 @@ class HasFields(RBase):
         return filter(match_fn, left)
 
 
+def is_num(x):
+    return isinstance(x, int) or isinstance(x, float)
+
+
+def max_mapped(func, sequence):
+    current = (func(sequence[0]), sequence[0])
+    for elem in sequence[1:]:
+        val = func(elem)
+        if is_num(val) and val > current[0]:
+            current = (val, elem)
+    return current[1]
+
+class MaxByField(BinExp):
+    def do_run(self, sequence, field, arg, scope):
+        return max_mapped(util.getter(field), sequence)
+
+class MaxByFunc(RBase):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def run(self, arg, scope):
+        sequence = self.left.run(arg, scope)
+        max_with = lambda x: self.right.run([x], scope)
+        return max_mapped(max_with, sequence)
+
+
+
 class Between(RBase):
     pass
 
@@ -489,8 +521,7 @@ class Distinct(RBase):
 class UnGroup(RBase):
     pass
 
-class Count(RBase):
-    pass
+
 
 class Contains(RBase):
     pass
