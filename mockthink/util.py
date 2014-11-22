@@ -49,6 +49,15 @@ def maybe_map(fn, thing):
     else:
         return fn(thing)
 
+@curry2
+def maybe_filter(fn, thing):
+    if isinstance(thing, dict):
+        return fn(thing)
+    elif is_iterable(thing):
+        return filter(fn, thing)
+    else:
+        return fn(thing)
+
 def is_simple(x):
     return not (isinstance(x, (list, dict)))
 

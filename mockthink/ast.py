@@ -350,17 +350,11 @@ class MakeArray(RBase):
         result = [elem.run(arg, scope) for elem in self.vals]
         return result
 
-class HasFields(RBase):
-    def __init__(self, left, to_match):
-        self.left = left
-        self.to_match = to_match
 
-    def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        match_fn = util.has_attrs(self.to_match.run(arg, scope))
-        if (isinstance(left, dict)):
-            return match_fn(left)
-        return filter(match_fn, left)
+class HasFields(BinExp):
+    def do_run(self, left, fields, arg, scope):
+        return util.maybe_filter(util.has_attrs(fields), left)
+
 
 class Between(Ternary):
     def do_run(self, table, lower_key, upper_key, arg, scope):
