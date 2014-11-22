@@ -192,6 +192,7 @@ class TestPlucking2(MockTest):
             {'a': 'a-2', 'd': 'd-2'}
         ]
         result = r.db('some_db').table('things').map(lambda t: t['values'].pluck('a', 'd')).run(conn)
+        pprint(result)
         self.assertEqUnordered(expected, list(result))
 
     def test_sub_sub_list(self, conn):

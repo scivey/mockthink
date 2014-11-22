@@ -120,41 +120,33 @@ def handle_update(node):
     else:
         raise UnexpectedTermSequence('unknown sequence for UPDATE -> %s' % args[1])
 
+
+
+def handle_makearray_or_datum_sequence(Mt_Constructor, node):
+    args = node.args
+    left = type_dispatch(args[0])
+    if isinstance(args[1], r_ast.MakeArray):
+        attrs = type_dispatch(args[1])
+    else:
+        attrs = []
+        for elem in args[1:]:
+            assert isinstance(elem, r_ast.Datum)
+            attrs.append(type_dispatch(elem))
+        attrs = mt_ast.MakeArray(attrs)
+    return Mt_Constructor(left, attrs)
+
 @handles_type(r_ast.Pluck)
 def handle_pluck(node):
-    args = node.args
-    if isinstance(args[1], r_ast.MakeArray):
-        attrs = plain_list_of_make_array(args[1])
-    else:
-        assert(isinstance(args[1], r_ast.Datum))
-        attrs = [plain_val_of_datum(datum) for datum in args[1:]]
-
-    left = type_dispatch(args[0])
-    return mt_ast.PluckPoly(left, attrs)
+    return handle_makearray_or_datum_sequence(mt_ast.PluckPoly, node)
 
 @handles_type(r_ast.HasFields)
 def handle_has_fields(node):
-    args = node.args
-    if isinstance(args[1], r_ast.MakeArray):
-        attrs = mt_ast.RDatum(plain_list_of_make_array(args[1]))
-    else:
-        assert(isinstance(args[1], r_ast.Datum))
-        attrs = mt_ast.RDatum([plain_val_of_datum(datum) for datum in args[1:]])
-
-    left = type_dispatch(args[0])
-    return mt_ast.HasFields(left, attrs)
+    return handle_makearray_or_datum_sequence(mt_ast.HasFields, node)
 
 @handles_type(r_ast.Without)
 def handle_without(node):
-    args = node.args
-    if isinstance(args[1], r_ast.MakeArray):
-        attrs = plain_list_of_make_array(args[1])
-    else:
-        assert(isinstance(args[1], r_ast.Datum))
-        attrs = [plain_val_of_datum(datum) for datum in args[1:]]
+    return handle_makearray_or_datum_sequence(mt_ast.WithoutPoly, node)
 
-    left = type_dispatch(args[0])
-    return mt_ast.WithoutPoly(left, attrs)
 
 @handles_type(r_ast.EqJoin)
 def handle_eq_join(node):

@@ -1,4 +1,3 @@
-from collections import defaultdict
 import operator
 from . import util
 from .scope import Scope
@@ -226,16 +225,11 @@ class UpdateWithObj(UpdateBase):
             return ext_fn(elem)
         return update_fn
 
-class Delete(RBase):
-    def __init__(self, left):
-        self.left = left
-
-    def run(self, arg, scope):
-        to_remove = self.left.run(arg, scope)
+class Delete(MonExp):
+    def do_run(self, sequence, arg, scope):
         current_table = self.find_table_scope()
         current_db = self.find_db_scope()
-        return arg.remove_by_id_in_table_in_db(current_db, current_table, to_remove)
-
+        return arg.remove_by_id_in_table_in_db(current_db, current_table, sequence)
 
 class RFunc(RBase):
     def __init__(self, param_names, body):
@@ -277,43 +271,43 @@ class MapBase(RBase):
             out.append(map_fn(elem, scope))
         return out
 
-class MapWithRFunc(MapBase):
-    def get_map_fn(self):
-        def map_fn(elem, scope):
-            return self.right.run([elem], scope)
-        return map_fn
 
-class WithoutPoly(RBase):
-    def __init__(self, left, bad_attrs):
-        self.left = left
-        self.bad_attrs = bad_attrs
+class MapWithRFunc(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        return map(map_fn, sequence)
 
-    def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        map_fn = util.without(self.bad_attrs)
+class WithoutPoly(BinExp):
+    def do_run(self, left, attrs, arg, scope):
+        map_fn = util.without(attrs)
         if isinstance(left, dict):
             return map_fn(left)
         elif util.is_iterable(left):
             return map(map_fn, left)
-        else:
-            pprint(left)
-            raise Exception('unexpected type')
 
-class PluckPoly(RBase):
-    def __init__(self, left, attrs):
-        self.left = left
-        self.attrs = attrs
+class PluckPoly(BinExp):
+    def do_run(self, sequence_or_obj, attrs, arg, scope):
+        pprint(attrs)
+        map_fn = util.pluck_with(*attrs)
+        if isinstance(sequence_or_obj, dict):
+            return map_fn(sequence_or_obj)
+        elif util.is_iterable(sequence_or_obj):
+            return map(map_fn, sequence_or_obj)
 
-    def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        map_fn = util.pluck_with(*self.attrs)
-        if isinstance(left, dict):
-            return map_fn(left)
-        elif util.is_iterable(left):
-            return map(map_fn, left)
-        else:
-            pprint(left)
-            raise Exception('unexpected type')
+# class PluckPoly(RBase):
+#     def __init__(self, left, attrs):
+#         self.left = left
+#         self.attrs = attrs
+
+#     def run(self, arg, scope):
+#         left = self.left.run(arg, scope)
+#         map_fn = util.pluck_with(*self.attrs)
+#         if isinstance(left, dict):
+#             return map_fn(left)
+#         elif util.is_iterable(left):
+#             return map(map_fn, left)
+#         else:
+#             pprint(left)
+#             raise Exception('unexpected type')
 
 
 class MergePoly(RBase):
@@ -411,6 +405,7 @@ class MakeArray(RBase):
         self.vals = vals
 
     def run(self, arg, scope):
+        pprint(self.vals)
         result = [elem.run(arg, scope) for elem in self.vals]
         return result
 
@@ -456,16 +451,9 @@ class WithFields(BinExp):
     def do_run(self, sequence, keys, arg, scope):
         return [elem for elem in sequence if util.has_attrs(keys, elem)]
 
-class ConcatMap(RBase):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-    def run(self, arg, scope):
-        sequence = self.left.run(arg, scope)
-        map_fn = lambda x: self.right.run([x], scope)
+class ConcatMap(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
         return util.cat(*[util.map_with(map_fn, elem) for elem in sequence])
-
 
 class Skip(BinExp):
     def do_run(self, sequence, num, arg, scope):
