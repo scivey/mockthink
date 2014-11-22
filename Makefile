@@ -1,9 +1,12 @@
 WORKDIR=$(shell pwd)
 
 SET_PATH=export PYTHONPATH=$(WORKDIR)
-
+RUN=$(SET_PATH) && python
 test-functional:
-	$(SET_PATH) && python ./mockthink/test/functional/__init__.py
+	$(RUN) ./mockthink/test/functional/__init__.py
 
 test-integration:
-	$(SET_PATH) && python ./mockthink/test/integration/__init__.py
+	$(RUN) ./mockthink/test/integration/__init__.py
+
+test-unit:
+	$(SET_PATH) && nosetests ./mockthink/test/unit

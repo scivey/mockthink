@@ -9,15 +9,12 @@ def curry2(func):
 
 def curry3(func):
     def out(x, *args):
-        if len(args) == 2:
+        if not len(args):
+            return curry2(lambda y, z: func(x, y, z))
+        elif len(args) == 2:
             return func(x, *args)
-        def out2(y, *args):
-            if len(args):
-                return func(x, y, args[0])
-            def out3(z):
-                return func(x, y, z)
-            return out3
-        return out2
+        else:
+            return curry2(lambda a, b: func(x, a, b))(args[0])
     return out
 
 def extend(*dicts):
