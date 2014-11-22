@@ -371,11 +371,15 @@ class StrDowncase(MonExp):
     def do_run(self, string, arg, scope):
         return string.lower()
 
-class StrSplit(BinExp):
+class StrSplitDefault(MonExp):
+    def do_run(self, string, arg, scope):
+        return string.split()
+
+class StrSplitOn(BinExp):
     def do_run(self, string, split_on, arg, scope):
         return util.rql_str_split(string, split_on)
 
-class StrSplitLimit(Ternary):
+class StrSplitOnLimit(Ternary):
     def do_run(self, string, split_on, limit, arg, scope):
         return util.rql_str_split(string, split_on, limit)
 

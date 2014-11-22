@@ -950,7 +950,7 @@ class TestStrings(MockTest):
         result =  r.db('library').table('texts').map(
             lambda doc: doc['text'].upcase()
         ).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqual(expected, set(result))
 
     def test_downcase(self, conn):
         expected = set([
@@ -961,7 +961,55 @@ class TestStrings(MockTest):
         result =  r.db('library').table('texts').map(
             lambda doc: doc['text'].downcase()
         ).run(conn)
+        self.assertEqual(expected, set(result))
+
+    def test_split_1(self, conn):
+        expected = [
+            ['something', 'with', 'spaces'],
+            ['some,csv,file'],
+            ['someething']
+        ]
+        result = r.db('library').table('texts').map(
+            lambda doc: doc['text'].split()
+        ).run(conn)
         self.assertEqUnordered(expected, result)
+
+    def test_split_2(self, conn):
+        expected = [
+            ['something  with spaces'],
+            ['some', 'csv', 'file'],
+            ['someething']
+        ]
+        result = r.db('library').table('texts').map(
+            lambda doc: doc['text'].split(',')
+        ).run(conn)
+        self.assertEqUnordered(expected, result)
+
+    def test_split_3(self, conn):
+        expected = [
+            ['som', 'thing  with spac', 's'],
+            ['som', ',csv,fil', ''],
+            ['som', '', 'thing']
+        ]
+        result = r.db('library').table('texts').map(
+            lambda doc: doc['text'].split('e')
+        ).run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
+
+    def test_split_4(self, conn):
+        expected = [
+            ['som', 'thing  with spaces'],
+            ['som', ',csv,file'],
+            ['som', 'ething']
+        ]
+        result = r.db('library').table('texts').map(
+            lambda doc: doc['text'].split('e', 1)
+        ).run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
+
+
 
 class TestDelete(MockTest):
     def get_data(self):

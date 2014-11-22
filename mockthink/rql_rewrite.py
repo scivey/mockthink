@@ -22,17 +22,23 @@ def handles_type(rql_type, func):
     return handler
 
 @util.curry2
-def handle_generic_binop(Mt_Constructor, node):
-    return Mt_Constructor(type_dispatch(node.args[0]), type_dispatch(node.args[1]))
-
-@util.curry2
 def handle_generic_monop(Mt_Constructor, node):
     return Mt_Constructor(type_dispatch(node.args[0]))
+
+@util.curry2
+def handle_generic_binop(Mt_Constructor, node):
+    return Mt_Constructor(type_dispatch(node.args[0]), type_dispatch(node.args[1]))
 
 @util.curry2
 def handle_generic_ternop(Mt_Constructor, node):
     assert(len(node.args) == 3)
     return Mt_Constructor(*[type_dispatch(arg) for arg in node.args])
+
+GENERIC_BY_ARITY = {
+    1: handle_generic_monop,
+    2: handle_generic_binop,
+    3: handle_generic_ternop
+}
 
 NORMAL_MONOPS = {
     r_ast.Var: mt_ast.RVar,
@@ -193,11 +199,23 @@ def handle_max(node):
     args = node.args
     left = type_dispatch(args[0])
     right = type_dispatch(args[1])
+
     if isinstance(args[1], r_ast.Func):
         return mt_ast.MaxByFunc(left, right)
     elif isinstance(args[1], r_ast.Datum):
         return mt_ast.MaxByField(left, right)
     raise TypeError()
+
+@handles_type(r_ast.Split)
+def handle_split(node):
+    by_arity = {
+        1: mt_ast.StrSplitDefault,
+        2: mt_ast.StrSplitOn,
+        3: mt_ast.StrSplitOnLimit
+    }
+    arg_count = len(node.args)
+    return GENERIC_BY_ARITY[arg_count](by_arity[arg_count], node)
+
 
 def rewrite_query(query):
     return type_dispatch(query)
