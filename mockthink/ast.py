@@ -181,23 +181,27 @@ class ByFuncBase(RBase):
         map_fn = lambda x: self.right.run([x], scope)
         return self.do_run(left, map_fn, arg, scope)
 
-class UpdateByFunc(ByFuncBase):
-    def do_run(self, sequence, map_fn, arg, scope):
-        result = map(map_fn, sequence)
+class UpdateBase(object):
+    def __init__(self, *args):
+        pass
+
+    def update_table(self, result_sequence, arg):
         current_db = self.find_db_scope()
         current_table = self.find_table_scope()
-        return arg.update_by_id_in_table_in_db(current_db, current_table, result)
+        return arg.update_by_id_in_table_in_db(current_db, current_table, result_sequence)
 
-class UpdateWithObj(BinExp):
+class UpdateByFunc(ByFuncBase, UpdateBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        return self.update_table(map(map_fn, sequence), arg)
+
+class UpdateWithObj(BinExp, UpdateBase):
     def do_run(self, sequence, to_update, arg, scope):
         map_fn = util.extend_with(to_update)
         if isinstance(sequence, dict):
             result = [map_fn(sequence)]
         else:
             result = map(map_fn, sequence)
-        current_db = self.find_db_scope()
-        current_table = self.find_table_scope()
-        return arg.update_by_id_in_table_in_db(current_db, current_table, result)
+        return self.update_table(result, arg)
 
 class Delete(MonExp):
     def do_run(self, sequence, arg, scope):
