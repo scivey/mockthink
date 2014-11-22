@@ -5,7 +5,7 @@ import rethinkdb as r
 from mockthink.db import MockThink, MockThinkConn
 from mockthink.test.common import make_test_registry, AssertionMixin
 from mockthink.test.common import as_db_and_table
-
+from mockthink import util
 
 TESTS = {}
 register_test = make_test_registry(TESTS)
@@ -840,6 +840,98 @@ class TestArrayManip(MockTest):
         ).run(conn)
         pprint(result)
         self.assertEqUnordered(expected, result)
+
+    def test_splice_at(self, conn):
+        expected = [
+            ['frog', 'pig', 'chicken', 'cow'],
+            ['horse', 'pig', 'chicken']
+        ]
+        result = r.db('x').table('farms').map(
+            lambda d: d['animals'].splice_at(1, ['pig', 'chicken'])
+        ).run(conn)
+        self.assertEqUnordered(expected, result)
+
+    def test_prepend(self, conn):
+        expected = [
+            ['pig', 'frog', 'cow'],
+            ['pig', 'horse']
+        ]
+        result = r.db('x').table('farms').map(
+            lambda d: d['animals'].prepend('pig')
+        ).run(conn)
+        self.assertEqUnordered(expected, result)
+
+    def test_append(self, conn):
+        expected = [
+            ['frog', 'cow', 'pig'],
+            ['horse', 'pig']
+        ]
+        result = r.db('x').table('farms').map(
+            lambda d: d['animals'].append('pig')
+        ).run(conn)
+        self.assertEqUnordered(expected, result)
+
+    def test_change_at(self, conn):
+        expected = [
+            ['wombat', 'cow'],
+            ['wombat']
+        ]
+        result = r.db('x').table('farms').map(
+            lambda d: d['animals'].change_at(0, 'wombat')
+        ).run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
+
+class TestObjectManip(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'joe',
+                'attributes': {
+                    'face': 'bad',
+                    'toes': 'fugly'
+                },
+                'joe-attr': True
+            },
+            {
+                'id': 'sam',
+                'attributes': {
+                    'face': 'eh',
+                    'blog': 'dry'
+                },
+                'sam-attr': True
+            }
+        ]
+        return as_db_and_table('y', 'people', data)
+
+    def test_keys_document(self, conn):
+        expected = [
+            ['id', 'attributes', 'joe-attr'],
+            ['id', 'attributes', 'sam-attr']
+        ]
+        result = r.db('y').table('people').map(
+            lambda d: d.keys()
+        ).run(conn)
+        self.assertEqual(3, len(result[0]))
+        self.assertEqual(3, len(result[1]))
+        key_set = set(util.cat(result[0], result[1]))
+        self.assertEqual(set(['id', 'attributes', 'joe-attr', 'sam-attr']), key_set)
+
+
+    def test_keys_nested(self, conn):
+        expected = [
+            ['face', 'toes'],
+            ['face', 'blog']
+        ]
+        result = r.db('y').table('people').map(
+            lambda d: d['attributes'].keys()
+        ).run(conn)
+        self.assertEqual(2, len(result[0]))
+        self.assertEqual(2, len(result[1]))
+
+        key_set = set(util.cat(result[0], result[1]))
+        self.assertEqual(set(['face', 'toes', 'blog']), key_set)
+
 
 
 class TestDelete(MockTest):

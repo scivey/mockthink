@@ -166,6 +166,10 @@ class Count(MonExp):
     def do_run(self, left, arg, scope):
         return len(left)
 
+class Keys(MonExp):
+    def do_run(self, left, arg, scope):
+        return left.keys()
+
 class RTable(BinExp):
     def get_table_name(self):
         return self.right.run(None, Scope({}))
@@ -344,14 +348,14 @@ class GroupByFunc(ByFuncBase):
     def do_run(self, sequence, map_fn, arg, scope):
         return util.group_by_func(map_fn, sequence)
 
-
 class Append(BinExp):
     def do_run(self, sequence, value, arg, scope):
         return util.append(value, sequence)
 
-class Prepend(RBase):
+class Prepend(BinExp):
     def do_run(self, sequence, value, arg, scope):
         return util.prepend(value, sequence)
+
 
 
 
@@ -372,6 +376,10 @@ class InsertAt(Ternary):
 class SpliceAt(Ternary):
     def do_run(self, sequence, index, value, arg, scope):
         return util.splice_at(value, index, sequence)
+
+class ChangeAt(Ternary):
+    def do_run(self, sequence, index, value, arg, scope):
+        return util.change_at(value, index, sequence)
 
 
 # ###########
@@ -483,12 +491,6 @@ class SetDifference(RBase):
 
 
 class DeleteAt(RBase):
-    pass
-
-class ChangeAt(RBase):
-    pass
-
-class Keys(RBase):
     pass
 
 class Literal(RBase):

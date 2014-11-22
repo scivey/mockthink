@@ -48,6 +48,11 @@ def splice_at(to_splice, index, a_list):
 def insert_at(val, index, a_list):
     return splice_at([val], index, a_list)
 
+@curry3
+def change_at(val, index, a_list):
+    right_start = index + 1
+    return cat(a_list[0:index], [val], a_list[right_start:])
+
 @curry2
 def extend_with(a_dict, to_extend):
     return extend(to_extend, a_dict)

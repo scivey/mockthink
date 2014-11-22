@@ -197,3 +197,17 @@ class Util(unittest.TestCase):
             [{'x': 5, 'y': 6}, {'x': 10, 'y': 11}],
             util.maybe_map(set_y_by_x, [{'x': 5}, {'x': 10}])
         )
+
+    def test_splice(self):
+        nums = [1, 2, 3, 4]
+        result = util.splice_at([10, 20], 2, nums)
+        self.assertEqual([1, 2, 10, 20, 3, 4], result)
+
+    def test_insert(self):
+        nums = [1, 2, 3, 4]
+        result = util.insert_at(10, 2, nums)
+        self.assertEqual([1, 2, 10, 3, 4], result)
+
+    def test_change_at(self):
+        nums = [1, 2, 3, 4]
+        self.assertEqual([1, 10, 3, 4], util.change_at(10, 1, nums))

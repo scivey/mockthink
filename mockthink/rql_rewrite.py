@@ -39,7 +39,8 @@ NORMAL_MONOPS = {
     r_ast.DB: mt_ast.RDb,
     r_ast.Delete: mt_ast.Delete,
     r_ast.IsEmpty: mt_ast.IsEmpty,
-    r_ast.Count: mt_ast.Count
+    r_ast.Count: mt_ast.Count,
+    r_ast.Keys: mt_ast.Keys
 }
 
 NORMAL_BINOPS = {
@@ -59,14 +60,18 @@ NORMAL_BINOPS = {
     r_ast.Get: mt_ast.Get,
     r_ast.Map: mt_ast.MapWithRFunc,
     r_ast.Replace: mt_ast.Replace,
-    r_ast.Merge: mt_ast.MergePoly
+    r_ast.Merge: mt_ast.MergePoly,
+    r_ast.Append: mt_ast.Append,
+    r_ast.Prepend: mt_ast.Prepend
 }
 
 NORMAL_TERNOPS = {
     r_ast.EqJoin: mt_ast.EqJoin,
     r_ast.InnerJoin: mt_ast.InnerJoin,
     r_ast.OuterJoin: mt_ast.OuterJoin,
-    r_ast.InsertAt: mt_ast.InsertAt
+    r_ast.InsertAt: mt_ast.InsertAt,
+    r_ast.SpliceAt: mt_ast.SpliceAt,
+    r_ast.ChangeAt: mt_ast.ChangeAt
 }
 
 for r_type, mt_type in NORMAL_MONOPS.iteritems():
