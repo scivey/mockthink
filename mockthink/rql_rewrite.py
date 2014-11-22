@@ -30,9 +30,31 @@ def handle_generic_binop(Mt_Constructor, node):
     return Mt_Constructor(type_dispatch(node.args[0]), type_dispatch(node.args[1]))
 
 @util.curry2
+def handle_generic_binop_poly_2(mt_type_map, node):
+    for r_type, m_type in mt_type_map.iteritems():
+        if isinstance(node.args[1], r_type):
+            Mt_Constructor = m_type
+            break
+    return Mt_Constructor(type_dispatch(node.args[0]), type_dispatch(node.args[1]))
+
+@util.curry2
 def handle_generic_ternop(Mt_Constructor, node):
     assert(len(node.args) == 3)
     return Mt_Constructor(*[type_dispatch(arg) for arg in node.args])
+
+@util.curry2
+def binop_splat(Mt_Constructor, node):
+    args = node.args
+    left = type_dispatch(args[0])
+    if isinstance(args[1], r_ast.MakeArray):
+        right = type_dispatch(args[1])
+    else:
+        right = []
+        for elem in args[1:]:
+            assert isinstance(elem, r_ast.Datum)
+            right.append(type_dispatch(elem))
+        right = mt_ast.MakeArray(right)
+    return Mt_Constructor(left, right)
 
 GENERIC_BY_ARITY = {
     1: handle_generic_monop,
@@ -73,6 +95,26 @@ NORMAL_BINOPS = {
     r_ast.Prepend: mt_ast.Prepend
 }
 
+BINOPS_BY_ARG_2_TYPE = {
+    r_ast.Group: {
+        r_ast.Datum: mt_ast.GroupByField,
+        r_ast.Func: mt_ast.GroupByFunc
+    },
+    r_ast.Max: {
+        r_ast.Datum: mt_ast.MaxByField,
+        r_ast.Func: mt_ast.MaxByFunc
+    }
+}
+
+SPLATTED_BINOPS = {
+    r_ast.Pluck: mt_ast.PluckPoly,
+    r_ast.HasFields: mt_ast.HasFields,
+    r_ast.Without: mt_ast.WithoutPoly,
+    r_ast.GetAll: mt_ast.GetAll
+}
+
+
+
 NORMAL_TERNOPS = {
     r_ast.EqJoin: mt_ast.EqJoin,
     r_ast.InnerJoin: mt_ast.InnerJoin,
@@ -87,6 +129,12 @@ for r_type, mt_type in NORMAL_MONOPS.iteritems():
 
 for r_type, mt_type in NORMAL_BINOPS.iteritems():
     RQL_TYPE_HANDLERS[r_type] = handle_generic_binop(mt_type)
+
+for r_type, arg_2_map in BINOPS_BY_ARG_2_TYPE.iteritems():
+    RQL_TYPE_HANDLERS[r_type] = handle_generic_binop_poly_2(arg_2_map)
+
+for r_type, mt_type in SPLATTED_BINOPS.iteritems():
+    RQL_TYPE_HANDLERS[r_type] = binop_splat(mt_type)
 
 for r_type, mt_type in NORMAL_TERNOPS.iteritems():
     RQL_TYPE_HANDLERS[r_type] = handle_generic_ternop(mt_type)
@@ -142,69 +190,15 @@ def handle_update(node):
     if isinstance(args[1], r_ast.Func):
         return handle_generic_binop(mt_ast.UpdateWithFunc, node)
     elif isinstance(args[1], r_ast.MakeObj):
-        update_obj = type_dispatch(args[1])
-        left_seq = type_dispatch(args[0])
-        return mt_ast.UpdateWithObj(left_seq, update_obj)
+        # update_obj = type_dispatch(args[1])
+        # left_seq = type_dispatch(args[0])
+        # return mt_ast.UpdateWithObj(left_seq, update_obj)
+        return handle_generic_binop(mt_ast.UpdateWithObj, node)
     else:
         raise UnexpectedTermSequence('unknown sequence for UPDATE -> %s' % args[1])
 
 
 
-def handle_makearray_or_datum_sequence(Mt_Constructor, node):
-    args = node.args
-    left = type_dispatch(args[0])
-    if isinstance(args[1], r_ast.MakeArray):
-        attrs = type_dispatch(args[1])
-    else:
-        attrs = []
-        for elem in args[1:]:
-            assert isinstance(elem, r_ast.Datum)
-            attrs.append(type_dispatch(elem))
-        attrs = mt_ast.MakeArray(attrs)
-    return Mt_Constructor(left, attrs)
-
-@handles_type(r_ast.Pluck)
-def handle_pluck(node):
-    return handle_makearray_or_datum_sequence(mt_ast.PluckPoly, node)
-
-@handles_type(r_ast.HasFields)
-def handle_has_fields(node):
-    return handle_makearray_or_datum_sequence(mt_ast.HasFields, node)
-
-@handles_type(r_ast.Without)
-def handle_without(node):
-    return handle_makearray_or_datum_sequence(mt_ast.WithoutPoly, node)
-
-@handles_type(r_ast.GetAll)
-def handle_get_all(node):
-    args = node.args
-    left = type_dispatch(args[0])
-    assert(isinstance(args[1], r_ast.Datum))
-    to_get = mt_ast.RDatum([plain_val_of_datum(datum) for datum in args[1:]])
-    return mt_ast.GetAll(left, to_get)
-
-@handles_type(r_ast.Group)
-def handle_group(node):
-    args = node.args
-    left = type_dispatch(args[0])
-    right = type_dispatch(args[1])
-    if isinstance(args[1], r_ast.Func):
-        return mt_ast.GroupByFunc(left, right)
-    elif isinstance(args[1], r_ast.Datum):
-        return mt_ast.GroupByField(left, right)
-    raise TypeError()
-
-@handles_type(r_ast.Max)
-def handle_max(node):
-    args = node.args
-    left = type_dispatch(args[0])
-    right = type_dispatch(args[1])
-
-    if isinstance(args[1], r_ast.Func):
-        return mt_ast.MaxByFunc(left, right)
-    elif isinstance(args[1], r_ast.Datum):
-        return mt_ast.MaxByField(left, right)
-    raise TypeError()
 
 @handles_type(r_ast.Split)
 def handle_split(node):
@@ -215,7 +209,6 @@ def handle_split(node):
     }
     arg_count = len(node.args)
     return GENERIC_BY_ARITY[arg_count](by_arity[arg_count], node)
-
 
 def rewrite_query(query):
     return type_dispatch(query)
