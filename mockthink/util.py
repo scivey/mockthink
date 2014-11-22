@@ -41,10 +41,13 @@ def map_with(fn, a_list):
     return map(fn, a_list)
 
 @curry2
-def maybe_map_with(fn, thing):
-    if isinstance(thing, list):
+def maybe_map(fn, thing):
+    if isinstance(thing, dict):
+        return fn(thing)
+    elif is_iterable(thing):
         return map(fn, thing)
-    return fn(thing)
+    else:
+        return fn(thing)
 
 def is_simple(x):
     return not (isinstance(x, (list, dict)))

@@ -180,3 +180,20 @@ class Util(unittest.TestCase):
         self.assertEqual('x-val', util.getter('x')(thing))
         self.assertEqual(None, util.getter('y')(thing))
 
+    def test_maybe_map_simple(self):
+        add_5 = lambda x: x + 5
+        self.assertEqual(13, util.maybe_map(add_5, 8))
+        self.assertEqual([5, 10, 15], util.maybe_map(add_5, [0, 5, 10]))
+
+    def test_maybe_map_dict(self):
+        def set_y_by_x(thing):
+            return {'x': thing['x'], 'y': thing['x'] + 1}
+
+        self.assertEqual(
+            {'x': 5, 'y': 6},
+            util.maybe_map(set_y_by_x, {'x': 5})
+        )
+        self.assertEqual(
+            [{'x': 5, 'y': 6}, {'x': 10, 'y': 11}],
+            util.maybe_map(set_y_by_x, [{'x': 5}, {'x': 10}])
+        )
