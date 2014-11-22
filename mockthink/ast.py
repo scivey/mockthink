@@ -179,21 +179,11 @@ class Bracket(BinExp):
 
 class Get(BinExp):
     def do_run(self, left, right, arg, scope):
-        res = None
-        for elem in left:
-            if util.getter('id', elem) == right:
-                res = elem
-                break
-        return res
+        return util.find_first(util.match_attr('id', right), left)
 
 class GetAll(BinExp):
     def do_run(self, left, right, arg, scope):
-        res = []
-        to_find = set(right)
-        for elem in left:
-            if util.getter('id', elem) in to_find:
-                res.append(elem)
-        return res
+        return filter(util.match_attr_multi('id', right), left)
 
 class Replace(BinExp):
     def do_run(self, left, right, arg, scope):

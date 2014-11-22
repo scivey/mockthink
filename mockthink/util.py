@@ -85,6 +85,16 @@ def getter(key, thing):
 def match_attr(key, val, thing):
     return getter(key, thing) == val
 
+@curry3
+def match_attr_multi(key, good_vals, thing):
+    thing_val = getter(key, thing)
+    result = False
+    for val in good_vals:
+        if thing_val == val:
+            result = True
+            break
+    return result
+
 @curry2
 def match_attrs(to_match, to_test):
     match = True
