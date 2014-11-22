@@ -72,6 +72,9 @@ class RVar(MonExp):
     def do_run(self, symbol_name, arg, scope):
         return scope.get_sym(symbol_name)
 
+class Distinct(RBase):
+    pass
+
 class Not(MonExp):
     def do_run(self, left, arg, scope):
         return (not left)
@@ -513,9 +516,6 @@ class Union(RBase):
     pass
 
 class Sample(RBase):
-    pass
-
-class Distinct(RBase):
     pass
 
 class UnGroup(RBase):
