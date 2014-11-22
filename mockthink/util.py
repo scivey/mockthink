@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+from pprint import pprint
 def curry2(func):
     def out(x, *args):
         if len(args):
@@ -21,6 +21,7 @@ def curry3(func):
 
 def extend(*dicts):
     out = {}
+    pprint({'extend': dicts})
     for one_dict in dicts:
         out.update(one_dict)
     return out

@@ -90,7 +90,9 @@ def handle_make_array(node):
 
 @handles_type(r_ast.MakeObj)
 def handle_make_obj(node):
-    return mt_ast.MakeObj({k: type_dispatch(v) for k, v in node.optargs.iteritems()})
+    out = {k: type_dispatch(v) for k, v in node.optargs.iteritems()}
+    pprint(out)
+    return mt_ast.MakeObj(out)
 
 @handles_type(r_ast.Func)
 def handle_func(node):
@@ -114,7 +116,7 @@ def handle_update(node):
     if isinstance(args[1], r_ast.Func):
         return handle_generic_binop(mt_ast.UpdateWithFunc, node)
     elif isinstance(args[1], r_ast.MakeObj):
-        update_obj = plain_obj_of_make_obj(args[1])
+        update_obj = type_dispatch(args[1])
         left_seq = type_dispatch(args[0])
         return mt_ast.UpdateWithObj(left_seq, update_obj)
     else:

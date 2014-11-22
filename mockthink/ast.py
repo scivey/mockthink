@@ -88,7 +88,6 @@ class BinExp(RBase):
         class_name = self.__class__.__name__
         return "<%s: (%s, %s)>" % (class_name, self.left, self.right)
 
-
     def do_run(self, left, right, arg, scope):
         pass
 
@@ -169,10 +168,6 @@ class Div(BinOp):
 class Mod(BinOp):
     binop = operator.mod
 
-
-
-
-
 class ByFuncBase(RBase):
     def __init__(self, left, right):
         self.left = left
@@ -186,44 +181,23 @@ class ByFuncBase(RBase):
         map_fn = lambda x: self.right.run([x], scope)
         return self.do_run(left, map_fn, arg, scope)
 
-
-
-
-class UpdateBase(RBase):
-
-    def __str__(self):
-        return "<Update: (%s, %s)>" % (self.left, self.right)
-
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-    def run(self, arg, scope):
-        update_fn = self.get_update_fn()
-        left = self.left.run(arg, scope)
-        pprint(left)
-        if isinstance(left, dict):
-            result = [update_fn(left, scope)]
-        else:
-            result = map_with_scope(update_fn, scope, left)
-        current_table = self.find_table_scope()
+class UpdateByFunc(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        result = map(map_fn, sequence)
         current_db = self.find_db_scope()
+        current_table = self.find_table_scope()
         return arg.update_by_id_in_table_in_db(current_db, current_table, result)
 
-class UpdateWithFunc(UpdateBase):
-    def get_update_fn(self):
-        def update_fn(elem, scope):
-            return self.right.run([elem], scope)
-        return update_fn
-
-class UpdateWithObj(UpdateBase):
-    def get_update_fn(self):
-        pprint(self.right)
-        ext_fn = util.extend_with(self.right)
-        def update_fn(elem, scope):
-            pprint(elem)
-            return ext_fn(elem)
-        return update_fn
+class UpdateWithObj(BinExp):
+    def do_run(self, sequence, to_update, arg, scope):
+        map_fn = util.extend_with(to_update)
+        if isinstance(sequence, dict):
+            result = [map_fn(sequence)]
+        else:
+            result = map(map_fn, sequence)
+        current_db = self.find_db_scope()
+        current_table = self.find_table_scope()
+        return arg.update_by_id_in_table_in_db(current_db, current_table, result)
 
 class Delete(MonExp):
     def do_run(self, sequence, arg, scope):
@@ -398,6 +372,7 @@ class MakeObj(RBase):
 
     def run(self, arg, scope):
         result = {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
+        pprint({'MAKEOBJ': result})
         return result
 
 class MakeArray(RBase):
