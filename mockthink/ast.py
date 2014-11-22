@@ -17,7 +17,6 @@ def filter_with_scope(filter_fn, scope, to_filter):
 # #################
 
 
-
 class RBase(object):
     def __init__(self, *args):
         pass
@@ -123,7 +122,21 @@ class ByFuncBase(RBase):
         map_fn = lambda x: self.right.run([x], scope)
         return self.do_run(left, map_fn, arg, scope)
 
+class MakeObj(RBase):
+    def __init__(self, vals):
+        self.vals = vals
 
+    def run(self, arg, scope):
+        result = {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
+        return result
+
+class MakeArray(RBase):
+    def __init__(self, vals):
+        self.vals = vals
+
+    def run(self, arg, scope):
+        result = [elem.run(arg, scope) for elem in self.vals]
+        return result
 
 # #################
 #   Query handlers
@@ -255,7 +268,6 @@ class Delete(MonExp):
         return arg.remove_by_id_in_table_in_db(current_db, current_table, sequence)
 
 
-
 class FilterWithFunc(ByFuncBase):
     def do_run(self, sequence, filt_fn, arg, scope):
         return filter(filt_fn, sequence)
@@ -279,6 +291,86 @@ class PluckPoly(BinExp):
 class MergePoly(BinExp):
     def do_run(self, left, ext_with, arg, scope):
         return util.maybe_map(util.extend_with(ext_with), left)
+
+class HasFields(BinExp):
+    def do_run(self, left, fields, arg, scope):
+        return util.maybe_filter(util.has_attrs(fields), left)
+
+
+class WithFields(BinExp):
+    def do_run(self, sequence, keys, arg, scope):
+        return [elem for elem in sequence if util.has_attrs(keys, elem)]
+
+class ConcatMap(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        return util.cat(*[util.map_with(map_fn, elem) for elem in sequence])
+
+class Skip(BinExp):
+    def do_run(self, sequence, num, arg, scope):
+        return util.drop(num)(sequence)
+
+class Limit(BinExp):
+    def do_run(self, sequence, num, arg, scope):
+        return util.take(num)(sequence)
+
+class Slice(BinExp):
+    def do_run(self, sequence, start_and_end, arg, scope):
+        start, end = start_and_end
+        return util.slice_with(start, end)(sequence)
+
+class Nth(BinExp):
+    def do_run(self, sequence, n, arg, scope):
+        return util.nth(n)(sequence)
+
+class SumByField(BinExp):
+    def do_run(self, sequence, field, arg, scope):
+        mapped = [util.getter(field)(elem) for elem in sequence]
+        nums = [elem for elem in mapped if util.is_num(elem)]
+        return sum(nums)
+
+class SumByFunc(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        nums = [elem for elem in map(map_fn, sequence) if util.is_num(elem)]
+        return sum(nums)
+
+class MaxByField(BinExp):
+    def do_run(self, sequence, field, arg, scope):
+        return util.max_mapped(util.getter(field), sequence)
+
+class MaxByFunc(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        return util.max_mapped(map_fn, sequence)
+
+class GroupByField(BinExp):
+    def do_run(self, elems, field, arg, scope):
+        return util.group_by_func(util.getter(field), elems)
+
+class GroupByFunc(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        return util.group_by_func(map_fn, sequence)
+
+
+
+
+
+
+
+class Between(Ternary):
+    def do_run(self, table, lower_key, upper_key, arg, scope):
+        out = []
+        for document in table:
+            doc_id = util.getter('id')(document)
+            if doc_id < upper_key and doc_id > lower_key:
+                out.append(document)
+        return out
+
+
+
+
+
+# ###########
+#   Joins
+# ###########
 
 def do_eq_join(left_field, left, right_field, right):
     out = []
@@ -334,89 +426,12 @@ class OuterJoin(InnerOuterJoinBase):
     def do_run(self, left, right, pred, arg, scope):
         return do_outer_join(pred, left, right)
 
-class MakeObj(RBase):
-    def __init__(self, vals):
-        self.vals = vals
-
-    def run(self, arg, scope):
-        result = {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
-        return result
-
-class MakeArray(RBase):
-    def __init__(self, vals):
-        self.vals = vals
-
-    def run(self, arg, scope):
-        result = [elem.run(arg, scope) for elem in self.vals]
-        return result
 
 
-class HasFields(BinExp):
-    def do_run(self, left, fields, arg, scope):
-        return util.maybe_filter(util.has_attrs(fields), left)
 
 
-class Between(Ternary):
-    def do_run(self, table, lower_key, upper_key, arg, scope):
-        out = []
-        for document in table:
-            doc_id = util.getter('id')(document)
-            if doc_id < upper_key and doc_id > lower_key:
-                out.append(document)
-        return out
-
-class WithFields(BinExp):
-    def do_run(self, sequence, keys, arg, scope):
-        return [elem for elem in sequence if util.has_attrs(keys, elem)]
-
-class ConcatMap(ByFuncBase):
-    def do_run(self, sequence, map_fn, arg, scope):
-        return util.cat(*[util.map_with(map_fn, elem) for elem in sequence])
-
-class Skip(BinExp):
-    def do_run(self, sequence, num, arg, scope):
-        return util.drop(num)(sequence)
-
-class Limit(RBase):
-    def do_run(self, sequence, num, arg, scope):
-        return util.take(num)(sequence)
 
 
-class Slice(BinExp):
-    def do_run(self, sequence, start_and_end, arg, scope):
-        start, end = start_and_end
-        return util.slice_with(start, end)(sequence)
-
-class Nth(BinExp):
-    def do_run(self, sequence, n, arg, scope):
-        return util.nth(n)(sequence)
-
-class SumByField(BinExp):
-    def do_run(self, sequence, field, arg, scope):
-        mapped = [util.getter(field)(elem) for elem in sequence]
-        nums = [elem for elem in mapped if util.is_num(elem)]
-        return sum(nums)
-
-class SumByFunc(ByFuncBase):
-    def do_run(self, sequence, map_fn, arg, scope):
-        nums = [elem for elem in map(map_fn, sequence) if util.is_num(elem)]
-        return sum(nums)
-
-class MaxByField(BinExp):
-    def do_run(self, sequence, field, arg, scope):
-        return util.max_mapped(util.getter(field), sequence)
-
-class MaxByFunc(ByFuncBase):
-    def do_run(self, sequence, map_fn, arg, scope):
-        return util.max_mapped(map_fn, sequence)
-
-class GroupByField(BinExp):
-    def do_run(self, elems, field, arg, scope):
-        return util.group_by_func(util.getter(field), elems)
-
-class GroupByFunc(ByFuncBase):
-    def do_run(self, sequence, map_fn, arg, scope):
-        return util.group_by_func(map_fn, sequence)
 
 class Zip(RBase):
     pass
