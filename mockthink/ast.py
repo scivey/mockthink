@@ -10,6 +10,14 @@ def map_with_scope(map_fn, scope, to_map):
 def filter_with_scope(filter_fn, scope, to_filter):
     return filter(lambda elem: filter_fn(elem, scope), to_filter)
 
+
+
+# #################
+#   Base classes
+# #################
+
+
+
 class RBase(object):
     def __init__(self, *args):
         pass
@@ -40,6 +48,19 @@ class RDatum(RBase):
     def run(self, arg, scope):
         return self.val
 
+class RFunc(RBase):
+    def __init__(self, param_names, body):
+        self.param_names = param_names
+        self.body = body
+
+    def __str__(self):
+        params = ", ".join(self.param_names)
+        return "<RFunc: [%s] { %s }>" % (params, self.body)
+
+    def run(self, args, scope):
+        bound = util.as_obj(zip(self.param_names, args))
+        call_scope = scope.push(bound)
+        return self.body.run(None, call_scope)
 
 class MonExp(RBase):
     def __init__(self, left):
@@ -55,6 +76,59 @@ class MonExp(RBase):
     def run(self, arg, scope):
         left = self.left.run(arg, scope)
         return self.do_run(left, arg, scope)
+
+
+class BinExp(RBase):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __str__(self):
+        class_name = self.__class__.__name__
+        return "<%s: (%s, %s)>" % (class_name, self.left, self.right)
+
+    def do_run(self, left, right, arg, scope):
+        pass
+
+    def run(self, arg, scope):
+        left = self.left.run(arg, scope)
+        right = self.right.run(arg, scope)
+        return self.do_run(left, right, arg, scope)
+
+class Ternary(RBase):
+    def __init__(self, left, middle, right):
+        self.left = left
+        self.middle = middle
+        self.right = right
+
+    def do_run(self, left, middle, right, arg, scope):
+        raise NotImplemented()
+
+    def run(self, arg, scope):
+        left = self.left.run(arg, scope)
+        middle = self.middle.run(arg, scope)
+        right = self.right.run(arg, scope)
+        return self.do_run(left, middle, right, arg, scope)
+
+class ByFuncBase(RBase):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def do_run(self, left, map_fn, arg, scope):
+        pass
+
+    def run(self, arg, scope):
+        left = self.left.run(arg, scope)
+        map_fn = lambda x: self.right.run([x], scope)
+        return self.do_run(left, map_fn, arg, scope)
+
+
+
+# #################
+#   Query handlers
+# #################
+
 
 class RDb(MonExp):
     def do_run(self, db_name, arg, scope):
@@ -78,23 +152,6 @@ class Not(MonExp):
 class Count(MonExp):
     def do_run(self, left, arg, scope):
         return len(left)
-
-class BinExp(RBase):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-    def __str__(self):
-        class_name = self.__class__.__name__
-        return "<%s: (%s, %s)>" % (class_name, self.left, self.right)
-
-    def do_run(self, left, right, arg, scope):
-        pass
-
-    def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        right = self.right.run(arg, scope)
-        return self.do_run(left, right, arg, scope)
 
 class RTable(BinExp):
     def get_table_name(self):
@@ -168,18 +225,6 @@ class Div(BinOp):
 class Mod(BinOp):
     binop = operator.mod
 
-class ByFuncBase(RBase):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-    def do_run(self, left, map_fn, arg, scope):
-        pass
-
-    def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        map_fn = lambda x: self.right.run([x], scope)
-        return self.do_run(left, map_fn, arg, scope)
 
 class UpdateBase(object):
     def __init__(self, *args):
@@ -209,19 +254,7 @@ class Delete(MonExp):
         current_db = self.find_db_scope()
         return arg.remove_by_id_in_table_in_db(current_db, current_table, sequence)
 
-class RFunc(RBase):
-    def __init__(self, param_names, body):
-        self.param_names = param_names
-        self.body = body
 
-    def __str__(self):
-        params = ", ".join(self.param_names)
-        return "<RFunc: [%s] { %s }>" % (params, self.body)
-
-    def run(self, args, scope):
-        bound = util.as_obj(zip(self.param_names, args))
-        call_scope = scope.push(bound)
-        return self.body.run(None, call_scope)
 
 class FilterWithFunc(ByFuncBase):
     def do_run(self, sequence, filt_fn, arg, scope):
@@ -247,7 +280,6 @@ class MergePoly(BinExp):
     def do_run(self, left, ext_with, arg, scope):
         return util.maybe_map(util.extend_with(ext_with), left)
 
-
 def do_eq_join(left_field, left, right_field, right):
     out = []
     for elem in left:
@@ -257,17 +289,21 @@ def do_eq_join(left_field, left, right_field, right):
             out.append({'left': elem, 'right': match})
     return out
 
-class EqJoin(RBase):
-    def __init__(self, left, field_name, right):
+class EqJoin(Ternary):
+    def do_run(self, left, field, right, arg, scope):
+        return do_eq_join(field, left, 'id', right)
+
+class InnerOuterJoinBase(RBase):
+    def __init__(self, left, middle, right):
         self.left = left
-        self.field_name = field_name
+        self.middle = middle
         self.right = right
+
     def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        right = self.right.run(arg, scope)
-        pprint(left)
-        pprint(right)
-        return do_eq_join(self.field_name, left, 'id', right)
+        left_seq = self.left.run(arg, scope)
+        right_seq = self.middle.run(arg, scope)
+        pred = lambda x, y: self.right.run([x, y], scope)
+        return self.do_run(left_seq, right_seq, pred, arg, scope)
 
 def do_inner_join(pred, left, right):
     out = []
@@ -277,18 +313,9 @@ def do_inner_join(pred, left, right):
                 out.append({'left': left_elem, 'right': right_elem})
     return out
 
-class InnerJoin(RBase):
-    def __init__(self, left, pred, right):
-        self.left = left
-        self.right = right
-        self.pred = pred
-
-    def run(self, arg, scope):
-        def inner_pred(x, y):
-            return self.pred.run([x, y], scope)
-        left = self.left.run(arg, scope)
-        right = self.right.run(arg, scope)
-        return do_inner_join(inner_pred, left, right)
+class InnerJoin(InnerOuterJoinBase):
+    def do_run(self, left, right, pred, arg, scope):
+        return do_inner_join(pred, left, right)
 
 def do_outer_join(pred, left, right):
     out = []
@@ -303,18 +330,9 @@ def do_outer_join(pred, left, right):
         out = util.cat(out, matches)
     return out
 
-class OuterJoin(RBase):
-    def __init__(self, left, pred, right):
-        self.left = left
-        self.right = right
-        self.pred = pred
-
-    def run(self, arg, scope):
-        def outer_pred(x, y):
-            return self.pred.run([x, y], scope)
-        left = self.left.run(arg, scope)
-        right = self.right.run(arg, scope)
-        return do_outer_join(outer_pred, left, right)
+class OuterJoin(InnerOuterJoinBase):
+    def do_run(self, left, right, pred, arg, scope):
+        return do_outer_join(pred, left, right)
 
 class MakeObj(RBase):
     def __init__(self, vals):
@@ -322,7 +340,6 @@ class MakeObj(RBase):
 
     def run(self, arg, scope):
         result = {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
-        pprint({'MAKEOBJ': result})
         return result
 
 class MakeArray(RBase):
@@ -330,7 +347,6 @@ class MakeArray(RBase):
         self.vals = vals
 
     def run(self, arg, scope):
-        pprint(self.vals)
         result = [elem.run(arg, scope) for elem in self.vals]
         return result
 
@@ -345,23 +361,6 @@ class HasFields(RBase):
         if (isinstance(left, dict)):
             return match_fn(left)
         return filter(match_fn, left)
-
-
-
-class Ternary(RBase):
-    def __init__(self, left, middle, right):
-        self.left = left
-        self.middle = middle
-        self.right = right
-
-    def do_run(self, left, middle, right, arg, scope):
-        raise NotImplemented()
-
-    def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        middle = self.middle.run(arg, scope)
-        right = self.right.run(arg, scope)
-        return self.do_run(left, middle, right, arg, scope)
 
 class Between(Ternary):
     def do_run(self, table, lower_key, upper_key, arg, scope):

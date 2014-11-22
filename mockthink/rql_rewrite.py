@@ -29,6 +29,11 @@ def handle_generic_binop(Mt_Constructor, node):
 def handle_generic_monop(Mt_Constructor, node):
     return Mt_Constructor(type_dispatch(node.args[0]))
 
+@util.curry2
+def handle_generic_ternop(Mt_Constructor, node):
+    assert(len(node.args) == 3)
+    return Mt_Constructor(*[type_dispatch(arg) for arg in node.args])
+
 NORMAL_MONOPS = {
     r_ast.Var: mt_ast.RVar,
     r_ast.DB: mt_ast.RDb,
@@ -36,10 +41,6 @@ NORMAL_MONOPS = {
     r_ast.IsEmpty: mt_ast.IsEmpty,
     r_ast.Count: mt_ast.Count
 }
-
-for r_type, mt_type in NORMAL_MONOPS.iteritems():
-    RQL_TYPE_HANDLERS[r_type] = handle_generic_monop(mt_type)
-
 
 NORMAL_BINOPS = {
     r_ast.Ge: mt_ast.Gte,
@@ -61,9 +62,20 @@ NORMAL_BINOPS = {
     r_ast.Merge: mt_ast.MergePoly
 }
 
+NORMAL_TERNOPS = {
+    r_ast.EqJoin: mt_ast.EqJoin,
+    r_ast.InnerJoin: mt_ast.InnerJoin,
+    r_ast.OuterJoin: mt_ast.OuterJoin
+}
+
+for r_type, mt_type in NORMAL_MONOPS.iteritems():
+    RQL_TYPE_HANDLERS[r_type] = handle_generic_monop(mt_type)
+
 for r_type, mt_type in NORMAL_BINOPS.iteritems():
     RQL_TYPE_HANDLERS[r_type] = handle_generic_binop(mt_type)
 
+for r_type, mt_type in NORMAL_TERNOPS.iteritems():
+    RQL_TYPE_HANDLERS[r_type] = handle_generic_ternop(mt_type)
 
 
 @handles_type(r_ast.Datum)
@@ -148,41 +160,6 @@ def handle_has_fields(node):
 @handles_type(r_ast.Without)
 def handle_without(node):
     return handle_makearray_or_datum_sequence(mt_ast.WithoutPoly, node)
-
-
-@handles_type(r_ast.EqJoin)
-def handle_eq_join(node):
-    args = node.args
-    assert(isinstance(args[1], r_ast.Datum))
-    field_name = plain_val_of_datum(args[1])
-    left = type_dispatch(args[0])
-    right = type_dispatch(args[2])
-    print 'EQ-JOIN'
-    pprint({
-        'left': left,
-        'field_name': field_name,
-        'right': right
-    })
-    return mt_ast.EqJoin(left, field_name, right)
-
-
-
-
-def inner_or_outer_join(Mt_Constructor, node):
-    args = node.args
-    left = type_dispatch(args[0])
-    right = type_dispatch(args[1])
-    assert(isinstance(args[2], r_ast.Func))
-    pred = type_dispatch(args[2])
-    return Mt_Constructor(left, pred, right)
-
-@handles_type(r_ast.InnerJoin)
-def handle_inner_join(node):
-    return inner_or_outer_join(mt_ast.InnerJoin, node)
-
-@handles_type(r_ast.OuterJoin)
-def handle_outer_join(node):
-    return inner_or_outer_join(mt_ast.OuterJoin, node)
 
 @handles_type(r_ast.GetAll)
 def handle_get_all(node):
