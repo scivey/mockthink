@@ -185,12 +185,6 @@ class GetAll(BinExp):
     def do_run(self, left, right, arg, scope):
         return filter(util.match_attr_multi('id', right), left)
 
-class Replace(BinExp):
-    def do_run(self, left, right, arg, scope):
-        current_table = self.find_table_scope()
-        current_db = self.find_db_scope()
-        return arg.update_by_id_in_table_in_db(current_db, current_table, right)
-
 class BinOp(BinExp):
     def do_run(self, left, right, arg, scope):
         return self.__class__.binop(left, right)
@@ -250,6 +244,10 @@ class UpdateWithObj(BinExp, UpdateBase):
         else:
             result = map(map_fn, sequence)
         return self.update_table(result, arg)
+
+class Replace(BinExp, UpdateBase):
+    def do_run(self, left, right, arg, scope):
+        return self.update_table(right, arg)
 
 class Delete(MonExp):
     def do_run(self, sequence, arg, scope):
