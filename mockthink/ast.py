@@ -251,7 +251,6 @@ class Delete(MonExp):
         current_db = self.find_db_scope()
         return arg.remove_by_id_in_table_in_db(current_db, current_table, sequence)
 
-
 class FilterWithFunc(ByFuncBase):
     def do_run(self, sequence, filt_fn, arg, scope):
         return filter(filt_fn, sequence)
@@ -280,7 +279,6 @@ class HasFields(BinExp):
     def do_run(self, left, fields, arg, scope):
         return util.maybe_filter(util.has_attrs(fields), left)
 
-
 class WithFields(BinExp):
     def do_run(self, sequence, keys, arg, scope):
         return [elem for elem in sequence if util.has_attrs(keys, elem)]
@@ -298,8 +296,8 @@ class Limit(BinExp):
         return util.take(num)(sequence)
 
 class Slice(BinExp):
-    def do_run(self, sequence, start_and_end, arg, scope):
-        start, end = start_and_end
+    def do_run(self, sequence, indices, arg, scope):
+        start, end = indices
         return util.slice_with(start, end)(sequence)
 
 class Nth(BinExp):
@@ -308,14 +306,11 @@ class Nth(BinExp):
 
 class SumByField(BinExp):
     def do_run(self, sequence, field, arg, scope):
-        mapped = [util.getter(field)(elem) for elem in sequence]
-        nums = [elem for elem in mapped if util.is_num(elem)]
-        return sum(nums)
+        return util.safe_sum([util.getter(field)(elem) for elem in sequence])
 
 class SumByFunc(ByFuncBase):
     def do_run(self, sequence, map_fn, arg, scope):
-        nums = [elem for elem in map(map_fn, sequence) if util.is_num(elem)]
-        return sum(nums)
+        return util.safe_sum(map(map_fn, sequence))
 
 class MaxByField(BinExp):
     def do_run(self, sequence, field, arg, scope):
@@ -324,6 +319,22 @@ class MaxByField(BinExp):
 class MaxByFunc(ByFuncBase):
     def do_run(self, sequence, map_fn, arg, scope):
         return util.max_mapped(map_fn, sequence)
+
+class AvgByField(BinExp):
+    def do_run(self, sequence, field, arg, scope):
+        return util.safe_average(map(util.getter(field), sequence))
+
+class AvgByFunc(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        return util.safe_average(map(map_fn, sequence))
+
+class MinByField(BinExp):
+    def do_run(self, sequence, field, arg, scope):
+        return util.safe_min(map(util.getter(field), sequence))
+
+class MinByFunc(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        return util.safe_min(map(map_fn, sequence))
 
 class GroupByField(BinExp):
     def do_run(self, elems, field, arg, scope):
@@ -334,7 +345,13 @@ class GroupByFunc(ByFuncBase):
         return util.group_by_func(map_fn, sequence)
 
 
+class Append(BinExp):
+    def do_run(self, sequence, value, arg, scope):
+        return util.append(value, sequence)
 
+class Prepend(RBase):
+    def do_run(self, sequence, value, arg, scope):
+        return util.prepend(value, sequence)
 
 
 
@@ -348,8 +365,13 @@ class Between(Ternary):
                 out.append(document)
         return out
 
+class InsertAt(Ternary):
+    def do_run(self, sequence, index, value, arg, scope):
+        return util.insert_at(value, index, sequence)
 
-
+class SpliceAt(Ternary):
+    def do_run(self, sequence, index, value, arg, scope):
+        return util.splice_at(value, index, sequence)
 
 
 # ###########
@@ -412,11 +434,6 @@ class OuterJoin(InnerOuterJoinBase):
 
 
 
-
-
-
-
-
 class Zip(RBase):
     pass
 
@@ -443,23 +460,11 @@ class Reduce(RBase):
     pass
 
 
-class Avg(RBase):
-    pass
-
-class Min(RBase):
-    pass
-
-class Max(RBase):
-    pass
 
 class Row(RBase):
     pass
 
-class Append(RBase):
-    pass
 
-class Prepend(RBase):
-    pass
 
 class Difference(RBase):
     pass
@@ -476,11 +481,6 @@ class SetIntersection(RBase):
 class SetDifference(RBase):
     pass
 
-class InsertAt(RBase):
-    pass
-
-class SpliceAt(RBase):
-    pass
 
 class DeleteAt(RBase):
     pass

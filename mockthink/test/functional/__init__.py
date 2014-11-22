@@ -822,7 +822,24 @@ class TestMax(MockTest):
         self.assertEqual(expected, result)
 
 
+class TestArrayManip(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 1, 'animals': ['frog', 'cow']},
+            {'id': 2, 'animals': ['horse']}
+        ]
+        return as_db_and_table('x', 'farms', data)
 
+    def test_insert_at(self, conn):
+        expected = [
+            ['frog', 'pig', 'cow'],
+            ['horse', 'pig']
+        ]
+        result = r.db('x').table('farms').map(
+            lambda d: d['animals'].insert_at(1, 'pig')
+        ).run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
 
 
 class TestDelete(MockTest):

@@ -33,6 +33,22 @@ def cat(*lists):
     return out
 
 @curry2
+def append(elem, a_list):
+    return cat(a_list, [elem])
+
+@curry2
+def prepend(elem, a_list):
+    return cat([elem], a_list)
+
+@curry3
+def splice_at(to_splice, index, a_list):
+    return cat(a_list[0:index], to_splice, a_list[index:])
+
+@curry3
+def insert_at(val, index, a_list):
+    return splice_at([val], index, a_list)
+
+@curry2
 def extend_with(a_dict, to_extend):
     return extend(to_extend, a_dict)
 
@@ -185,3 +201,16 @@ def group_by_func(func, sequence):
 
 def is_num(x):
     return isinstance(x, int) or isinstance(x, float)
+
+def safe_sum(nums):
+    return sum(filter(is_num, nums))
+
+def safe_average(nums):
+    actual_nums = filter(is_num, nums)
+    return sum(actual_nums) / (len(actual_nums) + 0.0)
+
+def safe_max(nums):
+    return max(filter(is_num, nums))
+
+def safe_min(nums):
+    return min(filter(is_num, nums))

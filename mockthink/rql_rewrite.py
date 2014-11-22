@@ -65,7 +65,8 @@ NORMAL_BINOPS = {
 NORMAL_TERNOPS = {
     r_ast.EqJoin: mt_ast.EqJoin,
     r_ast.InnerJoin: mt_ast.InnerJoin,
-    r_ast.OuterJoin: mt_ast.OuterJoin
+    r_ast.OuterJoin: mt_ast.OuterJoin,
+    r_ast.InsertAt: mt_ast.InsertAt
 }
 
 for r_type, mt_type in NORMAL_MONOPS.iteritems():
