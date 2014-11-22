@@ -72,9 +72,6 @@ class RVar(MonExp):
     def do_run(self, symbol_name, arg, scope):
         return scope.get_sym(symbol_name)
 
-class Distinct(RBase):
-    pass
-
 class Not(MonExp):
     def do_run(self, left, arg, scope):
         return (not left)
@@ -136,28 +133,6 @@ class Replace(BinExp):
         current_db = self.find_db_scope()
         return arg.update_by_id_in_table_in_db(current_db, current_table, right)
 
-
-
-class GroupByField(BinExp):
-    def do_run(self, elems, field, arg, scope):
-        output = defaultdict(lambda: [])
-        for elem in elems:
-            output[util.getter(field)(elem)].append(elem)
-        return output
-
-class GroupByFunc(RBase):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
-    def run(self, arg, scope):
-        group_with = lambda x: self.right.run([x], scope)
-        output = defaultdict(lambda: [])
-        for elem in self.left.run(arg, scope):
-            output[group_with(elem)].append(elem)
-        return output
-
-
 class BinOp(BinExp):
     def do_run(self, left, right, arg, scope):
         return self.__class__.binop(left, right)
@@ -194,6 +169,26 @@ class Div(BinOp):
 
 class Mod(BinOp):
     binop = operator.mod
+
+
+
+
+
+class ByFuncBase(RBase):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def do_run(self, left, map_fn, arg, scope):
+        pass
+
+    def run(self, arg, scope):
+        left = self.left.run(arg, scope)
+        map_fn = lambda x: self.right.run([x], scope)
+        return self.do_run(left, map_fn, arg, scope)
+
+
+
 
 class UpdateBase(RBase):
 
@@ -256,38 +251,13 @@ class RFunc(RBase):
         call_scope = scope.push(bound)
         return self.body.run(None, call_scope)
 
-class FilterBase(RBase):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
+class FilterWithFunc(ByFuncBase):
+    def do_run(self, sequence, filt_fn, arg, scope):
+        return filter(filt_fn, sequence)
 
-    def __str__(self):
-        return "<Filter: (%s, %s)>" % (self.left, self.right)
-
-    def get_filter_fn(self):
-        pass
-
-    def run(self, arg, scope):
-        to_filter = self.left.run(arg, scope)
-        out = []
-        filt_fn = self.get_filter_fn()
-        for elem in to_filter:
-            if filt_fn(elem, scope):
-                out.append(elem)
-        return out
-
-class FilterWithFunc(FilterBase):
-    def get_filter_fn(self):
-        def filt(elem, scope):
-            return self.right.run([elem], scope)
-        return filt
-
-class FilterWithObj(FilterBase):
-    def get_filter_fn(self):
-        to_match = self.right
-        def filt(elem, scope):
-            return util.match_attrs(to_match)(elem)
-        return filt
+class FilterWithObj(BinExp):
+    def do_run(self, sequence, to_match, arg, scope):
+        return filter(util.match_attrs(to_match), sequence)
 
 class MapBase(RBase):
     def __init__(self, left, right):
@@ -457,56 +427,96 @@ class HasFields(RBase):
         return filter(match_fn, left)
 
 
-def is_num(x):
-    return isinstance(x, int) or isinstance(x, float)
 
+class Ternary(RBase):
+    def __init__(self, left, middle, right):
+        self.left = left
+        self.middle = middle
+        self.right = right
 
-def max_mapped(func, sequence):
-    current = (func(sequence[0]), sequence[0])
-    for elem in sequence[1:]:
-        val = func(elem)
-        if is_num(val) and val > current[0]:
-            current = (val, elem)
-    return current[1]
+    def do_run(self, left, middle, right, arg, scope):
+        raise NotImplemented()
 
-class MaxByField(BinExp):
-    def do_run(self, sequence, field, arg, scope):
-        return max_mapped(util.getter(field), sequence)
+    def run(self, arg, scope):
+        left = self.left.run(arg, scope)
+        middle = self.middle.run(arg, scope)
+        right = self.right.run(arg, scope)
+        return self.do_run(left, middle, right, arg, scope)
 
-class MaxByFunc(RBase):
+class Between(Ternary):
+    def do_run(self, table, lower_key, upper_key, arg, scope):
+        out = []
+        for document in table:
+            doc_id = util.getter('id')(document)
+            if doc_id < upper_key and doc_id > lower_key:
+                out.append(document)
+        return out
+
+class WithFields(BinExp):
+    def do_run(self, sequence, keys, arg, scope):
+        return [elem for elem in sequence if util.has_attrs(keys, elem)]
+
+class ConcatMap(RBase):
     def __init__(self, left, right):
         self.left = left
         self.right = right
 
     def run(self, arg, scope):
         sequence = self.left.run(arg, scope)
-        max_with = lambda x: self.right.run([x], scope)
-        return max_mapped(max_with, sequence)
+        map_fn = lambda x: self.right.run([x], scope)
+        return util.cat(*[util.map_with(map_fn, elem) for elem in sequence])
 
 
+class Skip(BinExp):
+    def do_run(self, sequence, num, arg, scope):
+        return util.drop(num)(sequence)
 
-class Between(RBase):
-    pass
+class Limit(RBase):
+    def do_run(self, sequence, num, arg, scope):
+        return util.take(num)(sequence)
+
+
+class Slice(BinExp):
+    def do_run(self, sequence, start_and_end, arg, scope):
+        start, end = start_and_end
+        return util.slice_with(start, end)(sequence)
+
+class Nth(BinExp):
+    def do_run(self, sequence, n, arg, scope):
+        return util.nth(n)(sequence)
+
+class SumByField(BinExp):
+    def do_run(self, sequence, field, arg, scope):
+        mapped = [util.getter(field)(elem) for elem in sequence]
+        nums = [elem for elem in mapped if util.is_num(elem)]
+        return sum(nums)
+
+class SumByFunc(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        nums = [elem for elem in map(map_fn, sequence) if util.is_num(elem)]
+        return sum(nums)
+
+class MaxByField(BinExp):
+    def do_run(self, sequence, field, arg, scope):
+        return util.max_mapped(util.getter(field), sequence)
+
+class MaxByFunc(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        return util.max_mapped(map_fn, sequence)
+
+class GroupByField(BinExp):
+    def do_run(self, elems, field, arg, scope):
+        return util.group_by_func(util.getter(field), elems)
+
+class GroupByFunc(ByFuncBase):
+    def do_run(self, sequence, map_fn, arg, scope):
+        return util.group_by_func(map_fn, sequence)
 
 class Zip(RBase):
     pass
 
-class ConcatMap(RBase):
-    pass
 
 class OrderBy(RBase):
-    pass
-
-class Skip(RBase):
-    pass
-
-class Limit(RBase):
-    pass
-
-class Slice(RBase):
-    pass
-
-class Nth(RBase):
     pass
 
 class IndexesOf(RBase):
@@ -521,16 +531,12 @@ class Sample(RBase):
 class UnGroup(RBase):
     pass
 
-
-
 class Contains(RBase):
     pass
 
 class Reduce(RBase):
     pass
 
-class Sum(RBase):
-    pass
 
 class Avg(RBase):
     pass
@@ -647,4 +653,7 @@ class Http(RBase):
     pass
 
 class Uuid(RBase):
+    pass
+
+class Distinct(RBase):
     pass

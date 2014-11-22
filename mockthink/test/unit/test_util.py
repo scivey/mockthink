@@ -160,3 +160,23 @@ class Util(unittest.TestCase):
             'z': 'good-z'
         }
         self.assertFalse(util.match_attrs(to_match, bad_test))
+
+    def test_getter_dict(self):
+        a_dict = {
+            'x': 'x-val'
+        }
+        self.assertEqual('x-val', util.getter('x')(a_dict))
+        self.assertEqual(None, util.getter('y')(a_dict))
+
+    def test_getter_obj(self):
+
+        class Thing(object):
+            def __init__(self, a_dict):
+                for k, v in a_dict.iteritems():
+                    setattr(self, k, v)
+
+        thing = Thing({'x': 'x-val'})
+
+        self.assertEqual('x-val', util.getter('x')(thing))
+        self.assertEqual(None, util.getter('y')(thing))
+

@@ -104,9 +104,7 @@ def handle_filter(node):
     if isinstance(args[1], r_ast.Func):
         return mt_ast.FilterWithFunc(type_dispatch(args[0]), type_dispatch(args[1]))
     elif isinstance(args[1], r_ast.MakeObj):
-        filter_obj = plain_obj_of_make_obj(args[1])
-        left_seq = type_dispatch(args[0])
-        return mt_ast.FilterWithObj(left_seq, filter_obj)
+        return mt_ast.FilterWithObj(type_dispatch(args[0]), type_dispatch(args[1]))
     else:
         raise UnexpectedTermSequence('unknown sequence for FILTER -> %s' % args[1])
 

@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 def curry2(func):
     def out(x, *args):
         if len(args):
@@ -123,3 +125,34 @@ def obj_clone(a_dict):
 
 def is_iterable(x):
     return hasattr(x, '__iter__')
+
+@curry2
+def drop(n, a_list):
+    return a_list[n:]
+
+@curry2
+def take(n, a_list):
+    return a_list[0:n]
+
+@curry3
+def slice_with(start, end, a_list):
+    return a_list[start:end]
+
+@curry2
+def max_mapped(func, sequence):
+    current = (func(sequence[0]), sequence[0])
+    for elem in sequence[1:]:
+        val = func(elem)
+        if is_num(val) and val > current[0]:
+            current = (val, elem)
+    return current[1]
+
+@curry2
+def group_by_func(func, sequence):
+    output = defaultdict(lambda: [])
+    for elem in sequence:
+        output[func(elem)].append(elem)
+    return output
+
+def is_num(x):
+    return isinstance(x, int) or isinstance(x, float)
