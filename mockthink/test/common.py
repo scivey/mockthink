@@ -1,3 +1,4 @@
+from pprint import pprint
 import rethinkdb as r
 from mockthink.db import MockThink, MockThinkConn
 

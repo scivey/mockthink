@@ -1,3 +1,4 @@
+from collections import defaultdict
 import operator
 from . import util
 from .scope import Scope
@@ -127,6 +128,28 @@ class Replace(BinExp):
         current_table = self.find_table_scope()
         current_db = self.find_db_scope()
         return arg.update_by_id_in_table_in_db(current_db, current_table, right)
+
+
+
+class GroupByField(BinExp):
+    def do_run(self, elems, field, arg, scope):
+        output = defaultdict(lambda: [])
+        for elem in elems:
+            output[util.getter(field)(elem)].append(elem)
+        return output
+
+class GroupByFunc(RBase):
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def run(self, arg, scope):
+        group_with = lambda x: self.right.run([x], scope)
+        output = defaultdict(lambda: [])
+        for elem in self.left.run(arg, scope):
+            output[group_with(elem)].append(elem)
+        return output
+
 
 class BinOp(BinExp):
     def do_run(self, left, right, arg, scope):
@@ -427,7 +450,6 @@ class HasFields(RBase):
         return filter(match_fn, left)
 
 
-
 class Between(RBase):
     pass
 
@@ -462,9 +484,6 @@ class Sample(RBase):
     pass
 
 class Distinct(RBase):
-    pass
-
-class Group(RBase):
     pass
 
 class UnGroup(RBase):

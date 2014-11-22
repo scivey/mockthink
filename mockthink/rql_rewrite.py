@@ -198,6 +198,17 @@ def handle_get_all(node):
     to_get = mt_ast.RDatum([plain_val_of_datum(datum) for datum in args[1:]])
     return mt_ast.GetAll(left, to_get)
 
+@handles_type(r_ast.Group)
+def handle_group(node):
+    args = node.args
+    left = type_dispatch(args[0])
+    right = type_dispatch(args[1])
+    if isinstance(args[1], r_ast.Func):
+        return mt_ast.GroupByFunc(left, right)
+    elif isinstance(args[1], r_ast.Datum):
+        return mt_ast.GroupByField(left, right)
+    raise TypeError()
+
 def rewrite_query(query):
     return type_dispatch(query)
 
