@@ -358,7 +358,26 @@ class Prepend(BinExp):
 
 
 
+#   ####################
+#     String functions
+#   ####################
 
+
+class StrUpcase(MonExp):
+    def do_run(self, string, arg, scope):
+        return string.upper()
+
+class StrDowncase(MonExp):
+    def do_run(self, string, arg, scope):
+        return string.lower()
+
+class StrSplit(BinExp):
+    def do_run(self, string, split_on, arg, scope):
+        return util.rql_str_split(string, split_on)
+
+class StrSplitLimit(Ternary):
+    def do_run(self, string, split_on, limit, arg, scope):
+        return util.rql_str_split(string, split_on, limit)
 
 class Between(Ternary):
     def do_run(self, table, lower_key, upper_key, arg, scope):
@@ -502,11 +521,6 @@ class StrMatch(RBase):
 class StrSplit(RBase):
     pass
 
-class StrUpcase(RBase):
-    pass
-
-class StrDowncase(RBase):
-    pass
 
 class Random(RBase):
     pass

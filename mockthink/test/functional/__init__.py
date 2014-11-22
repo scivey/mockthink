@@ -932,7 +932,36 @@ class TestObjectManip(MockTest):
         key_set = set(util.cat(result[0], result[1]))
         self.assertEqual(set(['face', 'toes', 'blog']), key_set)
 
+class TestStrings(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'a', 'text': 'something  with spaces'},
+            {'id': 'b', 'text': 'some,csv,file'},
+            {'id': 'c', 'text': 'someething'}
+        ]
+        return as_db_and_table('library', 'texts', data)
 
+    def test_upcase(self, conn):
+        expected = set([
+            'SOMETHING  WITH SPACES',
+            'SOME,CSV,FILE',
+            'SOMEETHING'
+        ])
+        result =  r.db('library').table('texts').map(
+            lambda doc: doc['text'].upcase()
+        ).run(conn)
+        self.assertEqUnordered(expected, result)
+
+    def test_downcase(self, conn):
+        expected = set([
+            'something  with spaces',
+            'some,csv,file',
+            'someething'
+        ])
+        result =  r.db('library').table('texts').map(
+            lambda doc: doc['text'].downcase()
+        ).run(conn)
+        self.assertEqUnordered(expected, result)
 
 class TestDelete(MockTest):
     def get_data(self):

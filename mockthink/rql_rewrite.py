@@ -40,7 +40,9 @@ NORMAL_MONOPS = {
     r_ast.Delete: mt_ast.Delete,
     r_ast.IsEmpty: mt_ast.IsEmpty,
     r_ast.Count: mt_ast.Count,
-    r_ast.Keys: mt_ast.Keys
+    r_ast.Keys: mt_ast.Keys,
+    r_ast.Downcase: mt_ast.StrDowncase,
+    r_ast.Upcase: mt_ast.StrUpcase
 }
 
 NORMAL_BINOPS = {

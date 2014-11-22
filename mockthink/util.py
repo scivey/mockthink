@@ -219,3 +219,17 @@ def safe_max(nums):
 
 def safe_min(nums):
     return min(filter(is_num, nums))
+
+def array_of_string(string):
+    return [char for char in string]
+
+def rql_str_split(string, split_on, limit=-1):
+    if not split_on:
+        if isinstance(split_on, str):
+            # rql's string.split mimics python's except for splitting on empty string.
+            # in that case python throws an error, while rql converts to char array
+            return array_of_string(string)
+        else:
+            # pythons string.split() seems not to allow a limit with default split_on
+            return string.split()
+    return string.split(split_on, limit)
