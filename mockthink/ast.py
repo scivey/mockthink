@@ -41,6 +41,15 @@ class RBase(object):
             result = self.left.find_db_scope()
         return result
 
+    def find_index_func_for_scope(self, index_name, db_arg):
+        table = self.find_table_scope()
+        db = self.find_db_scope()
+        return db_arg.get_index_func_in_table_in_db(
+            self.find_db_scope(),
+            self.find_table_scope(),
+            index_name
+        )
+
 class RDatum(RBase):
     def __init__(self, val, optargs={}):
         self.val = val
@@ -243,16 +252,19 @@ class Get(BinExp):
 class GetAll(BinExp):
     def do_run(self, left, right, arg, scope):
         if 'index' in self.optargs and self.optargs['index'] != 'id':
-            current_db = self.find_db_scope()
-            current_table = self.find_table_scope()
-            index_func = arg.get_index_func_in_table_in_db(
-                current_db,
-                current_table,
-                self.optargs['index']
+            index_func = self.find_index_func_for_scope(
+                self.optargs['index'],
+                arg
             )
+            if isinstance(index_func, RFunc):
+                map_fn = lambda d: index_func.run([d], scope)
+            else:
+                map_fn = index_func
             result = []
+            left = list(left)
+            pprint({'foo': left})
             for elem in left:
-                if index_func(elem) in right:
+                if map_fn(elem) in right:
                     result.append(elem)
             return result
         else:
@@ -562,6 +574,25 @@ class IndexCreateByField(BinExp):
             index_func
         )
 
+class IndexCreateByFunc(RBase):
+    def __init__(self, left, middle, right, optargs={}):
+        self.left = left
+        self.middle = middle
+        self.right = right
+
+    def run(self, arg, scope):
+        sequence = self.left.run(arg, scope)
+        index_name = self.middle.run(arg, scope)
+        index_func = self.right
+        current_db = self.find_db_scope()
+        current_table = self.find_table_scope()
+        return arg.create_index_in_table_in_db(
+            current_db,
+            current_table,
+            index_name,
+            index_func
+        )
+
 class IndexRename(Ternary):
     def do_run(self, sequence, old_name, new_name, arg, scope):
         current_db = self.find_db_scope()
@@ -658,9 +689,36 @@ class StrSplitOnLimit(Ternary):
 
 class Between(Ternary):
     def do_run(self, table, lower_key, upper_key, arg, scope):
+        defaults = {
+            'left_bound': 'closed',
+            'right_bound': 'open',
+            'index': 'id'
+        }
+        options = util.extend(defaults, self.optargs)
+
+        if options['index'] == 'id':
+            map_fn = util.getter('id')
+        else:
+            map_fn = self.find_index_func_for_scope(
+                options['index'],
+                arg
+            )
+
+        tests = {}
+
+        if options['left_bound'] == 'closed':
+            tests['left'] = operator.ge
+        else:
+            tests['left'] = operator.gt
+
+        if options['right_bound'] == 'closed':
+            tests['right'] = operator.le
+        else:
+            tests['right'] = operator.lt
+
         for document in table:
-            doc_id = util.getter('id')(document)
-            if doc_id < upper_key and doc_id > lower_key:
+            doc_val = map_fn(document)
+            if tests['left'](doc_val, lower_key) and tests['right'](doc_val, upper_key):
                 yield document
 
 class InsertAt(Ternary):

@@ -1689,6 +1689,29 @@ class TestIndexes(MockTest):
         pprint(result)
         self.assertEqUnordered(expected, result)
 
+    def test_func_index_create(self, conn):
+        expected = ['first_and_last']
+        r.db('s').table('people').index_create(
+            'first_and_last',
+            lambda doc: doc['first_name'] + doc['last_name']
+        ).run(conn)
+        result = r.db('s').table('people').index_list().run(conn)
+
+        self.assertEqUnordered(expected, list(result))
+
+    def test_func_index_create_works(self, conn):
+        expected = [
+            {'id': 'bob', 'first_name': 'Bob', 'last_name': 'Builder'}
+        ]
+        r.db('s').table('people').index_create(
+            'first_and_last',
+            lambda doc: doc['first_name'] + doc['last_name']
+        ).run(conn)
+        result = r.db('s').table('people').get_all(
+            'BobBuilder',
+            index='first_and_last'
+        ).run(conn)
+        self.assertEqUnordered(expected, list(result))
 
 def run_tests(conn, grep):
     for test_name, test_fn in TESTS.iteritems():

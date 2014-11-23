@@ -139,7 +139,6 @@ NORMAL_BINOPS = {
     r_ast.Reduce: mt_ast.Reduce,
     r_ast.Insert: mt_ast.Insert,
     r_ast.IndexWait: mt_ast.IndexWait,
-    r_ast.IndexCreate: mt_ast.IndexCreateByField,
     r_ast.IndexDrop: mt_ast.IndexDrop
 }
 
@@ -191,6 +190,10 @@ OPS_BY_ARITY = {
         0: mt_ast.Random0,
         1: mt_ast.Random1,
         2: mt_ast.Random2
+    },
+    r_ast.IndexCreate: {
+        2: mt_ast.IndexCreateByField,
+        3: mt_ast.IndexCreateByFunc
     }
 }
 
