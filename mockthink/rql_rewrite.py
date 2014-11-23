@@ -105,7 +105,8 @@ NORMAL_MONOPS = {
     r_ast.Asc: mt_ast.Asc,
     r_ast.Desc: mt_ast.Desc,
     r_ast.Zip: mt_ast.Zip,
-    r_ast.Json: mt_ast.Json
+    r_ast.Json: mt_ast.Json,
+    r_ast.TypeOf: mt_ast.TypeOf
 }
 
 NORMAL_BINOPS = {

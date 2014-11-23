@@ -160,6 +160,27 @@ class RDb(MonExp):
         return self.left.run(None, Scope({}))
 
 
+class TypeOf(MonExp):
+    def do_run(self, val, arg, scope):
+        type_map = {
+            str: 'STRING',
+            dict: 'OBJECT',
+            int: 'NUMBER',
+            float: 'NUMBER',
+            bool: 'BOOL'
+        }
+        if val == None:
+            return 'NULL'
+        else:
+            val_type = type(val)
+            if val_type in type_map:
+                return type_map[val_type]
+            elif util.is_iterable(val):
+                return 'ARRAY'
+
+        raise TypeError
+
+
 class Zip(MonExp):
     def do_run(self, sequence, arg, scope):
         out = []
@@ -619,8 +640,7 @@ class Js(RBase):
 class CoerceTo(RBase):
     pass
 
-class TypeOf(RBase):
-    pass
+
 
 class Info(RBase):
     pass
