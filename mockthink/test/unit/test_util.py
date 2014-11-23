@@ -3,7 +3,7 @@ import unittest
 from pprint import pprint
 from ... import util
 
-class Util(unittest.TestCase):
+class TestUtil(unittest.TestCase):
     def test_curry2(self):
         fun = lambda x, y: x + y
         curried = util.curry2(fun)

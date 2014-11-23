@@ -272,3 +272,10 @@ def sort_by_many(keys_and_dirs, sequence):
         handle_chunk()
         return result
 
+def indices_of_passing(pred, sequence):
+    out = []
+    for index in range(0, len(list(sequence))):
+        if pred(sequence[index]):
+            out.append(index)
+    return out
+

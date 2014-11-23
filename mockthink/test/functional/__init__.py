@@ -1048,13 +1048,46 @@ class TestRandom(MockTest):
         assert(result >= 10)
         assert(type(result) == int)
 
-    def test_random_float(self, conn):
+    def test_random_2_float(self, conn):
         result = r.random(10, 20, float=True).run(conn)
         assert(result <= 20)
         assert(result >= 10)
         assert(type(result) == float)
 
 
+class TestUnion(MockTest):
+    def get_data(self):
+        things_1 = [
+            {'id': 'thing1-1'},
+            {'id': 'thing1-2'}
+        ]
+        things_2 = [
+            {'id': 'thing2-1'},
+            {'id': 'thing2-2'}
+        ]
+        return {
+            'dbs': {
+                'x': {
+                    'tables': {
+                        'things_1': things_1,
+                        'things_2': things_2
+                    }
+                }
+            }
+
+        }
+
+    def test_table_union(self, conn):
+        expected = [
+            {'id': 'thing1-1'},
+            {'id': 'thing1-2'},
+            {'id': 'thing2-1'},
+            {'id': 'thing2-2'}
+        ]
+        result = r.db('x').table('things_1').union(
+            r.db('x').table('things_2')
+        ).run(conn)
+        self.assertEqUnordered(expected, result)
 
 
 class TestObjectManip(MockTest):

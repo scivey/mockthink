@@ -400,6 +400,26 @@ class Random2(BinExp):
             return random.randint(min_num, max_num)
 
 
+
+
+class Union(BinExp):
+    def do_run(self, left, right, arg, scope):
+        return list(left) + list(right)
+
+class Sample(BinExp):
+    def do_run(self, sequence, sample_n, arg, scope):
+        return random.sample(sequence, sample_n)
+
+
+class IndexesOfValue(BinExp):
+    def do_run(self, sequence, test_val, arg, scope):
+        return indices_of_passing(operator.eq, sequence)
+
+class IndexesOfFunc(ByFuncBase):
+    def do_run(self, sequence, test_fn, arg, scope):
+        return indices_of_passing(test_fn, sequence)
+
+
 #   ####################
 #     String functions
 #   ####################
@@ -494,11 +514,7 @@ class Zip(RBase):
 class IndexesOf(RBase):
     pass
 
-class Union(RBase):
-    pass
 
-class Sample(RBase):
-    pass
 
 class UnGroup(RBase):
     pass

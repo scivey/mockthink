@@ -125,7 +125,8 @@ NORMAL_BINOPS = {
     r_ast.Replace: mt_ast.Replace,
     r_ast.Merge: mt_ast.MergePoly,
     r_ast.Append: mt_ast.Append,
-    r_ast.Prepend: mt_ast.Prepend
+    r_ast.Prepend: mt_ast.Prepend,
+    r_ast.Union: mt_ast.Union
 }
 
 BINOPS_BY_ARG_2_TYPE = {
