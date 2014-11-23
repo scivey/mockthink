@@ -1522,6 +1522,33 @@ class TestDelete(MockTest):
         self.assertEqUnordered(expected, list(result))
 
 
+class TestBranch(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'one', 'value': 5},
+            {'id': 'three', 'value': 22},
+            {'id': 'two', 'value': 12},
+            {'id': 'four', 'value': 31}
+        ]
+        return as_db_and_table('x', 't', data)
+
+    def test_branch_1(self, conn):
+        expected = [
+            {'id': 'one', 'value': 5, 'over_20': False},
+            {'id': 'three', 'value': 22, 'over_20': True},
+            {'id': 'two', 'value': 12, 'over_20': False},
+            {'id': 'four', 'value': 31, 'over_20': True}
+        ]
+        result = r.db('x').table('t').map(
+            r.branch(
+                r.row['value'] > 20,
+                r.row.merge({'over_20': True}),
+                r.row.merge({'over_20': False})
+            )
+        ).run(conn)
+        result = list(result)
+        pprint({'RESULT': result})
+        self.assertEqUnordered(expected, list(result))
 
 def run_tests(conn, grep):
     for test_name, test_fn in TESTS.iteritems():

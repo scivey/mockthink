@@ -477,9 +477,9 @@ class Branch(RBase):
     def run(self, arg, scope):
         test = self.test.run(arg, scope)
         if test == False or test == None:
-            return self.if_true.run(arg, scope)
-        else:
             return self.if_false.run(arg, scope)
+        else:
+            return self.if_true.run(arg, scope)
 
 class Difference(BinExp):
     def do_run(self, sequence, to_remove, arg, scope):
@@ -584,13 +584,8 @@ class Contains(RBase):
 class Reduce(RBase):
     pass
 
-
-
 class Row(RBase):
     pass
-
-
-
 
 class Literal(RBase):
     pass

@@ -223,10 +223,33 @@ def handle_make_array(node):
 def handle_make_obj(node):
     return mt_ast.MakeObj({k: type_dispatch(v) for k, v in node.optargs.iteritems()})
 
+def contains_ivar(node):
+    return r_ast._ivar_scan(node)
+
+def is_ivar(node):
+    return isinstance(node, r_ast.ImplicitVar)
+
+def replace_implicit_vars(arg_symbol, node):
+    for index in range(0, len(node.args)):
+        elem = node.args[index]
+        if is_ivar(elem):
+            node.args[index] = r_ast.Var(r_ast.Datum(arg_symbol))
+        else:
+            replace_implicit_vars(arg_symbol, elem)
+    for key, val in node.optargs.iteritems():
+        if is_ivar(val):
+            node.optargs[key] = r_ast.Var(r_ast.Datum(arg_symbol))
+        else:
+            replace_implicit_vars(arg_symbol, node.optargs[key])
+
+
 @handles_type(r_ast.Func)
 def handle_func(node):
     func_params = plain_list_of_make_array(node.args[0])
-    func_body = type_dispatch(node.args[1])
+    func_body = node.args[1]
+    if contains_ivar(func_body):
+        replace_implicit_vars(func_params[0], func_body)
+    func_body = type_dispatch(func_body)
     return mt_ast.RFunc(func_params, func_body)
 
 @handles_type(r_ast.OrderBy)
