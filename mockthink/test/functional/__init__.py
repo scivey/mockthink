@@ -1758,8 +1758,33 @@ class TestIndexes(MockTest):
         ).run(conn)
         self.assertEqual(expected, list(result))
 
+    def test_index_wait_one_works(self, conn):
+        expected = [
+            {'id': 'bob', 'first_name': 'Bob', 'last_name': 'Builder'}
+        ]
 
+        r.db('s').table('people').index_create(
+            'last_name'
+        ).run(conn)
+        r.db('s').table('people').index_wait('last_name').run(conn)
+        result = r.db('s').table('people').get_all(
+            'Builder', index='last_name'
+        ).run(conn)
+        self.assertEqual(expected, list(result))
 
+    def test_index_wait_all_works(self, conn):
+        expected = [
+            {'id': 'bob', 'first_name': 'Bob', 'last_name': 'Builder'}
+        ]
+
+        r.db('s').table('people').index_create(
+            'last_name'
+        ).run(conn)
+        r.db('s').table('people').index_wait().run(conn)
+        result = r.db('s').table('people').get_all(
+            'Builder', index='last_name'
+        ).run(conn)
+        self.assertEqual(expected, list(result))
 
 
 def run_tests(conn, grep):

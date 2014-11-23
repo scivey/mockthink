@@ -637,7 +637,13 @@ class IndexList(MonExp):
             current_table
         )
 
-class IndexWait(BinExp):
+
+class IndexWaitAll(MonExp):
+    def do_run(self, table, arg, scope):
+        assert(isinstance(self.left, RTable))
+        return table
+
+class IndexWaitOne(BinExp):
     def do_run(self, table, index_name, arg, scope):
         assert(isinstance(self.left, RTable))
         current_db = self.find_db_scope()

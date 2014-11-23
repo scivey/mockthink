@@ -138,7 +138,6 @@ NORMAL_BINOPS = {
     r_ast.SetIntersection: mt_ast.SetIntersection,
     r_ast.Reduce: mt_ast.Reduce,
     r_ast.Insert: mt_ast.Insert,
-    r_ast.IndexWait: mt_ast.IndexWait,
     r_ast.IndexDrop: mt_ast.IndexDrop
 }
 
@@ -195,6 +194,10 @@ OPS_BY_ARITY = {
     r_ast.IndexCreate: {
         2: mt_ast.IndexCreateByField,
         3: mt_ast.IndexCreateByFunc
+    },
+    r_ast.IndexWait: {
+        1: mt_ast.IndexWaitAll,
+        2: mt_ast.IndexWaitOne
     }
 }
 
