@@ -283,6 +283,13 @@ class And(BinOp):
 class Or(BinOp):
     binop = operator.or_
 
+class Reduce(ByFuncBase):
+    def do_run(self, sequence, reduce_fn, arg, scope):
+        first, second = sequence[0:2]
+        result = reduce_fn([first, second])
+        for elem in sequence[2:]:
+            result = reduce_fn([elem, result])
+        return result
 
 
 class UpdateBase(object):
@@ -607,8 +614,6 @@ class OuterJoin(InnerOuterJoinBase):
 class Contains(RBase):
     pass
 
-class Reduce(RBase):
-    pass
 
 class Literal(RBase):
     pass

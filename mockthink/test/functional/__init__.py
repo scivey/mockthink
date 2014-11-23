@@ -1586,6 +1586,27 @@ class TestJson(MockTest):
         ).run(conn)
         self.assertEqUnordered(expected, result)
 
+class TestReduce(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'one', 'points': 10},
+            {'id': 'two', 'points': 25},
+            {'id': 'three', 'points': 100},
+            {'id': 'four', 'points': 50},
+            {'id': 'five', 'points': 6}
+        ]
+        return as_db_and_table('d', 'nums', data)
+
+    def test_reduce_1(self, conn):
+        expected = 191
+        result = r.db('d').table('nums').map(
+            lambda doc: doc['points']
+        ).reduce(
+            lambda elem, acc: elem + acc
+        ).run(conn)
+        self.assertEqual(expected, result)
+
+
 
 class TestBranch(MockTest):
     def get_data(self):
