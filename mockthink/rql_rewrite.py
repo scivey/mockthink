@@ -126,7 +126,8 @@ NORMAL_BINOPS = {
     r_ast.Merge: mt_ast.MergePoly,
     r_ast.Append: mt_ast.Append,
     r_ast.Prepend: mt_ast.Prepend,
-    r_ast.Union: mt_ast.Union
+    r_ast.Union: mt_ast.Union,
+    r_ast.Sample: mt_ast.Sample
 }
 
 BINOPS_BY_ARG_2_TYPE = {
@@ -234,6 +235,15 @@ def handle_order_by(node):
             right.append(type_dispatch(elem))
     right = mt_ast.MakeArray(right)
     return mt_ast.OrderBy(left, right)
+
+@handles_type(r_ast.IndexesOf)
+def handle_indexes_of(node):
+    left = type_dispatch(node.args[0])
+    right = type_dispatch(node.args[1])
+    if isinstance(node.args[1], r_ast.Func):
+        return mt_ast.IndexesOfFunc(left, right)
+    else:
+        return mt_ast.IndexesOfValue(left, right)
 
 # @handles_type(r_ast.Split)
 # def handle_split(node):

@@ -1090,6 +1090,94 @@ class TestUnion(MockTest):
         self.assertEqUnordered(expected, result)
 
 
+class TestIndexesOf(MockTest):
+    def get_data(self):
+        things = [
+            {'id': 'one', 'letters': ['c', 'c']},
+            {'id': 'two', 'letters': ['a', 'b', 'a', ['q', 'q'], 'b']},
+            {'id': 'three', 'letters': ['b', 'a', 'b', 'a']},
+            {'id': 'three', 'letters': ['c', 'a', 'b', 'a', ['q', 'q']]}
+        ]
+        return as_db_and_table('scrumptious', 'cake', things)
+
+    def test_indexes_of_val(self, conn):
+        expected = [
+            [],
+            [1, 4],
+            [0, 2],
+            [2]
+        ]
+        result = r.db('scrumptious').table('cake').map(
+            lambda doc: doc['letters'].indexes_of('b')
+        ).run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_indexes_of_array_val(self, conn):
+        expected = [
+            [],
+            [3],
+            [],
+            [4]
+        ]
+        result = r.db('scrumptious').table('cake').map(
+            lambda doc: doc['letters'].indexes_of(['q', 'q'])
+        ).run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_indexes_of_func(self, conn):
+        expected = [
+            [],
+            [1, 4],
+            [0, 2],
+            [2]
+        ]
+        result = r.db('scrumptious').table('cake').map(
+            lambda doc: doc['letters'].indexes_of(
+                lambda letter: letter == 'b'
+            )
+        ).run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, list(result))
+
+
+class TestSample(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'one', 'data': range(10, 20)},
+            {'id': 'two', 'data': range(20, 30)},
+            {'id': 'three', 'data': range(30, 40)}
+        ]
+        return as_db_and_table('db', 'things', data)
+
+    def test_nested(self, conn):
+        result = r.db('db').table('things').filter(
+            {'id': 'one'}
+        ).map(
+            lambda doc: doc['data'].sample(3)
+        ).run(conn)
+        result = list(result)
+        assert(len(result) == 1)
+        result = result[0]
+        assert(len(result) == 3)
+        for num in result:
+            assert(num <= 20)
+            assert(num >= 10)
+
+    def test_docs(self, conn):
+        result = r.db('db').table('things').sample(2).run(conn)
+        result = list(result)
+        assert(len(result) == 2)
+        doc1, doc2 = result
+        assert(doc1 != doc2)
+        ids = set(['one', 'two', 'three'])
+        assert(doc1['id'] in ids)
+        assert(doc2['id'] in ids)
+
+
+
+
 class TestObjectManip(MockTest):
     def get_data(self):
         data = [

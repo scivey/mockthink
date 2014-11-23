@@ -408,16 +408,15 @@ class Union(BinExp):
 
 class Sample(BinExp):
     def do_run(self, sequence, sample_n, arg, scope):
-        return random.sample(sequence, sample_n)
-
+        return random.sample(list(sequence), sample_n)
 
 class IndexesOfValue(BinExp):
     def do_run(self, sequence, test_val, arg, scope):
-        return indices_of_passing(operator.eq, sequence)
+        return util.indices_of_passing(util.eq(test_val), list(sequence))
 
 class IndexesOfFunc(ByFuncBase):
     def do_run(self, sequence, test_fn, arg, scope):
-        return indices_of_passing(test_fn, sequence)
+        return util.indices_of_passing(test_fn, list(sequence))
 
 
 #   ####################

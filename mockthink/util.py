@@ -1,4 +1,5 @@
 import random
+import operator
 from collections import defaultdict
 from pprint import pprint
 def curry2(func):
@@ -279,3 +280,6 @@ def indices_of_passing(pred, sequence):
             out.append(index)
     return out
 
+@curry2
+def eq(x, y):
+    return x == y
