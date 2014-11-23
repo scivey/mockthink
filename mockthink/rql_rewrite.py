@@ -92,7 +92,21 @@ def binop_splat(Mt_Constructor, node):
     return Mt_Constructor(left, right, optargs=process_optargs(node))
 
 
+#
+#   ReQL functions have an arity one greater than they seem to.
+#
+#   In the query `r.db('some_db').table('some_table')`, `table`'s arguments are really:
+#       table(r.db('some_db'), 'some_table')
+#
+#   Likewise, `r.db('some_Db').table('some_table').get('doc-id')` is really:
+#       get(r.table(r.db('some_db'), 'some_table'), 'doc-id')
+#
+#   i.e. the immediately preceding term is really a term's first argument, and so the deepest
+#   term in the AST is really the first term in the query.
+#
 
+
+#   1-ary reql terms which don't need any special handling
 NORMAL_MONOPS = {
     r_ast.Var: mt_ast.RVar,
     r_ast.DB: mt_ast.RDb,
@@ -111,6 +125,7 @@ NORMAL_MONOPS = {
     r_ast.Sync: mt_ast.Sync
 }
 
+#   2-ary reql terms which don't need any special handling
 NORMAL_BINOPS = {
     r_ast.Ge: mt_ast.Gte,
     r_ast.Lt: mt_ast.Lt,
@@ -142,6 +157,11 @@ NORMAL_BINOPS = {
     r_ast.IndexDrop: mt_ast.IndexDrop
 }
 
+
+#   2-ary terms which we handle with different mt_ast terms depending
+#   on the type of their second argument.  This allows us to avoid some type-checking
+#   at evaluation time, though we still need to branch on evaluate type of first argument
+#   in many cases.
 BINOPS_BY_ARG_2_TYPE = {
     r_ast.Group: {
         r_ast.Datum: mt_ast.GroupByField,
@@ -161,6 +181,15 @@ BINOPS_BY_ARG_2_TYPE = {
     }
 }
 
+#   ReQL represents these as varargs functions, which can take an array as second arg or
+#   a sequence of datums for args 1...N.
+#
+#   e.g. these are both allowed:
+#       r.db('x').table('y').pluck('id', 'name')
+#       r.db('x').table('y').pluck(['id', 'name'])
+#
+#   We check arg count and type and normalize to 2-ary functions of (arg0, [varargs])
+#   so they can be uniformly handled at evaluation.
 SPLATTED_BINOPS = {
     r_ast.Pluck: mt_ast.PluckPoly,
     r_ast.HasFields: mt_ast.HasFields,
@@ -170,6 +199,7 @@ SPLATTED_BINOPS = {
     r_ast.DeleteAt: mt_ast.DeleteAt
 }
 
+#   3-ary reql terms which don't need any special handling
 NORMAL_TERNOPS = {
     r_ast.EqJoin: mt_ast.EqJoin,
     r_ast.InnerJoin: mt_ast.InnerJoin,
@@ -182,6 +212,9 @@ NORMAL_TERNOPS = {
     r_ast.Between: mt_ast.Between
 }
 
+#   We can determine a lot about these functions' behavior based on arg count.
+#   Since we already know so much, there's no need to handle the branching logic at evaluation time.
+#   Instead, we represent them as different `mt_ast` types.
 OPS_BY_ARITY = {
     r_ast.Split: {
         1: mt_ast.StrSplitDefault,
@@ -244,26 +277,6 @@ def handle_make_array(node):
 def handle_make_obj(node):
     return mt_ast.MakeObj({k: type_dispatch(v) for k, v in node.optargs.iteritems()})
 
-def contains_ivar(node):
-    return r_ast._ivar_scan(node)
-
-def is_ivar(node):
-    return isinstance(node, r_ast.ImplicitVar)
-
-def replace_implicit_vars(arg_symbol, node):
-    for index in range(0, len(node.args)):
-        elem = node.args[index]
-        if is_ivar(elem):
-            node.args[index] = r_ast.Var(r_ast.Datum(arg_symbol))
-        else:
-            replace_implicit_vars(arg_symbol, elem)
-    for key, val in node.optargs.iteritems():
-        if is_ivar(val):
-            node.optargs[key] = r_ast.Var(r_ast.Datum(arg_symbol))
-        else:
-            replace_implicit_vars(arg_symbol, node.optargs[key])
-
-
 @handles_type(r_ast.Func)
 def handle_func(node):
     func_params = plain_list_of_make_array(node.args[0])
@@ -308,6 +321,42 @@ def handle_funcall(node):
     rest = mt_ast.MakeArray([type_dispatch(elem) for elem in rest])
     return mt_ast.Do(rest, func)
 
+
+
+#   main exported function
 def rewrite_query(query):
+    """Rewrite a ReQL query from `r_ast` types into corresponding `mt_ast` terms."""
     return type_dispatch(query)
 
+
+
+
+#   ImplicitVar handling.
+#   `ImplicitVar`s show up in ReQL expressions as `r.row`, e.g.:
+#       r.db('x').table('y').map(
+#           r.row('value').add(10)
+#       )
+#   ReQL rewrites this to a `Func` term but does not replace ivars
+#   in the client (handled server-side).  We handle these by taking
+#   the first parameter symbol of the `r_ast.Func`, recursing through its
+#   body, and replacing any ImplicitVar instances with Var(Datum(symbol)).
+#   Once that's done, the `Func` can be evaluated in the same way as any other.
+
+def contains_ivar(node):
+    return r_ast._ivar_scan(node)
+
+def is_ivar(node):
+    return isinstance(node, r_ast.ImplicitVar)
+
+def replace_implicit_vars(arg_symbol, node):
+    for index in range(0, len(node.args)):
+        elem = node.args[index]
+        if is_ivar(elem):
+            node.args[index] = r_ast.Var(r_ast.Datum(arg_symbol))
+        else:
+            replace_implicit_vars(arg_symbol, elem)
+    for key, val in node.optargs.iteritems():
+        if is_ivar(val):
+            node.optargs[key] = r_ast.Var(r_ast.Datum(arg_symbol))
+        else:
+            replace_implicit_vars(arg_symbol, node.optargs[key])
