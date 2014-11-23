@@ -166,9 +166,7 @@ def handle_make_array(node):
 
 @handles_type(r_ast.MakeObj)
 def handle_make_obj(node):
-    out = {k: type_dispatch(v) for k, v in node.optargs.iteritems()}
-    pprint(out)
-    return mt_ast.MakeObj(out)
+    return mt_ast.MakeObj({k: type_dispatch(v) for k, v in node.optargs.iteritems()})
 
 @handles_type(r_ast.Func)
 def handle_func(node):
