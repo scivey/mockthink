@@ -378,15 +378,6 @@ class TestMath(MockTest):
         result = r.db('math_db').table('points').map(lambda t: t['x'] * t['y']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
-    def test_div_method(self, conn):
-        expected = [250, 300]
-        result = r.db('math_db').table('points').map(lambda t: t['x'].mul(t['y'])).run(conn)
-        self.assertEqUnordered(expected, list(result))
-
-    def test_mul_oper(self, conn):
-        expected = [250, 300]
-        result = r.db('math_db').table('points').map(lambda t: t['x'] * t['y']).run(conn)
-        self.assertEqUnordered(expected, list(result))
 
 
 class TestReplace(MockTest):
