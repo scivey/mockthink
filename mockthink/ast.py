@@ -1,5 +1,5 @@
 import operator
-from . import util
+from . import util, joins
 from .scope import Scope
 
 from pprint import pprint
@@ -424,18 +424,9 @@ class ChangeAt(Ternary):
 #   Joins
 # ###########
 
-def do_eq_join(left_field, left, right_field, right):
-    out = []
-    for elem in left:
-        lval = util.getter(left_field)(elem)
-        match = util.find_first(lambda d: util.getter(right_field)(d) == lval, right)
-        if match:
-            out.append({'left': elem, 'right': match})
-    return out
-
 class EqJoin(Ternary):
     def do_run(self, left, field, right, arg, scope):
-        return do_eq_join(field, left, 'id', right)
+        return joins.do_eq_join(field, left, 'id', right)
 
 class InnerOuterJoinBase(RBase):
     def __init__(self, left, middle, right):
@@ -449,34 +440,14 @@ class InnerOuterJoinBase(RBase):
         pred = lambda x, y: self.right.run([x, y], scope)
         return self.do_run(left_seq, right_seq, pred, arg, scope)
 
-def do_inner_join(pred, left, right):
-    out = []
-    for left_elem in left:
-        for right_elem in right:
-            if pred(left_elem, right_elem):
-                out.append({'left': left_elem, 'right': right_elem})
-    return out
-
 class InnerJoin(InnerOuterJoinBase):
     def do_run(self, left, right, pred, arg, scope):
-        return do_inner_join(pred, left, right)
+        return joins.do_inner_join(pred, left, right)
 
-def do_outer_join(pred, left, right):
-    out = []
-    for left_elem in left:
-        matches = []
-        result = {'left': left_elem}
-        for right_elem in right:
-            if pred(left_elem, right_elem):
-                matches.append(util.extend(result, {'right': right_elem}))
-        if not matches:
-            matches.append(result)
-        out = util.cat(out, matches)
-    return out
 
 class OuterJoin(InnerOuterJoinBase):
     def do_run(self, left, right, pred, arg, scope):
-        return do_outer_join(pred, left, right)
+        return joins.do_outer_join(pred, left, right)
 
 
 
