@@ -2,6 +2,9 @@ from . import util
 from . import ast
 from .rql_rewrite import rewrite_query
 from .scope import Scope
+import rethinkdb
+import datetime
+import contextlib
 
 def replace_array_elems_by_id(existing, replace_with):
     elem_index_by_id = {}
@@ -221,12 +224,13 @@ class MockThinkConn(object):
 
 class MockThink(object):
     def __init__(self, initial_data):
-        self.initial_data = initial_data
-        self.data = objects_from_pods(initial_data)
+        self._modify_initial_data(initial_data)
+        self.tzinfo = rethinkdb.make_timezone('00:00')
 
     def _modify_initial_data(self, new_data):
         self.initial_data = new_data
         self.data = objects_from_pods(new_data)
+        self.data.mockthink = self
 
     def run_query(self, query):
         result = query.run(self.data, Scope({}))
@@ -246,3 +250,9 @@ class MockThink(object):
     def get_conn(self):
         conn = MockThinkConn(self)
         return conn
+
+    @contextlib.contextmanager
+    def connect(self):
+        conn = MockThinkConn(self)
+        yield conn
+        self.reset()

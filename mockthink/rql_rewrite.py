@@ -200,6 +200,10 @@ OPS_BY_ARITY = {
     r_ast.IndexWait: {
         1: mt_ast.IndexWaitAll,
         2: mt_ast.IndexWaitOne
+    },
+    r_ast.UserError: {
+        0: mt_ast.RError0,
+        1: mt_ast.RError1
     }
 }
 

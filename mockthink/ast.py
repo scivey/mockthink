@@ -14,6 +14,10 @@ def map_with_scope(map_fn, scope, to_map):
 def filter_with_scope(filter_fn, scope, to_filter):
     return filter(lambda elem: filter_fn(elem, scope), to_filter)
 
+class AttrHaving(object):
+    def __init__(self, attrs):
+        for k, v in attrs.iteritems():
+            setattr(self, k, v)
 
 
 # #################
@@ -50,6 +54,18 @@ class RBase(object):
             index_name
         )
 
+    def raise_rql_runtime_error(self, msg):
+        from rethinkdb import RqlRuntimeError
+        # temporary jankiness to get it working
+        # doing it this way means error messages won't
+        # be properly printed
+        term = AttrHaving({
+            'args': (),
+            'optargs': {},
+            'compose': (lambda x,y: 'COMPOSED')
+        })
+        raise RqlRuntimeError(msg, term, [])
+
 class RDatum(RBase):
     def __init__(self, val, optargs={}):
         self.val = val
@@ -70,10 +86,6 @@ class RFunc(RBase):
         return "<RFunc: [%s] { %s }>" % (params, self.body)
 
     def run(self, args, scope):
-        pprint({
-            'args': args,
-            'params': self.param_names
-        })
         if not isinstance(args, list):
             args = [args]
         bound = util.as_obj(zip(self.param_names, args))
@@ -162,6 +174,19 @@ class MakeArray(RBase):
 # #################
 #   Query handlers
 # #################
+
+
+
+class RError0(RBase):
+    def __init__(self, *args):
+        pass
+
+    def run(self, arg, conn):
+        self.raise_rql_runtime_error('DEFAULT MESSAGE')
+
+class RError1(MonExp):
+    def do_run(self, msg, arg, scope):
+        self.raise_rql_runtime_error(msg)
 
 
 class Uuid(RBase):
@@ -797,8 +822,6 @@ class Binary(RBase):
 class ForEach(RBase):
     pass
 
-class RError(RBase):
-    pass
 
 class RDefault(RBase):
     pass

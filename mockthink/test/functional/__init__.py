@@ -2,6 +2,7 @@ import argparse
 import sys
 from pprint import pprint
 import rethinkdb as r
+from rethinkdb import RqlRuntimeError
 from mockthink.db import MockThink, MockThinkConn
 from mockthink.test.common import make_test_registry, AssertionMixin
 from mockthink.test.common import as_db_and_table
@@ -1916,8 +1917,20 @@ class TestBetween(MockTest):
         self.assertEqUnordered(expected, result)
 
 
+class TestError(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'foo'}
+        ]
+        return as_db_and_table('db', 'fonz', data)
 
-
+    def test_error1(self, conn):
+        try:
+            r.error('msg').run(conn)
+        except RqlRuntimeError as err:
+            rql_err = err
+            self.assertEqual('msg', err.message)
+        assert(isinstance(rql_err, RqlRuntimeError))
 
 def run_tests(conn, grep):
     for test_name, test_fn in TESTS.iteritems():
