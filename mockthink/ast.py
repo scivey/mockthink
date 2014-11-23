@@ -822,7 +822,6 @@ class Binary(RBase):
 class ForEach(RBase):
     pass
 
-
 class RDefault(RBase):
     pass
 
@@ -835,11 +834,8 @@ class Js(RBase):
 class CoerceTo(RBase):
     pass
 
-
-
 class Info(RBase):
     pass
-
 
 class Http(RBase):
     pass
