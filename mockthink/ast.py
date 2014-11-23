@@ -604,7 +604,7 @@ class IndexRename(Ternary):
             new_name
         )
         if exists:
-            if not ('overwrite' in self.optargs and self.optargs['overwrite']):
+            if not self.optargs.get('overwrite', False):
                 raise Exception('tried to overwrite existing index!')
 
         return arg.rename_index_in_table_in_db(
@@ -715,7 +715,8 @@ class Between(Ternary):
             )
 
         tests = {}
-
+        pprint(self.optargs)
+        pprint(options)
         if options['left_bound'] == 'closed':
             tests['left'] = operator.ge
         else:

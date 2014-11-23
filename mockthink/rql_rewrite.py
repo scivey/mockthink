@@ -178,7 +178,8 @@ NORMAL_TERNOPS = {
     r_ast.SpliceAt: mt_ast.SpliceAt,
     r_ast.ChangeAt: mt_ast.ChangeAt,
     r_ast.Branch: mt_ast.Branch,
-    r_ast.IndexRename: mt_ast.IndexRename
+    r_ast.IndexRename: mt_ast.IndexRename,
+    r_ast.Between: mt_ast.Between
 }
 
 OPS_BY_ARITY = {
