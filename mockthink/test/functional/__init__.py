@@ -676,7 +676,7 @@ class TestMerge(MockTest):
             }
         ]
         result = r.db('jezebel').table('things').merge({'z': 'Z-VALUE'}).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_merge_nested(self, conn):
         expected = [
@@ -692,8 +692,7 @@ class TestMerge(MockTest):
         result = r.db('jezebel').table('things').map(
             lambda d: d['y'].merge({'extra-y-val': 'extra'})
         ).run(conn)
-        pprint(result)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_merge_nested_with_prop(self, conn):
         expected = [
@@ -710,7 +709,7 @@ class TestMerge(MockTest):
             lambda d: d['x'].merge(d['y'])
         ).run(conn)
         pprint(result)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_merge_nested_with_prop2(self, conn):
         expected = [
@@ -749,7 +748,7 @@ class TestIsEmpty(MockTest):
         result = r.db('some_db').table('some_table').map(
             lambda d: d.merge({'things_empty': d['things'].is_empty()})
         ).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_is_empty_toplevel_empty(self, conn):
         result = r.db('some_db').table('some_table').filter({
@@ -839,7 +838,7 @@ class TestArrayManip(MockTest):
             lambda d: d['animals'].insert_at(1, 'pig')
         ).run(conn)
         pprint(result)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_splice_at(self, conn):
         expected = [
@@ -849,7 +848,7 @@ class TestArrayManip(MockTest):
         result = r.db('x').table('farms').map(
             lambda d: d['animals'].splice_at(1, ['pig', 'chicken'])
         ).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_prepend(self, conn):
         expected = [
@@ -859,7 +858,7 @@ class TestArrayManip(MockTest):
         result = r.db('x').table('farms').map(
             lambda d: d['animals'].prepend('pig')
         ).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_append(self, conn):
         expected = [
@@ -869,7 +868,7 @@ class TestArrayManip(MockTest):
         result = r.db('x').table('farms').map(
             lambda d: d['animals'].append('pig')
         ).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_change_at(self, conn):
         expected = [
@@ -880,7 +879,7 @@ class TestArrayManip(MockTest):
             lambda d: d['animals'].change_at(0, 'wombat')
         ).run(conn)
         pprint(result)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
 class TestObjectManip(MockTest):
     def get_data(self):
@@ -909,9 +908,9 @@ class TestObjectManip(MockTest):
             ['id', 'attributes', 'joe-attr'],
             ['id', 'attributes', 'sam-attr']
         ]
-        result = r.db('y').table('people').map(
+        result = list(r.db('y').table('people').map(
             lambda d: d.keys()
-        ).run(conn)
+        ).run(conn))
         self.assertEqual(3, len(result[0]))
         self.assertEqual(3, len(result[1]))
         key_set = set(util.cat(result[0], result[1]))
@@ -923,9 +922,9 @@ class TestObjectManip(MockTest):
             ['face', 'toes'],
             ['face', 'blog']
         ]
-        result = r.db('y').table('people').map(
+        result = list(r.db('y').table('people').map(
             lambda d: d['attributes'].keys()
-        ).run(conn)
+        ).run(conn))
         self.assertEqual(2, len(result[0]))
         self.assertEqual(2, len(result[1]))
 
@@ -950,7 +949,7 @@ class TestStrings(MockTest):
         result =  r.db('library').table('texts').map(
             lambda doc: doc['text'].upcase()
         ).run(conn)
-        self.assertEqual(expected, set(result))
+        self.assertEqual(expected, set(list(result)))
 
     def test_downcase(self, conn):
         expected = set([
@@ -961,7 +960,7 @@ class TestStrings(MockTest):
         result =  r.db('library').table('texts').map(
             lambda doc: doc['text'].downcase()
         ).run(conn)
-        self.assertEqual(expected, set(result))
+        self.assertEqual(expected, set(list(result)))
 
     def test_split_1(self, conn):
         expected = [
@@ -972,7 +971,7 @@ class TestStrings(MockTest):
         result = r.db('library').table('texts').map(
             lambda doc: doc['text'].split()
         ).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_split_2(self, conn):
         expected = [
@@ -995,7 +994,7 @@ class TestStrings(MockTest):
             lambda doc: doc['text'].split('e')
         ).run(conn)
         pprint(result)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_split_4(self, conn):
         expected = [
@@ -1007,7 +1006,7 @@ class TestStrings(MockTest):
             lambda doc: doc['text'].split('e', 1)
         ).run(conn)
         pprint(result)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
 
 
@@ -1045,12 +1044,11 @@ class TestDelete(MockTest):
 
 def run_tests(conn, grep):
     for test_name, test_fn in TESTS.iteritems():
-        if not grep or grep == 'NONE':
+        if not grep or grep == 'ALL':
             test_fn(conn)
         elif grep in test_name:
             test_fn(conn)
         else:
-            # pass
             print 'skipping: %s' % test_name
 
 def run_tests_with_mockthink(grep):

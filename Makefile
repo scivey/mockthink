@@ -2,7 +2,7 @@ WORKDIR=$(shell pwd)
 
 SET_PATH=export PYTHONPATH=$(WORKDIR)
 RUN=$(SET_PATH) && python
-GREP ?= NONE
+GREP ?= ALL
 test-functional:
 	$(RUN) ./mockthink/test/functional/__init__.py --run mockthink --grep $(GREP)
 

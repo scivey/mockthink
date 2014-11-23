@@ -103,6 +103,14 @@ BINOPS_BY_ARG_2_TYPE = {
     r_ast.Max: {
         r_ast.Datum: mt_ast.MaxByField,
         r_ast.Func: mt_ast.MaxByFunc
+    },
+    r_ast.Filter: {
+        r_ast.MakeObj: mt_ast.FilterWithObj,
+        r_ast.Func: mt_ast.FilterWithFunc
+    },
+    r_ast.Update: {
+        r_ast.MakeObj: mt_ast.UpdateWithObj,
+        r_ast.Func: mt_ast.UpdateByFunc
     }
 }
 
@@ -142,19 +150,12 @@ for r_type, mt_type in NORMAL_TERNOPS.iteritems():
 def handle_datum(node):
     return mt_ast.RDatum(node.data)
 
-def plain_val_of_var(var_node):
-    return var_node.args[0].data
-
 def plain_val_of_datum(datum_node):
     return datum_node.data
 
 def plain_list_of_make_array(make_array_instance):
     assert(isinstance(make_array_instance, r_ast.MakeArray))
     return map(plain_val_of_datum, make_array_instance.args)
-
-def plain_obj_of_make_obj(make_obj_instance):
-    assert(isinstance(make_obj_instance, r_ast.MakeObj))
-    return {k: plain_val_of_datum(v) for k, v in make_obj_instance.optargs.iteritems()}
 
 @handles_type(r_ast.MakeArray)
 def handle_make_array(node):
@@ -171,29 +172,6 @@ def handle_func(node):
     func_params = plain_list_of_make_array(node.args[0])
     func_body = type_dispatch(node.args[1])
     return mt_ast.RFunc(func_params, func_body)
-
-@handles_type(r_ast.Filter)
-def handle_filter(node):
-    args = node.args
-    if isinstance(args[1], r_ast.Func):
-        return mt_ast.FilterWithFunc(type_dispatch(args[0]), type_dispatch(args[1]))
-    elif isinstance(args[1], r_ast.MakeObj):
-        return mt_ast.FilterWithObj(type_dispatch(args[0]), type_dispatch(args[1]))
-    else:
-        raise UnexpectedTermSequence('unknown sequence for FILTER -> %s' % args[1])
-
-@handles_type(r_ast.Update)
-def handle_update(node):
-    args = node.args
-    if isinstance(args[1], r_ast.Func):
-        return handle_generic_binop(mt_ast.UpdateWithFunc, node)
-    elif isinstance(args[1], r_ast.MakeObj):
-        # update_obj = type_dispatch(args[1])
-        # left_seq = type_dispatch(args[0])
-        # return mt_ast.UpdateWithObj(left_seq, update_obj)
-        return handle_generic_binop(mt_ast.UpdateWithObj, node)
-    else:
-        raise UnexpectedTermSequence('unknown sequence for UPDATE -> %s' % args[1])
 
 @handles_type(r_ast.Split)
 def handle_split(node):

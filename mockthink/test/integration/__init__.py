@@ -121,17 +121,22 @@ class TestThings(MockTest):
         self.assertEqUnordered(expected, result)
 
 
-def run_tests(conn):
+def run_tests(conn, grep):
     for test_name, test_fn in TESTS.iteritems():
-        test_fn(conn)
+        if not grep or grep == 'ALL':
+            test_fn(conn)
+        elif grep in test_name:
+            test_fn(conn)
+        else:
+            print 'skipping: %s' % test_name
 
-def run_tests_with_mockthink():
+def run_tests_with_mockthink(grep):
     think = MockThink(as_db_and_table('nothing', 'nothing', []))
-    run_tests(think.get_conn())
+    run_tests(think.get_conn(), grep)
 
-def run_tests_with_rethink():
+def run_tests_with_rethink(grep):
     conn = r.connect('localhost', 28015)
-    run_tests(conn)
+    run_tests(conn, grep)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -142,5 +147,7 @@ if __name__ == '__main__':
     }
 
     parser.add_argument('--run', default='mockthink')
+    parser.add_argument('--grep', default=None)
     args = parser.parse_args(sys.argv[1:])
-    runners[args.run]()
+    runners[args.run](args.grep)
+
