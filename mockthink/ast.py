@@ -195,6 +195,11 @@ class Desc(MonExp):
     def do_run(self, left, arg, scope):
         return (left, 'DESC')
 
+class Json(MonExp):
+    def do_run(self, json_str, arg, scope):
+        import json
+        return json.loads(json_str)
+
 class RTable(BinExp):
     def get_table_name(self):
         return self.right.run(None, Scope({}))
@@ -584,16 +589,11 @@ class Contains(RBase):
 class Reduce(RBase):
     pass
 
-class Row(RBase):
-    pass
-
 class Literal(RBase):
     pass
 
 class StrMatch(RBase):
     pass
-
-
 
 class Args(RBase):
     pass
@@ -625,8 +625,6 @@ class TypeOf(RBase):
 class Info(RBase):
     pass
 
-class Json(RBase):
-    pass
 
 class Http(RBase):
     pass

@@ -1512,6 +1512,23 @@ class TestDelete(MockTest):
         result = r.db('ephemeral').table('people').run(conn)
         self.assertEqUnordered(expected, list(result))
 
+class TestJson(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'one'},
+            {'id': 'two'}
+        ]
+        return as_db_and_table('d', 't', data)
+    def test_update_with_json(self, conn):
+        expected = [
+            {'id': 'one', 'nums': [1, 2, 3]},
+            {'id': 'two', 'nums': [1, 2, 3]}
+        ]
+        result = r.db('d').table('t').map(
+            lambda doc: doc.merge(r.json('{"nums": [1, 2, 3]}'))
+        ).run(conn)
+        self.assertEqUnordered(expected, result)
+
 
 class TestBranch(MockTest):
     def get_data(self):
