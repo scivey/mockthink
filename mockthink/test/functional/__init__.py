@@ -1701,17 +1701,66 @@ class TestIndexes(MockTest):
 
     def test_func_index_create_works(self, conn):
         expected = [
-            {'id': 'bob', 'first_name': 'Bob', 'last_name': 'Builder'}
+            {'id': 'bob', 'first_name': 'Bob', 'last_name': 'Builder'},
+            {'id': 'tom', 'first_name': 'Tom', 'last_name': 'Generic'}
         ]
         r.db('s').table('people').index_create(
             'first_and_last',
             lambda doc: doc['first_name'] + doc['last_name']
         ).run(conn)
         result = r.db('s').table('people').get_all(
-            'BobBuilder',
+            'BobBuilder', 'TomGeneric',
             index='first_and_last'
         ).run(conn)
         self.assertEqUnordered(expected, list(result))
+
+    def test_index_drop_works(self, conn):
+        r.db('s').table('people').index_create(
+            'last_name'
+        ).run(conn)
+        indexes = list(r.db('s').table('people').index_list().run(conn))
+        self.assertEqual(['last_name'], indexes)
+        r.db('s').table('people').index_drop(
+            'last_name'
+        ).run(conn)
+        indexes = list(r.db('s').table('people').index_list().run(conn))
+        self.assertEqual([], indexes)
+
+
+    def test_index_rename_works(self, conn):
+        r.db('s').table('people').index_create(
+            'last_name'
+        ).run(conn)
+        indexes = list(r.db('s').table('people').index_list().run(conn))
+        self.assertEqual(['last_name'], indexes)
+        r.db('s').table('people').index_rename(
+            'last_name', 'new_last_name'
+        ).run(conn)
+        indexes = list(r.db('s').table('people').index_list().run(conn))
+        self.assertEqual(['new_last_name'], indexes)
+
+
+    def test_index_rename_works_2(self, conn):
+        expected = [
+            {'id': 'tom', 'first_name': 'Tom', 'last_name': 'Generic'}
+        ]
+        r.db('s').table('people').index_create(
+            'last_name'
+        ).run(conn)
+        indexes = list(r.db('s').table('people').index_list().run(conn))
+        self.assertEqual(['last_name'], indexes)
+        r.db('s').table('people').index_rename(
+            'last_name', 'new_last_name'
+        ).run(conn)
+        result = r.db('s').table('people').get_all(
+            'Generic',
+            index='new_last_name'
+        ).run(conn)
+        self.assertEqual(expected, list(result))
+
+
+
+
 
 def run_tests(conn, grep):
     for test_name, test_fn in TESTS.iteritems():
