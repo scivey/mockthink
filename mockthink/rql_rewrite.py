@@ -45,7 +45,9 @@ def handle_generic_ternop(Mt_Constructor, node):
 def makearray_of_datums(datum_list):
     out = []
     for elem in datum_list:
-        assert isinstance(elem, r_ast.Datum)
+        expected_types = (r_ast.Datum, r_ast.Asc, r_ast.Desc)
+        if elem.__class__ not in expected_types:
+            raise TypeError('unexpected elem type: %p' % elem)
         out.append(type_dispatch(elem))
     return mt_ast.MakeArray(out)
 
@@ -73,7 +75,9 @@ NORMAL_MONOPS = {
     r_ast.Count: mt_ast.Count,
     r_ast.Keys: mt_ast.Keys,
     r_ast.Downcase: mt_ast.StrDowncase,
-    r_ast.Upcase: mt_ast.StrUpcase
+    r_ast.Upcase: mt_ast.StrUpcase,
+    r_ast.Asc: mt_ast.Asc,
+    r_ast.Desc: mt_ast.Desc
 }
 
 NORMAL_BINOPS = {
@@ -121,7 +125,8 @@ SPLATTED_BINOPS = {
     r_ast.Pluck: mt_ast.PluckPoly,
     r_ast.HasFields: mt_ast.HasFields,
     r_ast.Without: mt_ast.WithoutPoly,
-    r_ast.GetAll: mt_ast.GetAll
+    r_ast.GetAll: mt_ast.GetAll,
+    r_ast.OrderBy: mt_ast.OrderBy
 }
 
 NORMAL_TERNOPS = {
@@ -173,6 +178,20 @@ def handle_func(node):
     func_params = plain_list_of_make_array(node.args[0])
     func_body = type_dispatch(node.args[1])
     return mt_ast.RFunc(func_params, func_body)
+
+@handles_type(r_ast.OrderBy)
+def handle_order_by(node):
+    left = type_dispatch(node.args[0])
+    right = []
+    for elem in node.args[1:]:
+        if isinstance(elem, r_ast.Datum):
+            right.append(mt_ast.Asc(type_dispatch(elem)))
+        else:
+            accepted = (r_ast.Desc, r_ast.Asc)
+            assert(elem.__class__ in accepted)
+            right.append(type_dispatch(elem))
+    right = mt_ast.MakeArray(right)
+    return mt_ast.OrderBy(left, right)
 
 @handles_type(r_ast.Split)
 def handle_split(node):

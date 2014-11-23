@@ -1,5 +1,6 @@
 import mock
 import unittest
+from pprint import pprint
 from ... import util
 
 class Util(unittest.TestCase):
@@ -211,3 +212,73 @@ class Util(unittest.TestCase):
     def test_change_at(self):
         nums = [1, 2, 3, 4]
         self.assertEqual([1, 10, 3, 4], util.change_at(10, 1, nums))
+
+    def test_sort_by_one(self):
+        people = [
+            {'id': 'joe', 'age': 26, 'score': 60},
+            {'id': 'todd', 'age': 52, 'score': 15},
+            {'id': 'bill', 'age': 35, 'score': 78}
+        ]
+        expected = [
+            {'id': 'joe', 'age': 26, 'score': 60},
+            {'id': 'bill', 'age': 35, 'score': 78},
+            {'id': 'todd', 'age': 52, 'score': 15}
+        ]
+        result = util.sort_by_one('age', people)
+        for index in range(0, len(expected)):
+            self.assertEqual(expected[index], result[index])
+
+    def test_sort_by_many_1(self):
+        people = [
+            {'id': 'joe', 'age': 26, 'score': 60},
+            {'id': 'todd', 'age': 52, 'score': 15},
+            {'id': 'bill', 'age': 35, 'score': 78}
+        ]
+        expected = [
+            {'id': 'joe', 'age': 26, 'score': 60},
+            {'id': 'bill', 'age': 35, 'score': 78},
+            {'id': 'todd', 'age': 52, 'score': 15}
+        ]
+        result = util.sort_by_many([('age', 'ASC')], people)
+        for index in range(0, len(expected)):
+            self.assertEqual(expected[index], result[index])
+
+    def test_sort_by_many_2(self):
+        people = [
+            {'id': 'joe', 'age': 26, 'score': 60},
+            {'id': 'todd', 'age': 52, 'score': 15},
+            {'id': 'joe', 'age': 26, 'score': 20},
+            {'id': 'bill', 'age': 35, 'score': 78},
+            {'id': 'todd', 'age': 52, 'score': 80}
+        ]
+        expected = [
+            {'id': 'joe', 'age': 26, 'score': 20},
+            {'id': 'joe', 'age': 26, 'score': 60},
+            {'id': 'bill', 'age': 35, 'score': 78},
+            {'id': 'todd', 'age': 52, 'score': 15},
+            {'id': 'todd', 'age': 52, 'score': 80}
+        ]
+        result = util.sort_by_many([('age', 'ASC'), ('score', 'ASC')], people)
+        pprint({'RESULT': result})
+        for index in range(0, len(expected)):
+            self.assertEqual(expected[index], result[index])
+
+    def test_sort_by_many_3(self):
+        people = [
+            {'id': 'joe', 'age': 26, 'score': 60},
+            {'id': 'todd', 'age': 52, 'score': 15},
+            {'id': 'joe', 'age': 26, 'score': 20},
+            {'id': 'bill', 'age': 35, 'score': 78},
+            {'id': 'todd', 'age': 52, 'score': 80}
+        ]
+        expected = [
+            {'id': 'joe', 'age': 26, 'score': 60},
+            {'id': 'joe', 'age': 26, 'score': 20},
+            {'id': 'bill', 'age': 35, 'score': 78},
+            {'id': 'todd', 'age': 52, 'score': 80},
+            {'id': 'todd', 'age': 52, 'score': 15}
+        ]
+        result = util.sort_by_many([('age', 'ASC'), ('score', 'DESC')], people)
+        pprint({'RESULT': result})
+        for index in range(0, len(expected)):
+            self.assertEqual(expected[index], result[index])

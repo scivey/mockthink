@@ -116,9 +116,7 @@ class TestThings(MockTest):
                 'job': 'Lawyer'
             }
         ]
-        result = query.run(conn)
-        pprint(result)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(query.run(conn)))
 
 
 def run_tests(conn, grep):

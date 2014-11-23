@@ -168,6 +168,14 @@ class Keys(MonExp):
     def do_run(self, left, arg, scope):
         return left.keys()
 
+class Asc(MonExp):
+    def do_run(self, left, arg, scope):
+        return (left, 'ASC')
+
+class Desc(MonExp):
+    def do_run(self, left, arg, scope):
+        return (left, 'DESC')
+
 class RTable(BinExp):
     def get_table_name(self):
         return self.right.run(None, Scope({}))
@@ -361,6 +369,9 @@ class Prepend(BinExp):
     def do_run(self, sequence, value, arg, scope):
         return util.prepend(value, sequence)
 
+class OrderBy(BinExp):
+    def do_run(self, sequence, keys, arg, scope):
+        return util.sort_by_many(keys, sequence)
 
 
 #   ####################
@@ -452,10 +463,6 @@ class OuterJoin(InnerOuterJoinBase):
 
 
 class Zip(RBase):
-    pass
-
-
-class OrderBy(RBase):
     pass
 
 class IndexesOf(RBase):

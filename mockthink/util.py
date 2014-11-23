@@ -21,7 +21,6 @@ def curry3(func):
 
 def extend(*dicts):
     out = {}
-    pprint({'extend': dicts})
     for one_dict in dicts:
         out.update(one_dict)
     return out
@@ -233,3 +232,41 @@ def rql_str_split(string, split_on, limit=-1):
             # pythons string.split() seems not to allow a limit with default split_on
             return string.split()
     return string.split(split_on, limit)
+
+def sort_by_one(sort_key, sequence, reverse=False):
+    out = clone_array(sequence)
+    kwargs = {
+        'key': lambda doc: getter(sort_key, doc)
+    }
+    if reverse:
+        kwargs['reverse'] = True
+    out.sort(**kwargs)
+    return out
+
+def sort_by_many(keys_and_dirs, sequence):
+    # keys_and_dirs is a list of tuples and orders:
+    # [('name', 'ASC'), ('weight', 'DESC')]
+
+    # this probably isn't all that efficient, but
+    # we can figure that out later.
+    key_for_pass = keys_and_dirs[0]
+    current_pass = sort_by_one(key_for_pass[0], sequence, reverse=(key_for_pass[1] == 'DESC'))
+    if len(keys_and_dirs) == 1:
+        return current_pass
+    else:
+        result = []
+        chunk = []
+        current_key = None
+        def handle_chunk():
+            result.extend(sort_by_many(keys_and_dirs[1:], chunk))
+        for elem in current_pass:
+            next_key = getter(key_for_pass[0], elem)
+            if next_key != current_key:
+                if chunk:
+                    handle_chunk()
+                chunk = [elem]
+            else:
+                chunk.append(elem)
+            current_key = next_key
+        handle_chunk()
+        return result
