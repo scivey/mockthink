@@ -1,3 +1,4 @@
+import random
 from collections import defaultdict
 from pprint import pprint
 def curry2(func):
@@ -270,3 +271,4 @@ def sort_by_many(keys_and_dirs, sequence):
             current_key = next_key
         handle_chunk()
         return result
+

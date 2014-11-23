@@ -21,13 +21,27 @@ def handles_type(rql_type, func):
     RQL_TYPE_HANDLERS[rql_type] = handler
     return handler
 
+
+def process_optargs(node):
+    if hasattr(node, 'optargs') and node.optargs:
+        return {k: plain_val_of_datum(v) for k, v in node.optargs.iteritems()}
+    return {}
+
+@util.curry2
+def handle_generic_zerop(Mt_Constructor, node):
+    return Mt_Constructor(optargs=process_optargs(node))
+
 @util.curry2
 def handle_generic_monop(Mt_Constructor, node):
-    return Mt_Constructor(type_dispatch(node.args[0]))
+    return Mt_Constructor(type_dispatch(node.args[0]), optargs=process_optargs(node))
 
 @util.curry2
 def handle_generic_binop(Mt_Constructor, node):
-    return Mt_Constructor(type_dispatch(node.args[0]), type_dispatch(node.args[1]))
+    return Mt_Constructor(
+        type_dispatch(node.args[0]),
+        type_dispatch(node.args[1]),
+        optargs=process_optargs(node)
+    )
 
 @util.curry2
 def handle_generic_binop_poly_2(mt_type_map, node):
@@ -35,12 +49,28 @@ def handle_generic_binop_poly_2(mt_type_map, node):
         if isinstance(node.args[1], r_type):
             Mt_Constructor = m_type
             break
-    return Mt_Constructor(type_dispatch(node.args[0]), type_dispatch(node.args[1]))
+    return Mt_Constructor(
+        type_dispatch(node.args[0]),
+        type_dispatch(node.args[1]),
+        optargs=process_optargs(node)
+    )
 
 @util.curry2
 def handle_generic_ternop(Mt_Constructor, node):
     assert(len(node.args) == 3)
-    return Mt_Constructor(*[type_dispatch(arg) for arg in node.args])
+    return Mt_Constructor(*[type_dispatch(arg) for arg in node.args], optargs=process_optargs(node))
+
+GENERIC_BY_ARITY = {
+    0: handle_generic_zerop,
+    1: handle_generic_monop,
+    2: handle_generic_binop,
+    3: handle_generic_ternop
+}
+
+@util.curry2
+def handle_n_ary(arity_type_map, node):
+    arg_len = len(node.args)
+    return GENERIC_BY_ARITY[arg_len](arity_type_map[arg_len], node)
 
 def makearray_of_datums(datum_list):
     out = []
@@ -59,13 +89,9 @@ def binop_splat(Mt_Constructor, node):
         right = type_dispatch(args[1])
     else:
         right = makearray_of_datums(args[1:])
-    return Mt_Constructor(left, right)
+    return Mt_Constructor(left, right, optargs=process_optargs(node))
 
-GENERIC_BY_ARITY = {
-    1: handle_generic_monop,
-    2: handle_generic_binop,
-    3: handle_generic_ternop
-}
+
 
 NORMAL_MONOPS = {
     r_ast.Var: mt_ast.RVar,
@@ -138,6 +164,19 @@ NORMAL_TERNOPS = {
     r_ast.ChangeAt: mt_ast.ChangeAt
 }
 
+OPS_BY_ARITY = {
+    r_ast.Split: {
+        1: mt_ast.StrSplitDefault,
+        2: mt_ast.StrSplitOn,
+        3: mt_ast.StrSplitOnLimit
+    },
+    r_ast.Random: {
+        0: mt_ast.Random0,
+        1: mt_ast.Random1,
+        2: mt_ast.Random2
+    }
+}
+
 for r_type, mt_type in NORMAL_MONOPS.iteritems():
     RQL_TYPE_HANDLERS[r_type] = handle_generic_monop(mt_type)
 
@@ -153,6 +192,8 @@ for r_type, mt_type in SPLATTED_BINOPS.iteritems():
 for r_type, mt_type in NORMAL_TERNOPS.iteritems():
     RQL_TYPE_HANDLERS[r_type] = handle_generic_ternop(mt_type)
 
+for r_type, mt_type in OPS_BY_ARITY.iteritems():
+    RQL_TYPE_HANDLERS[r_type] = handle_n_ary(mt_type)
 
 @handles_type(r_ast.Datum)
 def handle_datum(node):
@@ -193,15 +234,13 @@ def handle_order_by(node):
     right = mt_ast.MakeArray(right)
     return mt_ast.OrderBy(left, right)
 
-@handles_type(r_ast.Split)
-def handle_split(node):
-    by_arity = {
-        1: mt_ast.StrSplitDefault,
-        2: mt_ast.StrSplitOn,
-        3: mt_ast.StrSplitOnLimit
-    }
-    arg_count = len(node.args)
-    return GENERIC_BY_ARITY[arg_count](by_arity[arg_count], node)
+# @handles_type(r_ast.Split)
+# def handle_split(node):
+#     by_arity = {
+
+#     }
+#     arg_count = len(node.args)
+#     return GENERIC_BY_ARITY[arg_count](by_arity[arg_count], node)
 
 def rewrite_query(query):
     return type_dispatch(query)

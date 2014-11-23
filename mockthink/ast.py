@@ -1,4 +1,5 @@
 import operator
+import random
 from . import util, joins
 from .scope import Scope
 
@@ -38,7 +39,7 @@ class RBase(object):
         return result
 
 class RDatum(RBase):
-    def __init__(self, val):
+    def __init__(self, val, optargs={}):
         self.val = val
 
     def __str__(self):
@@ -48,7 +49,7 @@ class RDatum(RBase):
         return self.val
 
 class RFunc(RBase):
-    def __init__(self, param_names, body):
+    def __init__(self, param_names, body, optargs={}):
         self.param_names = param_names
         self.body = body
 
@@ -62,8 +63,9 @@ class RFunc(RBase):
         return self.body.run(None, call_scope)
 
 class MonExp(RBase):
-    def __init__(self, left):
+    def __init__(self, left, optargs={}):
         self.left = left
+        self.optargs = optargs
 
     def __str__(self):
         class_name = self.__class__.__name__
@@ -78,9 +80,10 @@ class MonExp(RBase):
 
 
 class BinExp(RBase):
-    def __init__(self, left, right):
+    def __init__(self, left, right, optargs={}):
         self.left = left
         self.right = right
+        self.optargs = optargs
 
     def __str__(self):
         class_name = self.__class__.__name__
@@ -95,10 +98,11 @@ class BinExp(RBase):
         return self.do_run(left, right, arg, scope)
 
 class Ternary(RBase):
-    def __init__(self, left, middle, right):
+    def __init__(self, left, middle, right, optargs={}):
         self.left = left
         self.middle = middle
         self.right = right
+        self.optargs = optargs
 
     def do_run(self, left, middle, right, arg, scope):
         raise NotImplemented()
@@ -110,9 +114,10 @@ class Ternary(RBase):
         return self.do_run(left, middle, right, arg, scope)
 
 class ByFuncBase(RBase):
-    def __init__(self, left, right):
+    def __init__(self, left, right, optargs={}):
         self.left = left
         self.right = right
+        self.optargs = optargs
 
     def do_run(self, left, map_fn, arg, scope):
         pass
@@ -373,6 +378,27 @@ class OrderBy(BinExp):
     def do_run(self, sequence, keys, arg, scope):
         return util.sort_by_many(keys, sequence)
 
+class Random0(RBase):
+    def __init__(self, optargs={}):
+        self.optargs = optargs
+
+    def run(self, arg, scope):
+        return random.random()
+
+class Random1(MonExp):
+    def do_run(self, max_num, arg, scope):
+        if 'float' in self.optargs and self.optargs['float']:
+            return random.uniform(0, max_num)
+        else:
+            return random.randint(0, max_num)
+
+class Random2(BinExp):
+    def do_run(self, min_num, max_num, arg, scope):
+        if 'float' in self.optargs and self.optargs['float']:
+            return random.uniform(min_num, max_num)
+        else:
+            return random.randint(min_num, max_num)
+
 
 #   ####################
 #     String functions
@@ -440,7 +466,7 @@ class EqJoin(Ternary):
         return joins.do_eq_join(field, left, 'id', right)
 
 class InnerOuterJoinBase(RBase):
-    def __init__(self, left, middle, right):
+    def __init__(self, left, middle, right, optargs={}):
         self.left = left
         self.middle = middle
         self.right = right
@@ -516,8 +542,6 @@ class StrMatch(RBase):
     pass
 
 
-class Random(RBase):
-    pass
 
 class Args(RBase):
     pass
