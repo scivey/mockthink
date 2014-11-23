@@ -446,10 +446,6 @@ class Random2(BinExp):
         else:
             return random.randint(min_num, max_num)
 
-
-
-
-
 class Union(BinExp):
     def do_run(self, left, right, arg, scope):
         return list(left) + list(right)
@@ -488,10 +484,6 @@ class SetDifference(BinExp):
 class Do(ByFuncBase):
     def do_run(self, left, func, arg, scope):
         return func(left)
-
-
-
-
 
 class UnGroup(MonExp):
     def do_run(self, grouped_seq, arg, scope):
@@ -613,7 +605,6 @@ class OuterJoin(InnerOuterJoinBase):
 
 class Contains(RBase):
     pass
-
 
 class Literal(RBase):
     pass
