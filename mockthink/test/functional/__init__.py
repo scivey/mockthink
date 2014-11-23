@@ -1661,6 +1661,28 @@ class TestBranch(MockTest):
         result = list(result)
         self.assertEqUnordered(expected, list(result))
 
+class TestSync(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'x', 'name': 'x-name'},
+            {'id': 'y', 'name': 'y-name'}
+        ]
+        return as_db_and_table('d', 'things', data)
+
+    def test_sync(self, conn):
+        expected = [
+            {'id': 'x', 'name': 'x-name'},
+            {'id': 'y', 'name': 'y-name'},
+            {'id': 'z', 'name': 'z-name'}
+        ]
+
+        r.db('d').table('things').insert(
+            {'id': 'z', 'name': 'z-name'}
+        ).run(conn)
+        r.db('d').table('things').sync().run(conn)
+        result = r.db('d').table('things').run(conn)
+        self.assertEqual(expected, list(result))
+
 class TestIndexes(MockTest):
     def get_data(self):
         data = [
@@ -1785,6 +1807,8 @@ class TestIndexes(MockTest):
             'Builder', index='last_name'
         ).run(conn)
         self.assertEqual(expected, list(result))
+
+
 
 
 def run_tests(conn, grep):

@@ -656,6 +656,10 @@ class IndexWaitOne(BinExp):
         assert(exists)
         return table
 
+class Sync(MonExp):
+    def do_run(self, table, arg, scope):
+        assert(isinstance(self.left, RTable))
+        return table
 
 
 #   ####################
