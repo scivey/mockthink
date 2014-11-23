@@ -8,7 +8,7 @@ MockThink is an in-process Python clone of RethinkDB's API.  For testing.
 
 MockThink provides a stub connection object which can be passed to normal ReQL queries.  Instead of being serialized and sent to the server, the ReQL AST is run through an interpreter in the same process.  "Tables" and "databases" are based on data given to the MockThink constructor.
 
-Avoiding network calls (for tests as well as setup/teardown) makes testing queries with MockThink orders of magnitude faster.
+Avoiding network calls (for tests themselves as well as setup/teardown) makes testing queries with MockThink orders of magnitude faster.
 
 ## Usage
 
