@@ -242,7 +242,21 @@ class Get(BinExp):
 
 class GetAll(BinExp):
     def do_run(self, left, right, arg, scope):
-        return filter(util.match_attr_multi('id', right), left)
+        if 'index' in self.optargs and self.optargs['index'] != 'id':
+            current_db = self.find_db_scope()
+            current_table = self.find_table_scope()
+            index_func = arg.get_index_func_in_table_in_db(
+                current_db,
+                current_table,
+                self.optargs['index']
+            )
+            result = []
+            for elem in left:
+                if index_func(elem) in right:
+                    result.append(elem)
+            return result
+        else:
+            return filter(util.match_attr_multi('id', right), left)
 
 class BinOp(BinExp):
     def do_run(self, left, right, arg, scope):
@@ -530,6 +544,81 @@ class Difference(BinExp):
         for elem in sequence:
             if elem not in to_remove:
                 yield elem
+
+
+#   #################################
+#     Index manipulation functions
+#   #################################
+
+class IndexCreateByField(BinExp):
+    def do_run(self, sequence, field_name, arg, scope):
+        index_func = util.getter(field_name)
+        current_db = self.find_db_scope()
+        current_table = self.find_table_scope()
+        return arg.create_index_in_table_in_db(
+            current_db,
+            current_table,
+            field_name,
+            index_func
+        )
+
+class IndexRename(Ternary):
+    def do_run(self, sequence, old_name, new_name, arg, scope):
+        current_db = self.find_db_scope()
+        current_table = self.find_table_scope()
+
+        exists = arg.index_exists_in_table_in_db(
+            current_db,
+            current_table,
+            new_name
+        )
+        if exists:
+            if not ('overwrite' in self.optargs and self.optargs['overwrite']):
+                raise Exception('tried to overwrite existing index!')
+
+        return arg.rename_index_in_table_in_db(
+            current_db,
+            current_table,
+            old_name,
+            new_name
+        )
+
+class IndexDrop(BinExp):
+    def do_run(self, sequence, index_name, arg, scope):
+        assert(isinstance(self.left, RTable))
+        current_db = self.find_db_scope()
+        current_table = self.find_table_scope()
+
+        return arg.drop_index_in_table_in_db(
+            current_db,
+            current_table,
+            index_name
+        )
+
+class IndexList(MonExp):
+    def do_run(self, table, arg, scope):
+        assert(isinstance(self.left, RTable))
+
+        current_db = self.find_db_scope()
+        current_table = self.find_table_scope()
+        return arg.list_indexes_in_table_in_db(
+            current_db,
+            current_table
+        )
+
+class IndexWait(BinExp):
+    def do_run(self, table, index_name, arg, scope):
+        assert(isinstance(self.left, RTable))
+        current_db = self.find_db_scope()
+        current_table = self.find_table_scope()
+        exists = arg.index_exists_in_table_in_db(
+            current_db,
+            current_table,
+            index_name
+        )
+        assert(exists)
+        return table
+
 
 
 #   ####################

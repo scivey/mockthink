@@ -106,7 +106,8 @@ NORMAL_MONOPS = {
     r_ast.Desc: mt_ast.Desc,
     r_ast.Zip: mt_ast.Zip,
     r_ast.Json: mt_ast.Json,
-    r_ast.TypeOf: mt_ast.TypeOf
+    r_ast.TypeOf: mt_ast.TypeOf,
+    r_ast.IndexList: mt_ast.IndexList
 }
 
 NORMAL_BINOPS = {
@@ -136,7 +137,10 @@ NORMAL_BINOPS = {
     r_ast.SetInsert: mt_ast.SetInsert,
     r_ast.SetIntersection: mt_ast.SetIntersection,
     r_ast.Reduce: mt_ast.Reduce,
-    r_ast.Insert: mt_ast.Insert
+    r_ast.Insert: mt_ast.Insert,
+    r_ast.IndexWait: mt_ast.IndexWait,
+    r_ast.IndexCreate: mt_ast.IndexCreateByField,
+    r_ast.IndexDrop: mt_ast.IndexDrop
 }
 
 BINOPS_BY_ARG_2_TYPE = {

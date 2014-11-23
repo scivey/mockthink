@@ -64,6 +64,15 @@ class MockTableData(object):
         new_indexes = util.without([index_name], self.indexes)
         return MockTableData(self.rows, new_indexes)
 
+    def list_indexes(self):
+        return self.indexes.keys()
+
+    def index_exists(self, index):
+        return index in self.indexes
+
+    def get_index_func(self, index):
+        return self.indexes[index]
+
     def __iter__(self):
         for elem in self.rows:
             yield elem
@@ -105,6 +114,27 @@ class MockDbData(object):
         new_table = self.get_table(table_name).remove_by_id(elem_list)
         return self.set_table(table_name, new_table)
 
+    def create_index_in_table(self, table_name, index_name, index_func):
+        new_table = self.get_table(table_name).create_index(index_name, index_func)
+        return self.set_table(table_name, new_table)
+
+    def drop_index_in_table(self, table_name, index_name):
+        new_table = self.get_table(table_name).drop_index(index_name)
+        return self.set_table(table_name, new_table)
+
+    def rename_index_in_table(self, table_name, old_index_name, new_index_name):
+        new_table = self.get_table(table_name).rename_index(old_index_name, new_index_name)
+        return self.set_table(table_name, new_table)
+
+    def list_indexes_in_table(self, table_name):
+        return self.get_table(table_name).list_indexes()
+
+    def index_exists_in_table(self, table_name, index):
+        return self.get_table(table_name).index_exists(index)
+
+    def get_index_func_in_table(self, table_name, index):
+        return self.get_table(table_name).get_index_func(index)
+
 class MockDb(object):
     def __init__(self, dbs_by_name):
         self.dbs_by_name = dbs_by_name
@@ -144,6 +174,28 @@ class MockDb(object):
     def remove_by_id_in_table_in_db(self, db_name, table_name, elem_list):
         new_db_data = self.get_db(db_name).remove_by_id_in_table(table_name, elem_list)
         return self.set_db(db_name, new_db_data)
+
+    def create_index_in_table_in_db(self, db_name, table_name, index_name, index_func):
+        new_db_data = self.get_db(db_name).create_index_in_table(table_name, index_name, index_func)
+        return self.set_db(db_name, new_db_data)
+
+    def drop_index_in_table_in_db(self, db_name, table_name, index_name):
+        new_db_data = self.get_db(db_name).drop_index_in_table(table_name, index_name)
+        return self.set_db(db_name, new_db_data)
+
+    def rename_index_in_table_in_db(self, db_name, table_name, old_index_name, new_index_name):
+        new_db_data = self.get_db(db_name).rename_index_in_table(table_name, old_index_name, new_index_name)
+        return self.set_db(db_name, new_db_data)
+
+    def list_indexes_in_table_in_db(self, db_name, table_name):
+        return self.get_db(db_name).list_indexes_in_table(table_name)
+
+    def index_exists_in_table_in_db(self, db_name, table_name, index_name):
+        return self.get_db(db_name).index_exists_in_table(table_name, index_name)
+
+    def get_index_func_in_table_in_db(self, db_name, table_name, index_name):
+        return self.get_db(db_name).get_index_func_in_table(table_name, index_name)
+
 
 def objects_from_pods(data):
     dbs_by_name = {}
