@@ -131,7 +131,7 @@ NORMAL_BINOPS = {
     r_ast.SetUnion: mt_ast.SetUnion,
     r_ast.SetDifference: mt_ast.SetDifference,
     r_ast.SetInsert: mt_ast.SetInsert,
-    r_ast.SetIntersection: mt_ast.SetIntersection
+    r_ast.SetIntersection: mt_ast.SetIntersection,
 }
 
 BINOPS_BY_ARG_2_TYPE = {
@@ -167,7 +167,8 @@ NORMAL_TERNOPS = {
     r_ast.OuterJoin: mt_ast.OuterJoin,
     r_ast.InsertAt: mt_ast.InsertAt,
     r_ast.SpliceAt: mt_ast.SpliceAt,
-    r_ast.ChangeAt: mt_ast.ChangeAt
+    r_ast.ChangeAt: mt_ast.ChangeAt,
+    r_ast.Branch: mt_ast.Branch
 }
 
 OPS_BY_ARITY = {
@@ -249,13 +250,17 @@ def handle_indexes_of(node):
     else:
         return mt_ast.IndexesOfValue(left, right)
 
-# @handles_type(r_ast.Split)
-# def handle_split(node):
-#     by_arity = {
-
-#     }
-#     arg_count = len(node.args)
-#     return GENERIC_BY_ARITY[arg_count](by_arity[arg_count], node)
+@handles_type(r_ast.FunCall)
+def handle_funcall(node):
+    if isinstance(node.args[0], r_ast.Func):
+        func = type_dispatch(node.args[0])
+        rest = node.args[1:]
+    else:
+        last = len(node.args) - 1
+        func = type_dispatch(node.args[last])
+        rest = node.args[0:last]
+    rest = mt_ast.MakeArray([type_dispatch(elem) for elem in rest])
+    return mt_ast.Do(rest, func)
 
 def rewrite_query(query):
     return type_dispatch(query)

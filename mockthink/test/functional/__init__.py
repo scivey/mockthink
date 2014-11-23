@@ -1176,6 +1176,59 @@ class TestSample(MockTest):
         assert(doc2['id'] in ids)
 
 
+class TestDo(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'one',
+                'name': 'One',
+                'pets': ['dog', 'cat', 'bird']
+            },
+            {
+                'id': 'two',
+                'name': 'Two',
+                'pets': ['fish', 'another fish']
+            },
+            {
+                'id': 'three',
+                'name': 'Three',
+                'pets': ['toad', 'rabbit']
+            }
+        ]
+        return as_db_and_table('generic', 'table', data)
+
+    def test_do_simple_1(self, conn):
+        result = r.db('generic').table('table').get('one').do(
+            lambda d: d['name']
+        ).run(conn)
+        self.assertEqual('One', result)
+
+    def test_do_simple_2(self, conn):
+        result = r.do(lambda d: d['name'],
+            r.db('generic').table('table').get('two')
+        ).run(conn)
+        self.assertEqual('Two', result)
+
+    def test_do_two(self, conn):
+        base = r.db('generic').table('table')
+        result = r.do(base.get('one'), base.get('two'),
+            lambda d1, d2: [d1['name'], d2['name']]
+        ).run(conn)
+        self.assertEqual(['One', 'Two'], result)
+
+    def test_do_three(self, conn):
+        base = r.db('generic').table('table')
+        result = r.do(
+            base.get('one'),
+            base.get('two'),
+            base.get('three'),
+            lambda d1, d2, d3: [d1['name'], d2['name'], d3['name']]
+        ).run(conn)
+        self.assertEqual(['One', 'Two', 'Three'], result)
+
+
+
+
 class TestSets(MockTest):
     def get_data(self):
         data = [

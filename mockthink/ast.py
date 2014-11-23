@@ -58,6 +58,12 @@ class RFunc(RBase):
         return "<RFunc: [%s] { %s }>" % (params, self.body)
 
     def run(self, args, scope):
+        pprint({
+            'args': args,
+            'params': self.param_names
+        })
+        if not isinstance(args, list):
+            args = [args]
         bound = util.as_obj(zip(self.param_names, args))
         call_scope = scope.push(bound)
         return self.body.run(None, call_scope)
@@ -124,7 +130,7 @@ class ByFuncBase(RBase):
 
     def run(self, arg, scope):
         left = self.left.run(arg, scope)
-        map_fn = lambda x: self.right.run([x], scope)
+        map_fn = lambda x: self.right.run(x, scope)
         return self.do_run(left, map_fn, arg, scope)
 
 class MakeObj(RBase):
@@ -402,6 +408,7 @@ class Random2(BinExp):
 
 
 
+
 class Union(BinExp):
     def do_run(self, left, right, arg, scope):
         return list(left) + list(right)
@@ -435,6 +442,35 @@ class SetIntersection(BinExp):
 class SetDifference(BinExp):
     def do_run(self, left, right, arg, scope):
         return list(set(list(left)) - set(list(right)))
+
+
+class Do(ByFuncBase):
+    def do_run(self, left, func, arg, scope):
+        return func(left)
+
+# class Do(RBase):
+#     def __init__(self, left, right, optargs={}):
+#         self.left = left
+#         self.right = right
+
+#     def run(self, arg, scope):
+#         pred = lambda x: self.right.run(x, scope)
+#         sequence = self.left.run(arg, scope)
+#         return pred(sequence)
+
+
+class Branch(RBase):
+    def __init__(self, test, if_true, if_false, optargs={}):
+        self.test = test
+        self.if_true = if_true
+        self.if_false = if_false
+
+    def run(self, arg, scope):
+        test = self.test.run(arg, scope)
+        if test == False or test == None:
+            return self.if_true.run(arg, scope)
+        else:
+            return self.if_false.run(arg, scope)
 
 
 
@@ -565,12 +601,6 @@ class Args(RBase):
     pass
 
 class Binary(RBase):
-    pass
-
-class Do(RBase):
-    pass
-
-class Branch(RBase):
     pass
 
 class ForEach(RBase):
