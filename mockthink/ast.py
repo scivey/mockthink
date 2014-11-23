@@ -127,16 +127,14 @@ class MakeObj(RBase):
         self.vals = vals
 
     def run(self, arg, scope):
-        result = {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
-        return result
+        return {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
 
 class MakeArray(RBase):
     def __init__(self, vals):
         self.vals = vals
 
     def run(self, arg, scope):
-        result = [elem.run(arg, scope) for elem in self.vals]
-        return result
+        return [elem.run(arg, scope) for elem in self.vals]
 
 # #################
 #   Query handlers
@@ -389,6 +387,16 @@ class StrSplitOn(BinExp):
 class StrSplitOnLimit(Ternary):
     def do_run(self, string, split_on, limit, arg, scope):
         return util.rql_str_split(string, split_on, limit)
+
+
+
+
+
+
+
+
+
+
 
 class Between(Ternary):
     def do_run(self, table, lower_key, upper_key, arg, scope):
