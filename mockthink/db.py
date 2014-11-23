@@ -21,8 +21,8 @@ def remove_array_elems_by_id(existing, to_remove):
     existing = util.clone_array(existing)
     result = existing
     for elem in to_remove:
-        result.remove(elem)
-
+        if elem in result:
+            result.remove(elem)
     return result
 
 

@@ -1015,6 +1015,17 @@ class TestArrayManip(MockTest):
         pprint(result)
         self.assertEqUnordered(expected, list(result))
 
+    def test_delete_at(self, conn):
+        expected = [
+            ['cow'],
+            []
+        ]
+        result = r.db('x').table('farms').map(
+            lambda d: d['animals'].delete_at(0)
+        ).run(conn)
+        res = list(result)
+        pprint(res)
+        self.assertEqUnordered(expected, res)
 
 class TestRandom(MockTest):
     def get_data(self):
@@ -1495,15 +1506,20 @@ class TestDelete(MockTest):
         result = r.db('ephemeral').table('people').run(conn)
         self.assertEqUnordered(expected, list(result))
 
-    # def test_delete_n(self, conn):
-    #     expected = [
-    #         {'id': 'sally-id', 'name': 'sally'},
-    #         {'id': 'joe-id', 'name': 'joe'}
-    #     ]
-    #     r.db('ephemeral').table('people').get_all('sam-id', 'tom-id').delete().run(conn)
-    #     result = r.db('ephemeral').table('people').run(conn)
-    #     self.assertEqUnordered(expected, list(result))
+    def test_delete_n(self, conn):
+        expected = [
+            {'id': 'sally-id', 'name': 'sally'},
+            {'id': 'joe-id', 'name': 'joe'}
+        ]
+        r.db('ephemeral').table('people').get_all('sam-id', 'tom-id').delete().run(conn)
+        result = r.db('ephemeral').table('people').run(conn)
+        self.assertEqUnordered(expected, list(result))
 
+    def test_delete_all_table_rows(self, conn):
+        expected = []
+        r.db('ephemeral').table('people').delete().run(conn)
+        result = r.db('ephemeral').table('people').run(conn)
+        self.assertEqUnordered(expected, list(result))
 
 
 

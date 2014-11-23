@@ -280,6 +280,12 @@ def indices_of_passing(pred, sequence):
             out.append(index)
     return out
 
+def without_indices(indices, sequence):
+    indices = set(indices)
+    for index in range(0, len(sequence)):
+        if index not in indices:
+            yield sequence[index]
+
 @curry2
 def eq(x, y):
     return x == y

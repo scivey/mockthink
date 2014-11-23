@@ -159,7 +159,8 @@ SPLATTED_BINOPS = {
     r_ast.HasFields: mt_ast.HasFields,
     r_ast.Without: mt_ast.WithoutPoly,
     r_ast.GetAll: mt_ast.GetAll,
-    r_ast.OrderBy: mt_ast.OrderBy
+    r_ast.OrderBy: mt_ast.OrderBy,
+    r_ast.DeleteAt: mt_ast.DeleteAt
 }
 
 NORMAL_TERNOPS = {

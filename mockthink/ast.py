@@ -285,7 +285,7 @@ class Delete(MonExp):
     def do_run(self, sequence, arg, scope):
         current_table = self.find_table_scope()
         current_db = self.find_db_scope()
-        return arg.remove_by_id_in_table_in_db(current_db, current_table, sequence)
+        return arg.remove_by_id_in_table_in_db(current_db, current_table, list(sequence))
 
 class FilterWithFunc(ByFuncBase):
     def do_run(self, sequence, filt_fn, arg, scope):
@@ -456,16 +456,17 @@ class Do(ByFuncBase):
     def do_run(self, left, func, arg, scope):
         return func(left)
 
-# class Do(RBase):
-#     def __init__(self, left, right, optargs={}):
-#         self.left = left
-#         self.right = right
 
-#     def run(self, arg, scope):
-#         pred = lambda x: self.right.run(x, scope)
-#         sequence = self.left.run(arg, scope)
-#         return pred(sequence)
 
+
+
+class UnGroup(MonExp):
+    def do_run(self, grouped_seq, arg, scope):
+        for group_name, group_vals in grouped_seq.iteritems():
+            yield {
+                'group': group_name,
+                'reduction': group_vals
+            }
 
 class Branch(RBase):
     def __init__(self, test, if_true, if_false, optargs={}):
@@ -480,7 +481,12 @@ class Branch(RBase):
         else:
             return self.if_false.run(arg, scope)
 
-
+class Difference(BinExp):
+    def do_run(self, sequence, to_remove, arg, scope):
+        to_remove = set(to_remove)
+        for elem in sequence:
+            if elem not in to_remove:
+                yield elem
 
 
 #   ####################
@@ -520,12 +526,10 @@ class StrSplitOnLimit(Ternary):
 
 class Between(Ternary):
     def do_run(self, table, lower_key, upper_key, arg, scope):
-        out = []
         for document in table:
             doc_id = util.getter('id')(document)
             if doc_id < upper_key and doc_id > lower_key:
-                out.append(document)
-        return out
+                yield document
 
 class InsertAt(Ternary):
     def do_run(self, sequence, index, value, arg, scope):
@@ -538,6 +542,10 @@ class SpliceAt(Ternary):
 class ChangeAt(Ternary):
     def do_run(self, sequence, index, value, arg, scope):
         return util.change_at(value, index, sequence)
+
+class DeleteAt(BinExp):
+    def do_run(self, sequence, indices, arg, scope):
+        return list(util.without_indices(indices, sequence))
 
 
 # ###########
@@ -570,12 +578,6 @@ class OuterJoin(InnerOuterJoinBase):
         return joins.do_outer_join(pred, left, right)
 
 
-
-
-
-class UnGroup(RBase):
-    pass
-
 class Contains(RBase):
     pass
 
@@ -588,11 +590,7 @@ class Row(RBase):
     pass
 
 
-class Difference(RBase):
-    pass
 
-class DeleteAt(RBase):
-    pass
 
 class Literal(RBase):
     pass
