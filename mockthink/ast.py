@@ -324,6 +324,20 @@ class Delete(MonExp):
         current_db = self.find_db_scope()
         return arg.remove_by_id_in_table_in_db(current_db, current_table, list(sequence))
 
+def ensure_id(elem):
+    if 'id' not in elem:
+        elem = util.extend(elem, {'id': uuid.uuid4()})
+    return elem
+
+class Insert(BinExp):
+    def do_run(self, sequence, to_insert, arg, scope):
+        current_table = self.find_table_scope()
+        current_db = self.find_db_scope()
+        if isinstance(to_insert, dict):
+            to_insert = [to_insert]
+        to_insert = map(ensure_id, list(to_insert))
+        return arg.insert_into_table_in_db(current_db, current_table, to_insert)
+
 class FilterWithFunc(ByFuncBase):
     def do_run(self, sequence, filt_fn, arg, scope):
         return filter(filt_fn, sequence)

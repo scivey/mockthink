@@ -27,36 +27,49 @@ def remove_array_elems_by_id(existing, to_remove):
 
 
 class MockTableData(object):
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, rows, indexes):
+        self.rows = rows
+        self.indexes = indexes
 
-    def replace_all(self, new_data):
-        return MockTableData(new_data)
+    def replace_all(self, rows, indexes):
+        return MockTableData(rows, indexes)
 
     def update_by_id(self, new_data):
         if not isinstance(new_data, list):
             new_data = [new_data]
-        return MockTableData(replace_array_elems_by_id(self.data, new_data))
+        return MockTableData(replace_array_elems_by_id(self.rows, new_data), self.indexes)
 
     def insert(self, new_rows):
         if not isinstance(new_rows, list):
             new_rows = [new_rows]
-        return MockTableData(util.cat(self.data, new_rows))
+        return MockTableData(util.cat(self.rows, new_rows), self.indexes)
 
     def remove_by_id(self, to_remove):
         if not isinstance(to_remove, list):
             to_remove = [to_remove]
-        return MockTableData(remove_array_elems_by_id(self.data, to_remove))
+        return MockTableData(remove_array_elems_by_id(self.rows, to_remove), self.indexes)
 
     def get_rows(self):
-        return self.data
+        return self.rows
+
+    def create_index(self, index_name, index_func):
+        return MockTableData(self.rows, util.extend(self.indexes, {index_name: index_func}))
+
+    def rename_index(self, old_name, new_name):
+        new_indexes = util.without([old_name], self.indexes)
+        new_indexes[new_name] = self.indexes[old_name]
+        return MockTableData(self.rows, new_indexes)
+
+    def drop_index(self, index_name):
+        new_indexes = util.without([index_name], self.indexes)
+        return MockTableData(self.rows, new_indexes)
 
     def __iter__(self):
-        for elem in self.data:
+        for elem in self.rows:
             yield elem
 
     def __getitem__(self, index):
-        return self.data[index]
+        return self.rows[index]
 
 class MockDbData(object):
     def __init__(self, tables_by_name):
@@ -137,7 +150,12 @@ def objects_from_pods(data):
     for db_name, db_data in data['dbs'].iteritems():
         tables_by_name = {}
         for table_name, table_data in db_data['tables'].iteritems():
-            tables_by_name[table_name] = MockTableData(table_data)
+            if isinstance(table_data, list):
+                indexes = {}
+            else:
+                indexes = table_data.get('indexes', {})
+                table_data = table_data.get('rows', [])
+            tables_by_name[table_name] = MockTableData(table_data, indexes)
         dbs_by_name[db_name] = MockDbData(tables_by_name)
     return MockDb(dbs_by_name)
 

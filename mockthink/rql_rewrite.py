@@ -135,7 +135,8 @@ NORMAL_BINOPS = {
     r_ast.SetDifference: mt_ast.SetDifference,
     r_ast.SetInsert: mt_ast.SetInsert,
     r_ast.SetIntersection: mt_ast.SetIntersection,
-    r_ast.Reduce: mt_ast.Reduce
+    r_ast.Reduce: mt_ast.Reduce,
+    r_ast.Insert: mt_ast.Insert
 }
 
 BINOPS_BY_ARG_2_TYPE = {

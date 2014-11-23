@@ -60,7 +60,6 @@ class TestGetAll(MockTest):
             {'id': 'joe-id', 'name': 'joe'},
         ]
         result = r.db('x').table('people').get_all('anne-id', 'joe-id').run(conn)
-        pprint(result)
         self.assertEqUnordered(expected, result)
 
     def test_get_all_just_one(self, conn):
@@ -192,7 +191,6 @@ class TestPlucking2(MockTest):
             {'a': 'a-2', 'd': 'd-2'}
         ]
         result = r.db('some_db').table('things').map(lambda t: t['values'].pluck('a', 'd')).run(conn)
-        pprint(result)
         self.assertEqUnordered(expected, list(result))
 
     def test_sub_sub_list(self, conn):
@@ -420,6 +418,42 @@ class TestUpdating(MockTest):
         r.db('things').table('muppets').update({'is_muppet': 'very'}).run(conn)
         result = r.db('things').table('muppets').run(conn)
         self.assertEqual(expected, list(result))
+
+    def test_insert_one(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+            {'id': 'elmo-id', 'species': 'methhead', 'name': 'Elmo'}
+        ]
+        r.db('things').table('muppets').insert({
+            'id': 'elmo-id',
+            'species': 'methhead',
+            'name': 'Elmo'
+        }).run(conn)
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_insert_array(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+            {'id': 'elmo-id', 'species': 'methhead', 'name': 'Elmo'},
+            {'id': 'fonz-id', 'species': 'guido', 'name': 'The Fonz'}
+        ]
+        r.db('things').table('muppets').insert([
+            {
+                'id': 'elmo-id',
+                'species': 'methhead',
+                'name': 'Elmo'
+            },
+            {
+                'id': 'fonz-id',
+                'species': 'guido',
+                'name': 'The Fonz'
+            }
+        ]).run(conn)
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
 
 
 
@@ -699,7 +733,6 @@ class TestMerge(MockTest):
         result = r.db('jezebel').table('things').map(
             lambda d: d['x'].merge(d['y'])
         ).run(conn)
-        pprint(result)
         self.assertEqUnordered(expected, list(result))
 
     def test_merge_nested_with_prop2(self, conn):
@@ -962,7 +995,6 @@ class TestArrayManip(MockTest):
         result = r.db('x').table('farms').map(
             lambda d: d['animals'].insert_at(1, 'pig')
         ).run(conn)
-        pprint(result)
         self.assertEqUnordered(expected, list(result))
 
     def test_splice_at(self, conn):
@@ -1003,7 +1035,6 @@ class TestArrayManip(MockTest):
         result = r.db('x').table('farms').map(
             lambda d: d['animals'].change_at(0, 'wombat')
         ).run(conn)
-        pprint(result)
         self.assertEqUnordered(expected, list(result))
 
     def test_delete_at(self, conn):
@@ -1015,7 +1046,6 @@ class TestArrayManip(MockTest):
             lambda d: d['animals'].delete_at(0)
         ).run(conn)
         res = list(result)
-        pprint(res)
         self.assertEqUnordered(expected, res)
 
 class TestRandom(MockTest):
@@ -1112,7 +1142,6 @@ class TestIndexesOf(MockTest):
         result = r.db('scrumptious').table('cake').map(
             lambda doc: doc['letters'].indexes_of('b')
         ).run(conn)
-        pprint(result)
         self.assertEqUnordered(expected, list(result))
 
     def test_indexes_of_array_val(self, conn):
@@ -1125,7 +1154,6 @@ class TestIndexesOf(MockTest):
         result = r.db('scrumptious').table('cake').map(
             lambda doc: doc['letters'].indexes_of(['q', 'q'])
         ).run(conn)
-        pprint(result)
         self.assertEqUnordered(expected, list(result))
 
     def test_indexes_of_func(self, conn):
@@ -1140,7 +1168,6 @@ class TestIndexesOf(MockTest):
                 lambda letter: letter == 'b'
             )
         ).run(conn)
-        pprint(result)
         self.assertEqUnordered(expected, list(result))
 
 
@@ -1345,7 +1372,6 @@ class TestSets(MockTest):
             lambda doc: doc['simple'].set_difference(['y'])
         ).run(conn)
         result = list(result)
-        pprint(result)
         result = map(lambda d: set(d), result)
         self.assertEqUnordered(expected, result)
 
@@ -1633,7 +1659,6 @@ class TestBranch(MockTest):
             )
         ).run(conn)
         result = list(result)
-        pprint({'RESULT': result})
         self.assertEqUnordered(expected, list(result))
 
 def run_tests(conn, grep):
