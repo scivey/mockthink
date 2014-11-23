@@ -419,6 +419,26 @@ class IndexesOfFunc(ByFuncBase):
         return util.indices_of_passing(test_fn, list(sequence))
 
 
+
+class SetInsert(BinExp):
+    def do_run(self, left, right, arg, scope):
+        return list(set(util.append(right, list(left))))
+
+class SetUnion(BinExp):
+    def do_run(self, left, right, arg, scope):
+        return list(set(list(left)).union(set(list(right))))
+
+class SetIntersection(BinExp):
+    def do_run(self, left, right, arg, scope):
+        return list(set(list(left)).intersection(set(list(right))))
+
+class SetDifference(BinExp):
+    def do_run(self, left, right, arg, scope):
+        return list(set(list(left)) - set(list(right)))
+
+
+
+
 #   ####################
 #     String functions
 #   ####################
@@ -510,9 +530,6 @@ class OuterJoin(InnerOuterJoinBase):
 class Zip(RBase):
     pass
 
-class IndexesOf(RBase):
-    pass
-
 
 
 class UnGroup(RBase):
@@ -530,22 +547,8 @@ class Row(RBase):
     pass
 
 
-
 class Difference(RBase):
     pass
-
-class SetInsert(RBase):
-    pass
-
-class SetUnion(RBase):
-    pass
-
-class SetIntersection(RBase):
-    pass
-
-class SetDifference(RBase):
-    pass
-
 
 class DeleteAt(RBase):
     pass

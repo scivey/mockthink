@@ -1176,6 +1176,67 @@ class TestSample(MockTest):
         assert(doc2['id'] in ids)
 
 
+class TestSets(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'one',
+                'simple': ['x', 'y'],
+                'complex': [{'val': 10}, {'val': 16}]
+            },
+            {
+                'id': 'two',
+                'simple': ['x', 'z'],
+                'complex': [{'val': 10}]
+            }
+        ]
+        return as_db_and_table('z', 't', data)
+
+    def test_set_insert(self, conn):
+        expected = [
+            set(['x', 'y']),
+            set(['x', 'y', 'z'])
+        ]
+        result = r.db('z').table('t').map(
+            lambda doc: doc['simple'].set_insert('y')
+        ).run(conn)
+        result = map(lambda d: set(d), result)
+        self.assertEqUnordered(expected, result)
+
+    def test_set_union(self, conn):
+        expected = [
+            set(['x', 'y', 'a']),
+            set(['x', 'y', 'z', 'a'])
+        ]
+        result = r.db('z').table('t').map(
+            lambda doc: doc['simple'].set_union(['y', 'a'])
+        ).run(conn)
+        result = map(lambda d: set(d), result)
+        self.assertEqUnordered(expected, result)
+
+    def test_set_intersection(self, conn):
+        expected = [
+            set(['x', 'y']),
+            set(['x'])
+        ]
+        result = r.db('z').table('t').map(
+            lambda doc: doc['simple'].set_intersection(['x', 'y'])
+        ).run(conn)
+        result = map(lambda d: set(d), result)
+        self.assertEqUnordered(expected, result)
+
+    def test_set_difference(self, conn):
+        expected = [
+            set(['x']),
+            set(['x', 'z'])
+        ]
+        result = r.db('z').table('t').map(
+            lambda doc: doc['simple'].set_difference(['y'])
+        ).run(conn)
+        result = list(result)
+        pprint(result)
+        result = map(lambda d: set(d), result)
+        self.assertEqUnordered(expected, result)
 
 
 class TestObjectManip(MockTest):
