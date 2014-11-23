@@ -226,6 +226,13 @@ class Div(BinOp):
 class Mod(BinOp):
     binop = operator.mod
 
+class And(BinOp):
+    binop = operator.and_
+
+class Or(BinOp):
+    binop = operator.or_
+
+
 
 class UpdateBase(object):
     def __init__(self, *args):
@@ -522,17 +529,8 @@ class Literal(RBase):
 class StrMatch(RBase):
     pass
 
-class StrSplit(RBase):
-    pass
-
 
 class Random(RBase):
-    pass
-
-class And(RBase):
-    pass
-
-class Or(RBase):
     pass
 
 class Args(RBase):

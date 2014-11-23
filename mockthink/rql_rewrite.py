@@ -113,8 +113,6 @@ SPLATTED_BINOPS = {
     r_ast.GetAll: mt_ast.GetAll
 }
 
-
-
 NORMAL_TERNOPS = {
     r_ast.EqJoin: mt_ast.EqJoin,
     r_ast.InnerJoin: mt_ast.InnerJoin,
@@ -196,9 +194,6 @@ def handle_update(node):
         return handle_generic_binop(mt_ast.UpdateWithObj, node)
     else:
         raise UnexpectedTermSequence('unknown sequence for UPDATE -> %s' % args[1])
-
-
-
 
 @handles_type(r_ast.Split)
 def handle_split(node):
