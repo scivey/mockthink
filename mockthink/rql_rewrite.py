@@ -42,6 +42,13 @@ def handle_generic_ternop(Mt_Constructor, node):
     assert(len(node.args) == 3)
     return Mt_Constructor(*[type_dispatch(arg) for arg in node.args])
 
+def makearray_of_datums(datum_list):
+    out = []
+    for elem in datum_list:
+        assert isinstance(elem, r_ast.Datum)
+        out.append(type_dispatch(elem))
+    return mt_ast.MakeArray(out)
+
 @util.curry2
 def binop_splat(Mt_Constructor, node):
     args = node.args
@@ -49,11 +56,7 @@ def binop_splat(Mt_Constructor, node):
     if isinstance(args[1], r_ast.MakeArray):
         right = type_dispatch(args[1])
     else:
-        right = []
-        for elem in args[1:]:
-            assert isinstance(elem, r_ast.Datum)
-            right.append(type_dispatch(elem))
-        right = mt_ast.MakeArray(right)
+        right = makearray_of_datums(args[1:])
     return Mt_Constructor(left, right)
 
 GENERIC_BY_ARITY = {
