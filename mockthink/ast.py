@@ -159,6 +159,14 @@ class RDb(MonExp):
     def get_db_name(self):
         return self.left.run(None, Scope({}))
 
+
+class Zip(MonExp):
+    def do_run(self, sequence, arg, scope):
+        out = []
+        for elem in sequence:
+            out.append(util.extend(elem['left'], elem['right']))
+        return out
+
 class IsEmpty(MonExp):
     def do_run(self, left, arg, scope):
         return (len(left) == 0)
@@ -562,9 +570,6 @@ class OuterJoin(InnerOuterJoinBase):
         return joins.do_outer_join(pred, left, right)
 
 
-
-class Zip(RBase):
-    pass
 
 
 

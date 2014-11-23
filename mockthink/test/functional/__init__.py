@@ -1227,6 +1227,62 @@ class TestDo(MockTest):
         self.assertEqual(['One', 'Two', 'Three'], result)
 
 
+class TestZip(MockTest):
+    def get_data(self):
+        left = [
+            {
+                'id': 'one',
+                'lname': 'One',
+                'rval': 'r-one'
+            },
+            {
+                'id': 'two',
+                'lname': 'Two',
+                'rval': 'r-two'
+            }
+        ]
+        right = [
+            {
+                'id': 'r-one',
+                'rname': 'RightOne'
+            },
+            {
+                'id': 'r-two',
+                'rname': 'RightTwo'
+            }
+        ]
+        return {
+            'dbs': {
+                'x': {
+                    'tables': {
+                        'ltab': left,
+                        'rtab': right
+                    }
+                }
+            }
+
+
+        }
+
+    def test_zip_1(self, conn):
+        expected = [
+            {
+                'id': 'r-one',
+                'lname': 'One',
+                'rname': 'RightOne',
+                'rval': 'r-one'
+            },
+            {
+                'id': 'r-two',
+                'lname': 'Two',
+                'rname': 'RightTwo',
+                'rval': 'r-two'
+            }
+        ]
+        result = r.db('x').table('ltab').eq_join(
+            'rval', r.db('x').table('rtab')
+        ).zip().run(conn)
+        self.assertEqUnordered(expected, list(result))
 
 
 class TestSets(MockTest):

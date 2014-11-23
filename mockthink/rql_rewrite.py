@@ -103,7 +103,8 @@ NORMAL_MONOPS = {
     r_ast.Downcase: mt_ast.StrDowncase,
     r_ast.Upcase: mt_ast.StrUpcase,
     r_ast.Asc: mt_ast.Asc,
-    r_ast.Desc: mt_ast.Desc
+    r_ast.Desc: mt_ast.Desc,
+    r_ast.Zip: mt_ast.Zip
 }
 
 NORMAL_BINOPS = {
