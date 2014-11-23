@@ -1,3 +1,4 @@
+from pprint import pprint
 from . import util
 
 def do_outer_join(pred, left, right):
