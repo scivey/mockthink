@@ -1,9 +1,12 @@
 import operator
 import random
+import uuid
+import json
+from pprint import pprint
+
 from . import util, joins
 from .scope import Scope
 
-from pprint import pprint
 
 def map_with_scope(map_fn, scope, to_map):
     return map(lambda elem: map_fn(elem, scope), to_map)
@@ -78,7 +81,7 @@ class MonExp(RBase):
         return "<%s: %s>" % (class_name, self.left)
 
     def do_run(self, left, arg, scope):
-        pass
+        raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
 
     def run(self, arg, scope):
         left = self.left.run(arg, scope)
@@ -96,7 +99,7 @@ class BinExp(RBase):
         return "<%s: (%s, %s)>" % (class_name, self.left, self.right)
 
     def do_run(self, left, right, arg, scope):
-        pass
+        raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
 
     def run(self, arg, scope):
         left = self.left.run(arg, scope)
@@ -111,7 +114,7 @@ class Ternary(RBase):
         self.optargs = optargs
 
     def do_run(self, left, middle, right, arg, scope):
-        raise NotImplemented()
+        raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
 
     def run(self, arg, scope):
         left = self.left.run(arg, scope)
@@ -126,7 +129,7 @@ class ByFuncBase(RBase):
         self.optargs = optargs
 
     def do_run(self, left, map_fn, arg, scope):
-        pass
+        raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
 
     def run(self, arg, scope):
         left = self.left.run(arg, scope)
@@ -152,13 +155,16 @@ class MakeArray(RBase):
 # #################
 
 
+class Uuid(RBase):
+    def run(self, arg, scope):
+        return uuid.uuid4()
+
 class RDb(MonExp):
     def do_run(self, db_name, arg, scope):
         return arg.get_db(db_name)
 
     def get_db_name(self):
         return self.left.run(None, Scope({}))
-
 
 class TypeOf(MonExp):
     def do_run(self, val, arg, scope):
@@ -177,7 +183,6 @@ class TypeOf(MonExp):
                 return type_map[val_type]
             elif util.is_iterable(val):
                 return 'ARRAY'
-
         raise TypeError
 
 
@@ -218,7 +223,6 @@ class Desc(MonExp):
 
 class Json(MonExp):
     def do_run(self, json_str, arg, scope):
-        import json
         return json.loads(json_str)
 
 class RTable(BinExp):
@@ -643,9 +647,6 @@ class Info(RBase):
 
 
 class Http(RBase):
-    pass
-
-class Uuid(RBase):
     pass
 
 class Distinct(RBase):
