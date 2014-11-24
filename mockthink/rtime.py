@@ -8,21 +8,6 @@ def time_of_day_seconds(dt):
     minutes = (dt.hour * 60) + dt.minute
     return (minutes * 60) + dt.second
 
-def year_of_time(dt):
-    return dt.year
-
-def month_of_time(dt):
-    return dt.month
-
-def day_of_time(dt):
-    return dt.day
-
-def hours_of_time(dt):
-    return dt.hour
-
-def weekday_of_time(dt):
-    return dt.isoweekday()
-
 def day_of_year(dt):
     raise NotImplementedError
 

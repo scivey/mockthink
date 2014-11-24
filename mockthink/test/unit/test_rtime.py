@@ -6,26 +6,6 @@ import rethinkdb
 from ... import rtime
 
 class TestRTime(unittest.TestCase):
-    def test_year_of_time(self):
-        dt = mock.Mock()
-        dt.year = 'YEAR'
-        self.assertEqual('YEAR', rtime.year_of_time(dt))
-
-    def test_hours_of_time(self):
-        dt = mock.Mock()
-        dt.hour = 'HOUR'
-        self.assertEqual('HOUR', rtime.hours_of_time(dt))
-
-    def test_day_of_time(self):
-        dt = mock.Mock()
-        dt.day = 'DAY'
-        self.assertEqual('DAY', rtime.day_of_time(dt))
-
-    def test_weekday_of_time(self):
-        dt = mock.Mock()
-        dt.isoweekday.return_value = 'ISO-WEEKDAY'
-        self.assertEqual('ISO-WEEKDAY', rtime.weekday_of_time(dt))
-
     def test_to_date(self):
         timezone = rethinkdb.make_timezone('00:00')
         dt = datetime.datetime(2014, 6, 3, 12, 5, 36, tzinfo=timezone)
