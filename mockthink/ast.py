@@ -280,7 +280,6 @@ class GetAll(BinExp):
                 map_fn = index_func
             result = []
             left = list(left)
-            pprint({'foo': left})
             for elem in left:
                 if map_fn(elem) in right:
                     result.append(elem)

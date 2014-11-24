@@ -226,8 +226,8 @@ class MockThink(object):
         return result
 
     def pprint_query_ast(self, query):
-        foo = "%s" % query
-        print foo
+        query = "%s" % query
+        print query
 
     def reset(self):
         self.data = objects_from_pods(self.initial_data)

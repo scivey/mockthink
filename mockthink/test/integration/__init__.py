@@ -84,6 +84,44 @@ class TestThings(MockTest):
 
         self.assertEqUnordered(expected, list(query.run(conn)))
 
+    def test_index_getall_map_orderby(self, conn):
+        r.db('x').table('people').index_create(
+            'name_and_id',
+            lambda doc: doc['name'] + doc['id']
+        ).run(conn)
+
+        r.db('x').table('people').index_wait().run(conn)
+
+        query = r.db('x').table('people').get_all(
+            'joejoe-id', 'timtim-id', index='name_and_id'
+        ).map(
+            lambda doc: doc.merge({
+                'also_name': doc['name'],
+                'age_plus_10': doc['age'] + 10,
+                'age_times_2': doc['age'] * 2
+            })
+        ).order_by('name')
+
+        expected = [
+            {
+                'id': 'joe-id',
+                'name': 'joe',
+                'also_name': 'joe',
+                'age': 26,
+                'age_plus_10': 36,
+                'age_times_2': 52
+            },
+            {
+                'id': 'tim-id',
+                'name': 'tim',
+                'also_name': 'tim',
+                'age': 53,
+                'age_plus_10': 63,
+                'age_times_2': 106
+            }
+        ]
+        self.assertEqual(expected, list(query.run(conn)))
+
     def test_multi_join(self, conn):
         query = r.db('x').table('employees').eq_join(
             'person', r.db('x').table('people')
