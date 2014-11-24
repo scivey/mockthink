@@ -7,13 +7,6 @@ from pprint import pprint
 from . import util, joins, rtime
 from .scope import Scope
 
-
-def map_with_scope(map_fn, scope, to_map):
-    return map(lambda elem: map_fn(elem, scope), to_map)
-
-def filter_with_scope(filter_fn, scope, to_filter):
-    return filter(lambda elem: filter_fn(elem, scope), to_filter)
-
 class AttrHaving(object):
     def __init__(self, attrs):
         for k, v in attrs.iteritems():

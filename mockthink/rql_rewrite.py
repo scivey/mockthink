@@ -3,11 +3,6 @@ import rethinkdb.ast as r_ast
 from . import ast as mt_ast
 from . import util
 
-class UnexpectedTermSequence(Exception):
-    def __init__(self, msg=''):
-        print msg
-        self.msg = msg
-
 RQL_TYPE_HANDLERS = {}
 
 def type_dispatch(rql_node):
