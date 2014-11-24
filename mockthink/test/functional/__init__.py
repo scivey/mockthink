@@ -2104,7 +2104,7 @@ def run_tests_with_mockthink(grep):
     run_tests(think.get_conn(), grep)
 
 def run_tests_with_rethink(grep):
-    conn = r.connect('localhost', 28015)
+    conn = r.connect('localhost', 30000)
     run_tests(conn, grep)
 
 if __name__ == '__main__':

@@ -1,0 +1,6 @@
+rethink:
+    image: dockerfile/rethinkdb
+    command: rethinkdb --bind all
+    ports:
+        - "8085:8080"
+        - "30000:28015"
