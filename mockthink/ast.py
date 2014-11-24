@@ -4,7 +4,7 @@ import uuid
 import json
 from pprint import pprint
 
-from . import util, joins
+from . import util, joins, rtime
 from .scope import Scope
 
 
@@ -717,7 +717,18 @@ class StrSplitOnLimit(Ternary):
 
 
 
+def operators_for_bounds(left_bound, right_bound):
+    if left_bound == 'closed':
+        left_oper = operator.ge
+    else:
+        left_oper = operator.gt
 
+    if right_bound == 'closed':
+        right_oper = operator.le
+    else:
+        right_oper = operator.lt
+
+    return left_oper, right_oper
 
 
 
@@ -739,22 +750,12 @@ class Between(Ternary):
                 arg
             )
 
-        tests = {}
-        pprint(self.optargs)
-        pprint(options)
-        if options['left_bound'] == 'closed':
-            tests['left'] = operator.ge
-        else:
-            tests['left'] = operator.gt
-
-        if options['right_bound'] == 'closed':
-            tests['right'] = operator.le
-        else:
-            tests['right'] = operator.lt
-
+        left_test, right_test = operators_for_bounds(
+            options['left_bound'], options['right_bound']
+        )
         for document in table:
             doc_val = map_fn(document)
-            if tests['left'](doc_val, lower_key) and tests['right'](doc_val, upper_key):
+            if left_test(doc_val, lower_key) and right_test(doc_val, upper_key):
                 yield document
 
 class InsertAt(Ternary):
@@ -802,6 +803,78 @@ class InnerJoin(InnerOuterJoinBase):
 class OuterJoin(InnerOuterJoinBase):
     def do_run(self, left, right, pred, arg, scope):
         return joins.do_outer_join(pred, left, right)
+
+
+
+
+
+
+
+
+
+
+# ############
+#   Time
+# ############
+
+class Year(MonExp):
+    def do_run(self, dtime, arg, scope):
+        return dtime.year
+
+class Month(MonExp):
+    def do_run(self, dtime, arg, scope):
+        return dtime.month
+
+class Day(MonExp):
+    def do_run(self, dtime, arg, scope):
+        return dtime.day
+
+class Hours(MonExp):
+    def do_run(self, dtime, arg, scope):
+        return dtime.hour
+
+class Minutes(MonExp):
+    def do_run(self, dtime, arg, scope):
+        return dtime.minute
+
+class Seconds(MonExp):
+    def do_run(self, dtime, arg, scope):
+        return dtime.second
+
+class Date(MonExp):
+    def do_run(self, dtime, arg, scope):
+        return rtime.to_date(dtime)
+
+class TimeOfDay(MonExp):
+    def do_run(self, dtime, arg, scope):
+        return rtime.time_of_day_seconds(dtime)
+
+class DayOfWeek(MonExp):
+    def do_run(self, dtime, arg, scope):
+        return dtime.isoweekday()
+
+class Now(RBase):
+    def __init__(self, optsargs={}):
+        self.optargs = optargs
+
+    def run(self, db, scope):
+        return db.get_now_time()
+
+class Time(MonExp):
+    def do_run(self, parts, arg, scope):
+        return rtime.make_time(*parts)
+
+class During(Ternary):
+    def do_run(self, to_test, left, right, arg, scope):
+        defaults = {
+            'left_bound': 'closed',
+            'right_bound': 'open'
+        }
+        options = util.extend(defaults, self.optargs)
+        left_test, right_test = operators_for_bounds(
+            options['left_bound'], options['right_bound']
+        )
+        return (left_test(to_test, left) and right_test(to_test, right))
 
 
 class Contains(RBase):

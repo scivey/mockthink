@@ -1,10 +1,10 @@
-from . import util
-from . import ast
-from .rql_rewrite import rewrite_query
-from .scope import Scope
 import rethinkdb
 import datetime
 import contextlib
+
+from . import util, ast, rtime
+from .rql_rewrite import rewrite_query
+from .scope import Scope
 
 def replace_array_elems_by_id(existing, replace_with):
     elem_index_by_id = {}
@@ -199,6 +199,8 @@ class MockDb(object):
     def get_index_func_in_table_in_db(self, db_name, table_name, index_name):
         return self.get_db(db_name).get_index_func_in_table(table_name, index_name)
 
+    def get_now_time(self):
+        return self.mockthink.get_now_time()
 
 def objects_from_pods(data):
     dbs_by_name = {}
@@ -229,15 +231,27 @@ class MockThink(object):
 
     def _modify_initial_data(self, new_data):
         self.initial_data = new_data
-        self.data = objects_from_pods(new_data)
-        self.data.mockthink = self
+        self.reset()
 
     def run_query(self, query):
+        temp_now_time = False
+
+        # RethinkDB only evaluates `r.now()` once per query,
+        # so it should have the same result each time within that query.
+        # But we don't do anything if now_time has already been set.
+
+        if not hasattr(self, 'now_time'):
+            temp_now_time = True
+            self.now_time = self.get_now_time()
+
         result = query.run(self.data, Scope({}))
         if isinstance(result, MockDb):
             self.data = result
         elif isinstance(result, MockTableData):
             result = result.get_rows()
+
+        if temp_now_time:
+            delattr(self, 'now_time')
         return result
 
     def pprint_query_ast(self, query):
@@ -246,10 +260,20 @@ class MockThink(object):
 
     def reset(self):
         self.data = objects_from_pods(self.initial_data)
+        self.data.mockthink = self
 
     def get_conn(self):
         conn = MockThinkConn(self)
         return conn
+
+    def set_now_time(self, dtime):
+        self.now_time = dtime
+
+    def get_now_time(self):
+        if hasattr(self, 'now_time'):
+            return self.now_time
+        else:
+            return rtime.now()
 
     @contextlib.contextmanager
     def connect(self):

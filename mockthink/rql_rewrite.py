@@ -105,6 +105,11 @@ def binop_splat(Mt_Constructor, node):
 #   term in the AST is really the first term in the query.
 #
 
+#   0-ary reql terms which don't need any special handling
+NORMAL_ZEROPS = {
+    r_ast.Now: mt_ast.Now
+}
+
 
 #   1-ary reql terms which don't need any special handling
 NORMAL_MONOPS = {
@@ -122,7 +127,13 @@ NORMAL_MONOPS = {
     r_ast.Json: mt_ast.Json,
     r_ast.TypeOf: mt_ast.TypeOf,
     r_ast.IndexList: mt_ast.IndexList,
-    r_ast.Sync: mt_ast.Sync
+    r_ast.Sync: mt_ast.Sync,
+    r_ast.Year: mt_ast.Year,
+    r_ast.Month: mt_ast.Month,
+    r_ast.Day: mt_ast.Day,
+    r_ast.Hours: mt_ast.Hours,
+    r_ast.Minutes: mt_ast.Minutes,
+    r_ast.Seconds: mt_ast.Seconds
 }
 
 #   2-ary reql terms which don't need any special handling
@@ -209,7 +220,8 @@ NORMAL_TERNOPS = {
     r_ast.ChangeAt: mt_ast.ChangeAt,
     r_ast.Branch: mt_ast.Branch,
     r_ast.IndexRename: mt_ast.IndexRename,
-    r_ast.Between: mt_ast.Between
+    r_ast.Between: mt_ast.Between,
+    r_ast.During: mt_ast.During
 }
 
 #   We can determine a lot about these functions' behavior based on arg count.
@@ -239,6 +251,9 @@ OPS_BY_ARITY = {
         1: mt_ast.RError1
     }
 }
+
+for r_type, mt_type in NORMAL_ZEROPS.iteritems():
+    RQL_TYPE_HANDLERS[r_type] = handle_generic_zerop(mt_type)
 
 for r_type, mt_type in NORMAL_MONOPS.iteritems():
     RQL_TYPE_HANDLERS[r_type] = handle_generic_monop(mt_type)
@@ -321,6 +336,10 @@ def handle_funcall(node):
     rest = mt_ast.MakeArray([type_dispatch(elem) for elem in rest])
     return mt_ast.Do(rest, func)
 
+@handles_type(r_ast.Time)
+def handle_time(node):
+    arg = makearray_of_datums(node.args)
+    return mt_ast.Time(arg)
 
 
 #   main exported function

@@ -6,7 +6,7 @@ from rethinkdb import RqlRuntimeError
 from mockthink.db import MockThink, MockThinkConn
 from mockthink.test.common import make_test_registry, AssertionMixin
 from mockthink.test.common import as_db_and_table
-from mockthink import util
+from mockthink import util, rtime
 
 TESTS = {}
 register_test = make_test_registry(TESTS)
@@ -1915,6 +1915,164 @@ class TestBetween(MockTest):
         ).run(conn)
         result = list(result)
         self.assertEqUnordered(expected, result)
+
+
+class TestTime(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'joe', 'last_updated': rtime.make_time(2014, 6, 3, 12, 10, 32)},
+            {'id': 'sam', 'last_updated': rtime.make_time(2014, 8, 25, 17, 3, 54)}
+        ]
+        return as_db_and_table('d', 'people', data)
+
+    def test_year(self, conn):
+        expected = [2014, 2014]
+        result = r.db('d').table('people').map(
+            lambda doc: doc['last_updated'].year()
+        ).run(conn)
+        self.assertEqual(expected, list(result))
+
+    def test_month(self, conn):
+        expected = set([6, 8])
+        result = r.db('d').table('people').map(
+            lambda doc: doc['last_updated'].month()
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
+    def test_day(self, conn):
+        expected = set([3, 25])
+        result = r.db('d').table('people').map(
+            lambda doc: doc['last_updated'].day()
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
+    def test_hours(self, conn):
+        expected = set([12, 17])
+        result = r.db('d').table('people').map(
+            lambda doc: doc['last_updated'].hours()
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
+    def test_minutes(self, conn):
+        expected = set([10, 3])
+        result = r.db('d').table('people').map(
+            lambda doc: doc['last_updated'].minutes()
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
+    def test_seconds(self, conn):
+        expected = set([32, 54])
+        result = r.db('d').table('people').map(
+            lambda doc: doc['last_updated'].seconds()
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
+
+class TestDuring(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'joe', 'last_updated': rtime.make_time(2014, 6, 3)},
+            {'id': 'sam', 'last_updated': rtime.make_time(2014, 8, 25)}
+        ]
+        return as_db_and_table('d', 'people', data)
+
+    def test_during_1(self, conn):
+        expected = [
+            {'id': 'joe', 'is_during': False},
+            {'id': 'sam', 'is_during': True}
+        ]
+        result = r.db('d').table('people').map(
+            lambda doc: {
+                'id': doc['id'],
+                'is_during': doc['last_updated'].during(r.time(2014, 7, 10), r.time(2014, 12, 1))
+            }
+        ).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_during_2(self, conn):
+        expected = [
+            {'id': 'joe', 'is_during': True},
+            {'id': 'sam', 'is_during': False}
+        ]
+        result = r.db('d').table('people').map(
+            lambda doc: {
+                'id': doc['id'],
+                'is_during': doc['last_updated'].during(
+                    r.time(2014, 5, 10),
+                    r.time(2014, 7, 1)
+                )
+            }
+        ).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_during_3(self, conn):
+        expected = [
+            {'id': 'joe', 'is_during': True},
+            {'id': 'sam', 'is_during': False}
+        ]
+        result = r.db('d').table('people').map(
+            lambda doc: {
+                'id': doc['id'],
+                'is_during': doc['last_updated'].during(
+                    r.time(2014, 6, 3),
+                    r.time(2014, 8, 25)
+                )
+            }
+        ).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_during_closed_right(self, conn):
+        expected = [
+            {'id': 'joe', 'is_during': True},
+            {'id': 'sam', 'is_during': True}
+        ]
+        result = r.db('d').table('people').map(
+            lambda doc: {
+                'id': doc['id'],
+                'is_during': doc['last_updated'].during(
+                    r.time(2014, 6, 3),
+                    r.time(2014, 8, 25),
+                    right_bound='closed'
+                )
+            }
+        ).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_during_open_left(self, conn):
+        expected = [
+            {'id': 'joe', 'is_during': False},
+            {'id': 'sam', 'is_during': False}
+        ]
+        result = r.db('d').table('people').map(
+            lambda doc: {
+                'id': doc['id'],
+                'is_during': doc['last_updated'].during(
+                    r.time(2014, 6, 3),
+                    r.time(2014, 8, 25),
+                    left_bound='open'
+                )
+            }
+        ).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_during_open_left_closed_right(self, conn):
+        expected = [
+            {'id': 'joe', 'is_during': False},
+            {'id': 'sam', 'is_during': True}
+        ]
+        result = r.db('d').table('people').map(
+            lambda doc: {
+                'id': doc['id'],
+                'is_during': doc['last_updated'].during(
+                    r.time(2014, 6, 3),
+                    r.time(2014, 8, 25),
+                    left_bound='open',
+                    right_bound='closed'
+                )
+            }
+        ).run(conn)
+        self.assertEqUnordered(expected, list(result))
+
 
 
 class TestError(MockTest):
