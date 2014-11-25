@@ -123,6 +123,7 @@ NORMAL_MONOPS = {
     r_ast.TypeOf: mt_ast.TypeOf,
     r_ast.IndexList: mt_ast.IndexList,
     r_ast.Sync: mt_ast.Sync,
+    r_ast.Ungroup: mt_ast.UnGroup,
     r_ast.Year: mt_ast.Year,
     r_ast.Month: mt_ast.Month,
     r_ast.Day: mt_ast.Day,
