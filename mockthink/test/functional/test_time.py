@@ -69,6 +69,16 @@ class TestDateTimeGetters(MockTest):
         ).run(conn)
         self.assertEqual(expected, set(list(result)))
 
+    def test_day_of_week(self, conn):
+        expected = set([
+            1,  # 2014 August 25 -> Monday
+            2   # 2014 June 3 -> Tuesday
+        ])
+        result = r.db('d').table('people').map(
+            lambda doc: doc['last_updated'].day_of_week()
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
 
 class TestTime(MockTest):
     def get_data(self):
