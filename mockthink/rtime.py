@@ -1,5 +1,6 @@
 import rethinkdb
 import datetime
+import time
 
 def to_date(dt, timezone=None):
     return datetime.datetime(dt.year, dt.month, dt.day, tzinfo=dt.tzinfo)
@@ -24,6 +25,11 @@ def create_rql_timezone(timezone_string):
         return rethinkdb.make_timezone('00:00')
     else:
         raise NotImplementedError
+
+def epoch_time(dt):
+    #   there's definitely a better way to do this.
+    jan1_1970 = datetime.datetime(1970, 1, 1, tzinfo=dt.tzinfo)
+    return int((dt - jan1_1970).total_seconds())
 
 def rql_compatible_time(year, month, day, *args):
     hour, minute, second = (0, 0, 0)

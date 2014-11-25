@@ -28,4 +28,3 @@ class TestRTime(unittest.TestCase):
         self.assertEqual(3, dt.month)
         self.assertEqual(2, dt.day)
         self.assertTrue(isinstance(dt.tzinfo, rethinkdb.ast.RqlTzinfo))
-

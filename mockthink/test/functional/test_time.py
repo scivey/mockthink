@@ -89,6 +89,25 @@ class TestDateTimeGetters(MockTest):
         ).run(conn)
         self.assertEqual(expected, set(list(result)))
 
+class TestMoreTime(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'joe', 'last_updated': datetime.datetime(2014, 6, 3, 0, 0, 1, tzinfo=r.make_timezone('00:00'))},
+            {'id': 'sam', 'last_updated': datetime.datetime(2014, 8, 25, 0, 0, 0, tzinfo=r.make_timezone('00:00'))}
+        ]
+        return as_db_and_table('d', 'people', data)
+
+    def test_epoch_time(self, conn):
+        results = r.db('d').table('people').map(
+            lambda d: d.merge({'as_epoch': d['last_updated'].to_epoch_time()})
+        ).run(conn)
+        results = list(results)
+        jan1 = datetime.datetime(1970, 1, 1, tzinfo=r.make_timezone('00:00'))
+        for doc in results:
+            expected = int((doc['last_updated'] - jan1).total_seconds())
+            self.assertEqual(expected, doc['as_epoch'])
+
+
 class TestTime(MockTest):
     def get_data(self):
         data = [

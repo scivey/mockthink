@@ -862,6 +862,10 @@ class Now(RBase):
     def run(self, db, scope):
         return db.get_now_time()
 
+class ToEpochTime(MonExp):
+    def do_run(self, dtime, arg, scope):
+        return rtime.epoch_time(dtime)
+
 class Time(MonExp):
     def do_run(self, parts, arg, scope):
         parts = list(parts)
