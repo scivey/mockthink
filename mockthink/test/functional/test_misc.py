@@ -231,8 +231,8 @@ class TestDo(MockTest):
         self.assertEqual('One', result)
 
     def test_do_simple_2(self, conn):
-        result = r.do(lambda d: d['name'],
-            r.db('generic').table('table').get('two')
+        result = r.do(r.db('generic').table('table').get('two'),
+            lambda d: d['name']
         ).run(conn)
         self.assertEqual('Two', result)
 
@@ -454,7 +454,7 @@ class TestSync(MockTest):
         ).run(conn)
         r.db('d').table('things').sync().run(conn)
         result = r.db('d').table('things').run(conn)
-        self.assertEqual(expected, list(result))
+        self.assertEqUnordered(expected, list(result))
 
 
 class TestError(MockTest):

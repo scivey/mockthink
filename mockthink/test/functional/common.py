@@ -1,3 +1,4 @@
+import rethinkdb as r
 from mockthink.db import MockThink, MockThinkConn
 from mockthink.test.common import make_test_registry, AssertionMixin
 from mockthink.test.common import as_db_and_table
@@ -25,7 +26,6 @@ class MockTest(Base, AssertionMixin):
                 }
             }
         }
-
 
 def run_tests(conn, grep):
     for test_name, test_fn in TESTS.iteritems():
