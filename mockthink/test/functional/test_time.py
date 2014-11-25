@@ -79,6 +79,15 @@ class TestDateTimeGetters(MockTest):
         ).run(conn)
         self.assertEqual(expected, set(list(result)))
 
+    def test_date(self, conn):
+        expected = set([
+            datetime.datetime(2014, 8, 25, tzinfo=r.make_timezone('00:00')),
+            datetime.datetime(2014, 6, 3, tzinfo=r.make_timezone('00:00'))
+        ])
+        result = r.db('d').table('people').map(
+            lambda doc: doc['last_updated'].date()
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
 
 class TestTime(MockTest):
     def get_data(self):
