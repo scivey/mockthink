@@ -59,6 +59,16 @@ class TestDateTimeGetters(MockTest):
         ).run(conn)
         self.assertEqual(expected, set(list(result)))
 
+    def test_time_of_day(self, conn):
+        expected = set([
+            ((((12 * 60) + 10) * 60) + 32),
+            ((((17 * 60) + 3) * 60) + 54)
+        ])
+        result = r.db('d').table('people').map(
+            lambda doc: doc['last_updated'].time_of_day()
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
 
 class TestTime(MockTest):
     def get_data(self):

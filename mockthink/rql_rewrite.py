@@ -129,7 +129,8 @@ NORMAL_MONOPS = {
     r_ast.Day: mt_ast.Day,
     r_ast.Hours: mt_ast.Hours,
     r_ast.Minutes: mt_ast.Minutes,
-    r_ast.Seconds: mt_ast.Seconds
+    r_ast.Seconds: mt_ast.Seconds,
+    r_ast.TimeOfDay: mt_ast.TimeOfDay
 }
 
 #   2-ary reql terms which don't need any special handling
