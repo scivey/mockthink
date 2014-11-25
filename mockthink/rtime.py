@@ -18,3 +18,23 @@ def make_time(year, month, day, hour=0, minute=0, second=0, timezone=None):
 def now():
     dtime = datetime.datetime.now()
     return dtime.replace(tzinfo=rethinkdb.make_timezone('00:00'))
+
+def create_rql_timezone(timezone_string):
+    if timezone_string == 'Z':
+        return rethinkdb.make_timezone('00:00')
+    else:
+        raise NotImplementedError
+
+def rql_compatible_time(year, month, day, *args):
+    hour, minute, second = (0, 0, 0)
+    arg_count = len(args)
+    if arg_count == 1:
+        timezone = args[0]
+    elif arg_count == 2:
+        hour, timezone = args
+    elif arg_count == 3:
+        hour, minute, timezone = args
+    elif arg_count == 4:
+        hour, minute, second, timezone = args
+    timezone = create_rql_timezone(timezone)
+    return datetime.datetime(year, month, day, hour, minute, second, tzinfo=timezone)

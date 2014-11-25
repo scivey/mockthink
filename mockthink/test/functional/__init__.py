@@ -1,8 +1,11 @@
 import argparse
 import sys
+import time
+import datetime
 from pprint import pprint
 import rethinkdb as r
-from rethinkdb import RqlRuntimeError
+from rethinkdb import RqlRuntimeError, RqlDriverError, RqlCompileError
+from rethinkdb.ast import RqlTzinfo
 from mockthink.db import MockThink, MockThinkConn
 from mockthink.test.common import make_test_registry, AssertionMixin
 from mockthink.test.common import as_db_and_table
@@ -1120,7 +1123,7 @@ class TestUnion(MockTest):
         result = r.db('x').table('things_1').union(
             r.db('x').table('things_2')
         ).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
 
 class TestIndexesOf(MockTest):
@@ -1917,7 +1920,7 @@ class TestBetween(MockTest):
         self.assertEqUnordered(expected, result)
 
 
-class TestTime(MockTest):
+class TestDateTimeGetters(MockTest):
     def get_data(self):
         data = [
             {'id': 'joe', 'last_updated': rtime.make_time(2014, 6, 3, 12, 10, 32)},
@@ -1967,6 +1970,91 @@ class TestTime(MockTest):
         ).run(conn)
         self.assertEqual(expected, set(list(result)))
 
+class TestTime(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'say_anything'},
+        ]
+        return as_db_and_table('unimportant', 'very', data)
+
+    def test_time_year_month_day_tz(self, conn):
+        r.db('unimportant').table('very').update(
+            lambda doc: doc.merge({'updated': r.time(2014, 6, 10, 'Z')})
+        ).run(conn)
+
+        result = r.db('unimportant').table('very').get('say_anything').run(conn)
+        update_time = result['updated']
+        self.assertEqual(2014, update_time.year)
+        self.assertEqual(6, update_time.month)
+        self.assertEqual(10, update_time.day)
+        assert(isinstance(update_time.tzinfo, RqlTzinfo))
+
+    # def test_time_year_month_day_hour_tz(self, conn):
+    #     r.db('unimportant').table('very').update({
+    #         'updated': r.time(2014, 6, 10, 15, 'Z')
+    #     }).run(conn)
+
+    #     result = r.db('unimportant').table('very').get('say_anything').run(conn)
+    #     pprint(result)
+    #     update_time = result['updated']
+    #     self.assertEqual(2014, update_time.year)
+    #     self.assertEqual(6, update_time.month)
+    #     self.assertEqual(10, update_time.day)
+    #     self.assertEqual(15, update_time.hour)
+    #     assert(isinstance(update_time.tzinfo, RqlTzinfo))
+
+    # def test_time_year_month_day_hour_minute_tz(self, conn):
+    #     r.db('unimportant').table('very').update(
+    #         lambda doc: doc.merge({'updated': r.time(2014, 6, 10, 15, 12, 'Z')})
+    #     ).run(conn)
+    #     print 'SLEEPING'
+    #     time.sleep(5)
+    #     print 'WAKING'
+    #     result = r.db('unimportant').table('very').get('say_anything').run(conn)
+    #     pprint(result)
+    #     update_time = result['updated']
+    #     self.assertEqual(2014, update_time.year)
+    #     self.assertEqual(6, update_time.month)
+    #     self.assertEqual(10, update_time.day)
+    #     self.assertEqual(15, update_time.hour)
+    #     self.assertEqual(30, update_time.minute)
+    #     assert(isinstance(update_time.tzinfo, RqlTzinfo))
+
+    def test_time_year_month_day_hour_minute_second_tz(self, conn):
+        r.db('unimportant').table('very').update({
+            'updated': r.time(2014, 6, 10, 15, 30, 45, 'Z')
+        }).run(conn)
+
+        result = r.db('unimportant').table('very').get('say_anything').run(conn)
+        update_time = result['updated']
+        self.assertEqual(2014, update_time.year)
+        self.assertEqual(6, update_time.month)
+        self.assertEqual(10, update_time.day)
+        self.assertEqual(15, update_time.hour)
+        self.assertEqual(30, update_time.minute)
+        self.assertEqual(45, update_time.second)
+        assert(isinstance(update_time.tzinfo, RqlTzinfo))
+
+    def test_error_with_less_than_4_args(self, conn):
+        try:
+            query = r.db('unimportant').table('very').update({
+                'update_time': r.time(2014, 3, 24)
+            }).run(conn)
+        except RqlCompileError as e:
+            err = e
+        assert('expected between 4 and 7' in err.message.lower())
+
+    def test_error_with_no_timezone(self, conn):
+        date = datetime.datetime(2014, 3, 24, 12)
+        try:
+            query = r.db('unimportant').table('very').update({
+                'update_time': date
+            }).run(conn)
+        except RqlDriverError as e:
+            err = e
+        assert('datetime' in err.message.lower())
+        assert('timezone' in err.message.lower())
+
 
 class TestDuring(MockTest):
     def get_data(self):
@@ -1984,7 +2072,7 @@ class TestDuring(MockTest):
         result = r.db('d').table('people').map(
             lambda doc: {
                 'id': doc['id'],
-                'is_during': doc['last_updated'].during(r.time(2014, 7, 10), r.time(2014, 12, 1))
+                'is_during': doc['last_updated'].during(r.time(2014, 7, 10, 'Z'), r.time(2014, 12, 1, 'Z'))
             }
         ).run(conn)
         self.assertEqUnordered(expected, list(result))
@@ -1998,8 +2086,8 @@ class TestDuring(MockTest):
             lambda doc: {
                 'id': doc['id'],
                 'is_during': doc['last_updated'].during(
-                    r.time(2014, 5, 10),
-                    r.time(2014, 7, 1)
+                    r.time(2014, 5, 10, 'Z'),
+                    r.time(2014, 7, 1, 'Z')
                 )
             }
         ).run(conn)
@@ -2014,8 +2102,8 @@ class TestDuring(MockTest):
             lambda doc: {
                 'id': doc['id'],
                 'is_during': doc['last_updated'].during(
-                    r.time(2014, 6, 3),
-                    r.time(2014, 8, 25)
+                    r.time(2014, 6, 3, 'Z'),
+                    r.time(2014, 8, 25, 'Z')
                 )
             }
         ).run(conn)
@@ -2030,8 +2118,8 @@ class TestDuring(MockTest):
             lambda doc: {
                 'id': doc['id'],
                 'is_during': doc['last_updated'].during(
-                    r.time(2014, 6, 3),
-                    r.time(2014, 8, 25),
+                    r.time(2014, 6, 3, 'Z'),
+                    r.time(2014, 8, 25, 'Z'),
                     right_bound='closed'
                 )
             }
@@ -2047,8 +2135,8 @@ class TestDuring(MockTest):
             lambda doc: {
                 'id': doc['id'],
                 'is_during': doc['last_updated'].during(
-                    r.time(2014, 6, 3),
-                    r.time(2014, 8, 25),
+                    r.time(2014, 6, 3, 'Z'),
+                    r.time(2014, 8, 25, 'Z'),
                     left_bound='open'
                 )
             }
@@ -2064,8 +2152,8 @@ class TestDuring(MockTest):
             lambda doc: {
                 'id': doc['id'],
                 'is_during': doc['last_updated'].during(
-                    r.time(2014, 6, 3),
-                    r.time(2014, 8, 25),
+                    r.time(2014, 6, 3, 'Z'),
+                    r.time(2014, 8, 25, 'Z'),
                     left_bound='open',
                     right_bound='closed'
                 )

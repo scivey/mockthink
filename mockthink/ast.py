@@ -1,3 +1,4 @@
+from rethinkdb import RqlRuntimeError, RqlDriverError, RqlCompileError
 import operator
 import random
 import uuid
@@ -58,6 +59,15 @@ class RBase(object):
             'compose': (lambda x,y: 'COMPOSED')
         })
         raise RqlRuntimeError(msg, term, [])
+
+    def raise_rql_compile_error(self, msg):
+        term = AttrHaving({
+            'args': (),
+            'optargs': {},
+            'compose': (lambda x,y: 'COMPOSED')
+        })
+        raise RqlCompileError(msg, term, [])
+
 
 class RDatum(RBase):
     def __init__(self, val, optargs={}):
@@ -854,7 +864,10 @@ class Now(RBase):
 
 class Time(MonExp):
     def do_run(self, parts, arg, scope):
-        return rtime.make_time(*parts)
+        parts = list(parts)
+        if len(parts) < 4:
+            self.raise_rql_compile_error("Expected between 4 and 7 arguments, got 3")
+        return rtime.rql_compatible_time(*parts)
 
 class During(Ternary):
     def do_run(self, to_test, left, right, arg, scope):
