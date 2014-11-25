@@ -53,7 +53,7 @@ class TestStrings(MockTest):
         result = r.db('library').table('texts').map(
             lambda doc: doc['text'].split(',')
         ).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_split_3(self, conn):
         expected = [
