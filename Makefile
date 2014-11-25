@@ -19,9 +19,3 @@ test-unit:
 	$(SET_PATH) && nosetests ./mockthink/test/unit
 
 test: test-unit test-integration test-functional
-
-test-errors:
-		$(RUN) ./mockthink/test/functional/test_errors.py --run mockthink --grep $(GREP)
-
-test-errors-rethink:
-	$(RUN) ./mockthink/test/functional/test_errors.py --run rethink --grep $(GREP)
