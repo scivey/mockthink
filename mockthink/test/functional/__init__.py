@@ -1,17 +1,12 @@
 import argparse
 import sys
-import time
-import datetime
-from pprint import pprint
-import rethinkdb as r
-from rethinkdb import RqlRuntimeError, RqlDriverError, RqlCompileError
-from rethinkdb.ast import RqlTzinfo
-from mockthink.db import MockThink, MockThinkConn
-from mockthink.test.common import make_test_registry, AssertionMixin
-from mockthink.test.common import as_db_and_table
-from mockthink import util, rtime
 
-from mockthink.test.functional import tests
+from mockthink.test.functional import test_array_manip, test_between, test_grouping
+from mockthink.test.functional import test_grouping, test_indexes, test_joins
+from mockthink.test.functional import test_math, test_merge, test_misc, test_order_by
+from mockthink.test.functional import test_pluck, test_strings, test_time, test_typeof_coerce
+from mockthink.test.functional import test_update_insert_delete, test_without
+
 from mockthink.test.functional.common import run_tests_with_rethink, run_tests_with_mockthink
 
 if __name__ == '__main__':
