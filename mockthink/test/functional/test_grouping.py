@@ -87,3 +87,36 @@ class TestUngroup(MockTest):
             result_group = filter(is_group(group), result)[0]
             expected_group = filter(is_group(group), expected)[0]
             self.assertEqUnordered(expected_group['reduction'], result_group['reduction'])
+
+    def test_ungroup_grouped_by_func(self, conn):
+        expected = [
+            {
+                'group': 'bro',
+                'reduction': [
+                    {'id': 'joe', 'type': 'bro'},
+                    {'id': 'sam', 'type': 'bro'}
+                ]
+            },
+            {
+                'group': 'hipster',
+                'reduction': [
+                    {'id': 'bill', 'type': 'hipster'},
+                    {'id': 'todd', 'type': 'hipster'}
+                ]
+            },
+            {
+                'group': 'unknown',
+                'reduction': [
+                    {'id': 'glenn', 'type': 'unknown'},
+                ]
+            }
+        ]
+        result = r.db('x').table('people').group(lambda d: d['type']).ungroup().run(conn)
+        result = list(result)
+        self.assertEqual(3, len(result))
+        self.assertEqual(set(['bro', 'hipster', 'unknown']), set([doc['group'] for doc in result]))
+        is_group = lambda group: lambda doc: doc['group'] == group
+        for group in ('bro', 'hipster', 'unknown'):
+            result_group = filter(is_group(group), result)[0]
+            expected_group = filter(is_group(group), expected)[0]
+            self.assertEqUnordered(expected_group['reduction'], result_group['reduction'])
