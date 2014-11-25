@@ -113,7 +113,7 @@ class TestIndexesOf(MockTest):
             {'id': 'one', 'letters': ['c', 'c']},
             {'id': 'two', 'letters': ['a', 'b', 'a', ['q', 'q'], 'b']},
             {'id': 'three', 'letters': ['b', 'a', 'b', 'a']},
-            {'id': 'three', 'letters': ['c', 'a', 'b', 'a', ['q', 'q']]}
+            {'id': 'four', 'letters': ['c', 'a', 'b', 'a', ['q', 'q']]}
         ]
         return as_db_and_table('scrumptious', 'cake', things)
 
@@ -127,7 +127,9 @@ class TestIndexesOf(MockTest):
         result = r.db('scrumptious').table('cake').map(
             lambda doc: doc['letters'].indexes_of('b')
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        result = list(result)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
 
     def test_indexes_of_array_val(self, conn):
         expected = [
