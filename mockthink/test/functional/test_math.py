@@ -49,6 +49,52 @@ class TestMath(MockTest):
         result = r.db('math_db').table('points').map(lambda t: t['x'] * t['y']).run(conn)
         self.assertEqUnordered(expected, list(result))
 
+class TestMath2(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'pt-1',
+                'x': 30,
+                'y': 3,
+                'z': 18
+            },
+            {
+                'id': 'pt-2',
+                'x': 24,
+                'y': 6,
+                'z': 10
+            }
+        ]
+        return as_db_and_table('math_db', 'points', data)
+
+    def test_div_method(self, conn):
+        expected = set([10, 4])
+        result = r.db('math_db').table('points').map(
+            lambda t: t['x'].div(t['y'])
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
+    def test_div_oper(self, conn):
+        expected = set([10, 4])
+        result = r.db('math_db').table('points').map(
+            lambda t: t['x'] / t['y']
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
+    def test_mod_method(self, conn):
+        expected = set([12, 4])
+        result = r.db('math_db').table('points').map(
+            lambda t: t['x'].mod(t['z'])
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
+    def test_mod_oper(self, conn):
+        expected = set([12, 4])
+        result = r.db('math_db').table('points').map(
+            lambda t: t['x'] % t['z']
+        ).run(conn)
+        self.assertEqual(expected, set(list(result)))
+
 
 class TestRandom(MockTest):
     def get_data(self):
