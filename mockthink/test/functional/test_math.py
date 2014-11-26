@@ -95,7 +95,6 @@ class TestMath2(MockTest):
         ).run(conn)
         self.assertEqual(expected, set(list(result)))
 
-
 class TestRandom(MockTest):
     def get_data(self):
         data = [
