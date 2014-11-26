@@ -199,6 +199,15 @@ def max_mapped(func, sequence):
     return current[1]
 
 @curry2
+def min_mapped(func, sequence):
+    current = (func(sequence[0]), sequence[0])
+    for elem in sequence[1:]:
+        val = func(elem)
+        if is_num(val) and val < current[0]:
+            current = (val, elem)
+    return current[1]
+
+@curry2
 def group_by_func(func, sequence):
     output = defaultdict(lambda: [])
     for elem in sequence:

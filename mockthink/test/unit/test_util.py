@@ -282,3 +282,27 @@ class TestUtil(unittest.TestCase):
         pprint({'RESULT': result})
         for index in range(0, len(expected)):
             self.assertEqual(expected[index], result[index])
+
+    def test_min_mapped(self):
+        sequence = [
+            {'val': 5},
+            {'val': 10},
+            {'val': 17},
+            {'val': 2},
+            {'val': 28},
+            {'val': 8}
+        ]
+        get_val = lambda doc: doc['val']
+        self.assertEqual({'val': 2}, util.min_mapped(get_val, sequence))
+
+    def test_max_mapped(self):
+        sequence = [
+            {'val': 5},
+            {'val': 10},
+            {'val': 17},
+            {'val': 2},
+            {'val': 28},
+            {'val': 8}
+        ]
+        get_val = lambda doc: doc['val']
+        self.assertEqual({'val': 28}, util.max_mapped(get_val, sequence))

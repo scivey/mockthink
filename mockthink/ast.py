@@ -494,11 +494,11 @@ class Min1(MonExp):
 
 class MinByField(BinExp):
     def do_run(self, sequence, field, arg, scope):
-        return util.safe_min(map(util.getter(field), sequence))
+        return util.min_mapped(util.getter(field), sequence)
 
 class MinByFunc(ByFuncBase):
     def do_run(self, sequence, map_fn, arg, scope):
-        return util.safe_min(map(map_fn, sequence))
+        return util.min_mapped(map_fn, sequence)
 
 class GroupByField(BinExp):
     def do_run(self, elems, field, arg, scope):
