@@ -182,27 +182,6 @@ class TestIsEmpty(MockTest):
         self.assertEqual(False, result)
 
 
-
-class TestMax(MockTest):
-    def get_data(self):
-        data = [
-            {'id': 'joe', 'age': 26, 'hobbies': ['sand', 'water', 'cats']},
-            {'id': 'bill', 'age': 35, 'hobbies': ['watermelon']},
-            {'id': 'todd', 'age': 52, 'hobbies': ['citrus']}
-        ]
-        return as_db_and_table('x', 'people', data)
-
-    def test_max_of_field(self, conn):
-        expected = {'id': 'todd', 'age': 52, 'hobbies': ['citrus']}
-        result = r.db('x').table('people').max('age').run(conn)
-        self.assertEqual(expected, result)
-
-    def test_max_of_func_return_val(self, conn):
-        expected = {'id': 'joe', 'age': 26, 'hobbies': ['sand', 'water', 'cats']}
-        result = r.db('x').table('people').max(lambda d: d['hobbies'].count()).run(conn)
-        self.assertEqual(expected, result)
-
-
 class TestDo(MockTest):
     def get_data(self):
         data = [
