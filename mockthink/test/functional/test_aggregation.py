@@ -41,7 +41,7 @@ class TestMax(MockTest):
         self.assertEqual(expected, result)
 
     def test_max_of_sequence_field(self, conn):
-        expected = [110]
+        expected = [{'val': 110}]
         result = r.db('x').table('people').filter({
             'id': 'todd'
         }).map(
@@ -49,7 +49,7 @@ class TestMax(MockTest):
         ).run(conn)
         self.assertEqual(expected, list(result))
 
-    def test_max_of_table_Func(self, conn):
+    def test_max_of_table_func(self, conn):
         expected = {'id': 'bill', 'age': 52, 'hobbies': ['watermelon']}
         result = r.db('x').table('people').max(
             lambda d: d['age']
@@ -57,7 +57,7 @@ class TestMax(MockTest):
         self.assertEqual(expected, result)
 
     def test_max_of_sequence_func(self, conn):
-        expected = [110]
+        expected = [{'val': 110}]
         result = r.db('x').table('people').filter({
             'id': 'todd'
         }).map(
@@ -110,7 +110,7 @@ class TestMin(MockTest):
         self.assertEqual(expected, result)
 
     def test_min_of_sequence_field(self, conn):
-        expected = [17]
+        expected = [{'val': 17}]
         result = r.db('x').table('people').filter({
             'id': 'todd'
         }).map(
@@ -126,7 +126,7 @@ class TestMin(MockTest):
         self.assertEqual(expected, result)
 
     def test_min_of_sequence_func(self, conn):
-        expected = [17]
+        expected = [{'val': 17}]
         result = r.db('x').table('people').filter({
             'id': 'todd'
         }).map(
@@ -310,7 +310,7 @@ class TestCount(MockTest):
         self.assertEqual(expected, result)
 
     def test_sequence_count(self, conn):
-        expected = [4]
+        expected = [5]
         result = r.db('x').table('people').filter(
             {'id': 'todd'}
         ).map(

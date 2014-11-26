@@ -3,6 +3,10 @@ import rethinkdb.ast as r_ast
 from . import ast as mt_ast
 from . import util
 
+def rewrite_query(query):
+    """Rewrite a ReQL query from `r_ast` types into corresponding `mt_ast` terms."""
+    return type_dispatch(query)
+
 RQL_TYPE_HANDLERS = {}
 
 def type_dispatch(rql_node):
@@ -54,6 +58,26 @@ def handle_generic_binop_poly_2(mt_type_map, node):
 def handle_generic_ternop(Mt_Constructor, node):
     assert(len(node.args) == 3)
     return Mt_Constructor(*[type_dispatch(arg) for arg in node.args], optargs=process_optargs(node))
+
+@util.curry2
+def handle_generic_aggregation(mt_type_map, node):
+    optargs = process_optargs(node)
+    if len(node.args) == 1:
+        Mt_Constructor = mt_type_map[1]
+        return Mt_Constructor(
+            type_dispatch(node.args[0]),
+            optargs=optargs
+        )
+    else:
+        for r_type, m_type in mt_type_map[2].iteritems():
+            if isinstance(node.args[1], r_type):
+                Mt_Constructor = m_type
+                break
+    return Mt_Constructor(
+        type_dispatch(node.args[0]),
+        type_dispatch(node.args[1]),
+        optargs=optargs
+    )
 
 GENERIC_BY_ARITY = {
     0: handle_generic_zerop,
@@ -112,7 +136,6 @@ NORMAL_MONOPS = {
     r_ast.DB: mt_ast.RDb,
     r_ast.Delete: mt_ast.Delete,
     r_ast.IsEmpty: mt_ast.IsEmpty,
-    r_ast.Count: mt_ast.Count,
     r_ast.Keys: mt_ast.Keys,
     r_ast.Downcase: mt_ast.StrDowncase,
     r_ast.Upcase: mt_ast.StrUpcase,
@@ -177,10 +200,6 @@ BINOPS_BY_ARG_2_TYPE = {
     r_ast.Group: {
         r_ast.Datum: mt_ast.GroupByField,
         r_ast.Func: mt_ast.GroupByFunc
-    },
-    r_ast.Max: {
-        r_ast.Datum: mt_ast.MaxByField,
-        r_ast.Func: mt_ast.MaxByFunc
     },
     r_ast.Filter: {
         r_ast.MakeObj: mt_ast.FilterWithObj,
@@ -252,6 +271,37 @@ OPS_BY_ARITY = {
     }
 }
 
+NORMAL_AGGREGATIONS = {
+    r_ast.Min: {
+        1: mt_ast.Min1,
+        2: {
+            r_ast.Datum: mt_ast.MinByField,
+            r_ast.Func: mt_ast.MinByFunc
+        }
+    },
+    r_ast.Max: {
+        1: mt_ast.Max1,
+        2: {
+            r_ast.Datum: mt_ast.MaxByField,
+            r_ast.Func: mt_ast.MaxByFunc
+        }
+    },
+    r_ast.Avg: {
+        1: mt_ast.Avg1,
+        2: {
+            r_ast.Datum: mt_ast.AvgByField,
+            r_ast.Func: mt_ast.AvgByFunc
+        }
+    },
+    r_ast.Sum: {
+        1: mt_ast.Sum1,
+        2: {
+            r_ast.Datum: mt_ast.SumByField,
+            r_ast.Func: mt_ast.SumByFunc
+        }
+    }
+}
+
 for r_type, mt_type in NORMAL_ZEROPS.iteritems():
     RQL_TYPE_HANDLERS[r_type] = handle_generic_zerop(mt_type)
 
@@ -272,6 +322,9 @@ for r_type, mt_type in NORMAL_TERNOPS.iteritems():
 
 for r_type, mt_type in OPS_BY_ARITY.iteritems():
     RQL_TYPE_HANDLERS[r_type] = handle_n_ary(mt_type)
+
+for r_type, type_map in NORMAL_AGGREGATIONS.iteritems():
+    RQL_TYPE_HANDLERS[r_type] = handle_generic_aggregation(type_map)
 
 @handles_type(r_ast.Datum)
 def handle_datum(node):
@@ -303,6 +356,7 @@ def handle_func(node):
 
 @handles_type(r_ast.OrderBy)
 def handle_order_by(node):
+    optargs = process_optargs(node)
     left = type_dispatch(node.args[0])
     right = []
     for elem in node.args[1:]:
@@ -313,16 +367,21 @@ def handle_order_by(node):
             assert(elem.__class__ in accepted)
             right.append(type_dispatch(elem))
     right = mt_ast.MakeArray(right)
-    return mt_ast.OrderBy(left, right)
+    return mt_ast.OrderBy(left, right, optargs=optargs)
 
 @handles_type(r_ast.IndexesOf)
 def handle_indexes_of(node):
+    optargs = process_optargs(node)
     left = type_dispatch(node.args[0])
     right = type_dispatch(node.args[1])
     if isinstance(node.args[1], r_ast.Func):
-        return mt_ast.IndexesOfFunc(left, right)
+        return mt_ast.IndexesOfFunc(
+            left, right, optargs=optargs
+        )
     else:
-        return mt_ast.IndexesOfValue(left, right)
+        return mt_ast.IndexesOfValue(
+            left, right, optargs=optargs
+        )
 
 @handles_type(r_ast.FunCall)
 def handle_funcall(node):
@@ -341,12 +400,39 @@ def handle_time(node):
     arg = makearray_of_datums(node.args)
     return mt_ast.Time(arg)
 
+@util.curry2
+def is_instance_of_any(type_tuple, to_test):
+    result = False
+    for one_type in type_tuple:
+        if isinstance(to_test, one_type):
+            result = True
+            break
+    return result
 
-#   main exported function
-def rewrite_query(query):
-    """Rewrite a ReQL query from `r_ast` types into corresponding `mt_ast` terms."""
-    return type_dispatch(query)
-
+@handles_type(r_ast.Count)
+def handle_count(node):
+    optargs = process_optargs(node)
+    left = type_dispatch(node.args[0])
+    if len(node.args) == 1:
+        return mt_ast.Count1(
+            left,
+            optargs=optargs
+        )
+    else:
+        right = type_dispatch(node.args[1])
+        if is_instance_of_any((r_ast.MakeObj, r_ast.Datum, r_ast.MakeArray), node.args[1]):
+            return mt_ast.CountByEq(
+                left,
+                right,
+                optargs=optargs
+            )
+        elif isinstance(node.args[1], r_ast.Func):
+            return mt_ast.CountByFunc(
+                left,
+                right,
+                optargs=optargs
+            )
+    raise TypeError
 
 
 

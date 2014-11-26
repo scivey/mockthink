@@ -242,10 +242,6 @@ class Not(MonExp):
     def do_run(self, left, arg, scope):
         return (not left)
 
-class Count(MonExp):
-    def do_run(self, left, arg, scope):
-        return len(left)
-
 class Keys(MonExp):
     def do_run(self, left, arg, scope):
         return left.keys()
@@ -444,6 +440,10 @@ class Nth(BinExp):
     def do_run(self, sequence, n, arg, scope):
         return util.nth(n)(sequence)
 
+class Sum1(MonExp):
+    def do_run(self, sequence, arg, scope):
+        return util.safe_sum(sequence)
+
 class SumByField(BinExp):
     def do_run(self, sequence, field, arg, scope):
         return util.safe_sum([util.getter(field)(elem) for elem in sequence])
@@ -451,6 +451,10 @@ class SumByField(BinExp):
 class SumByFunc(ByFuncBase):
     def do_run(self, sequence, map_fn, arg, scope):
         return util.safe_sum(map(map_fn, sequence))
+
+class Max1(MonExp):
+    def do_run(self, sequence, arg, scope):
+        return max(list(sequence))
 
 class MaxByField(BinExp):
     def do_run(self, sequence, field, arg, scope):
@@ -460,6 +464,10 @@ class MaxByFunc(ByFuncBase):
     def do_run(self, sequence, map_fn, arg, scope):
         return util.max_mapped(map_fn, sequence)
 
+class Avg1(MonExp):
+    def do_run(self, sequence, arg, scope):
+        return util.safe_average(list(sequence))
+
 class AvgByField(BinExp):
     def do_run(self, sequence, field, arg, scope):
         return util.safe_average(map(util.getter(field), sequence))
@@ -467,6 +475,22 @@ class AvgByField(BinExp):
 class AvgByFunc(ByFuncBase):
     def do_run(self, sequence, map_fn, arg, scope):
         return util.safe_average(map(map_fn, sequence))
+
+class Count1(MonExp):
+    def do_run(self, sequence, arg, scope):
+        return len(list(sequence))
+
+class CountByEq(BinExp):
+    def do_run(self, sequence, to_match, arg, scope):
+        return len([elem for elem in sequence if elem == to_match])
+
+class CountByFunc(ByFuncBase):
+    def do_run(self, sequence, filter_fn, arg, scope):
+        return len(filter(filter_fn, list(sequence)))
+
+class Min1(MonExp):
+    def do_run(self, sequence, arg, scope):
+        return min(list(sequence))
 
 class MinByField(BinExp):
     def do_run(self, sequence, field, arg, scope):
