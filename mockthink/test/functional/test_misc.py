@@ -73,6 +73,7 @@ class TestFiltering(MockTest):
         result = r.db('x').table('people').filter({'age': 35}).run(conn)
         self.assertEqual(expected, list(result))
 
+
 class TestMapping(MockTest):
     def get_data(self):
         data = [
@@ -87,8 +88,20 @@ class TestMapping(MockTest):
         expected = [
             True, False, True, False
         ]
-        result = r.db('x').table('people').map(lambda p: p['age'] > 20).run(conn)
+        result = r.db('x').table('people').map(
+            lambda p: p['age'] > 20
+        ).run(conn)
         self.assertEqUnordered(expected, list(result))
+
+    def test_map_missing_field_no_default(self, conn):
+        err = None
+        try:
+            result = r.db('x').table('people').map(
+                lambda p: p['missing'] > 15
+            ).run(conn)
+        except RqlRuntimeError as e:
+            err = e
+        assert(isinstance(err, RqlRuntimeError))
 
 class TestBracket(MockTest):
     def get_data(self):

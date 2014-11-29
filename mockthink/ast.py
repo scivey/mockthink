@@ -397,7 +397,12 @@ class FilterWithObj(BinExp):
 
 class MapWithRFunc(ByFuncBase):
     def do_run(self, sequence, map_fn, arg, scope):
-        return map(map_fn, sequence)
+        try:
+            result = map(map_fn, sequence)
+        except KeyError as k:
+            message = "Missing field '%s'" % k.message
+            self.raise_rql_runtime_error(message)
+        return result
 
 class WithoutPoly(BinExp):
     def do_run(self, left, attrs, arg, scope):

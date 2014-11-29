@@ -193,7 +193,19 @@ class TestDelete(MockTest):
         result = r.db('ephemeral').table('people').run(conn)
         self.assertEqUnordered(expected, list(result))
 
-    def test_delete_n(self, conn):
+    def test_delete_one_from_sequence(self, conn):
+        expected = [
+            {'id': 'sam-id', 'name': 'sam'},
+            {'id': 'tom-id', 'name': 'tom'},
+            {'id': 'sally-id', 'name': 'sally'}
+        ]
+        r.db('ephemeral').table('people').filter({
+            'id': 'joe-id'
+        }).delete().run(conn)
+        result = r.db('ephemeral').table('people').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_delete_get_all(self, conn):
         expected = [
             {'id': 'sally-id', 'name': 'sally'},
             {'id': 'joe-id', 'name': 'joe'}
