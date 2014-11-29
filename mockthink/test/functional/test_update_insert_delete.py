@@ -405,7 +405,8 @@ class TestLiteral(MockTest):
             'id': 'one',
             'points': {
                 'pt1': {
-                    'z': 'z-1'
+                    'x': 'x-1',
+                    'y': 'y-1'
                 }
             }
         }
