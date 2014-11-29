@@ -81,6 +81,37 @@ class TestUpdating(MockTest):
         result = r.db('things').table('muppets').run(conn)
         self.assertEqUnordered(expected, list(result))
 
+    def test_insert_one_no_id(self, conn):
+        r.db('things').table('muppets').insert({
+            'name': 'joe'
+        }).run(conn)
+        result = r.db('things').table('muppets').filter({
+            'name': 'joe'
+        }).run(conn)
+        result = list(result)
+        self.assertEqual(1, len(result))
+        joe = result[0]
+        assert(isinstance(joe['id'], unicode))
+
+    def test_insert_array_no_ids(self, conn):
+        r.db('things').table('muppets').insert([
+            {
+                'name': 'joe',
+                'wanted': True
+            },
+            {
+                'name': 'todd',
+                'wanted': True
+            }
+        ]).run(conn)
+        result = r.db('things').table('muppets').filter({
+            'wanted': True
+        }).run(conn)
+        result = list(result)
+        self.assertEqual(2, len(result))
+        assert(isinstance(result[0]['id'], unicode))
+        assert(isinstance(result[1]['id'], unicode))
+
 
 class TestDelete(MockTest):
     def get_data(self):

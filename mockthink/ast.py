@@ -375,7 +375,7 @@ class Delete(MonExp):
 
 def ensure_id(elem):
     if 'id' not in elem:
-        elem = util.extend(elem, {'id': uuid.uuid4()})
+        elem = util.extend(elem, {'id': unicode(uuid.uuid4())})
     return elem
 
 class Insert(BinExp):
