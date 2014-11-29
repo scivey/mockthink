@@ -12,7 +12,7 @@ class TestReplace(MockTest):
         ]
         return as_db_and_table('things', 'muppets', data)
 
-    def test_replace_one(self, conn):
+    def test_replace_selected(self, conn):
         expected = [
             {'id': 'kermit-id', 'name': 'Just Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
@@ -21,29 +21,35 @@ class TestReplace(MockTest):
         result = r.db('things').table('muppets').run(conn)
         self.assertEqUnordered(expected, result)
 
+    def test_replace_one_from_table(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'name': 'Just Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        r.db('things').table('muppets').replace({'id': 'kermit-id', 'name': 'Just Kermit'}).run(conn)
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, result)
 
-class TestUpdating(MockTest):
+    def test_replace_one_from_sequence(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'name': 'Just Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        r.db('things').table('muppets').filter(
+            lambda doc: True
+        ).replace({'id': 'kermit-id', 'name': 'Just Kermit'}).run(conn)
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, result)
+
+
+
+class TestInsert(MockTest):
     def get_data(self):
         data = [
             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
         ]
         return as_db_and_table('things', 'muppets', data)
-
-    def test_update_one(self, conn):
-        expected = {'id': 'kermit-id', 'species': 'green frog', 'name': 'Kermit'}
-        r.db('things').table('muppets').get('kermit-id').update({'species': 'green frog'}).run(conn)
-        result = r.db('things').table('muppets').get('kermit-id').run(conn)
-        self.assertEqual(expected, result)
-
-    def test_update_sequence(self, conn):
-        expected = [
-            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit', 'is_muppet': 'very'},
-            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy', 'is_muppet': 'very'}
-        ]
-        r.db('things').table('muppets').update({'is_muppet': 'very'}).run(conn)
-        result = r.db('things').table('muppets').run(conn)
-        self.assertEqual(expected, list(result))
 
     def test_insert_one(self, conn):
         expected = [
@@ -111,6 +117,31 @@ class TestUpdating(MockTest):
         self.assertEqual(2, len(result))
         assert(isinstance(result[0]['id'], unicode))
         assert(isinstance(result[1]['id'], unicode))
+
+
+class TestUpdate(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        return as_db_and_table('things', 'muppets', data)
+
+    def test_update_one(self, conn):
+        expected = {'id': 'kermit-id', 'species': 'green frog', 'name': 'Kermit'}
+        r.db('things').table('muppets').get('kermit-id').update({'species': 'green frog'}).run(conn)
+        result = r.db('things').table('muppets').get('kermit-id').run(conn)
+        self.assertEqual(expected, result)
+
+    def test_update_sequence(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit', 'is_muppet': 'very'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy', 'is_muppet': 'very'}
+        ]
+        r.db('things').table('muppets').update({'is_muppet': 'very'}).run(conn)
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqual(expected, list(result))
+
 
 class TestUpdateRql(MockTest):
     def get_data(self):
