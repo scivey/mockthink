@@ -196,8 +196,6 @@ class Literal(MakeObjBase):
     def do_run(self, obj, arg, scope):
         return LITERAL_OBJECT.from_dict(obj)
 
-
-
 class RError0(RBase):
     def __init__(self, *args):
         pass

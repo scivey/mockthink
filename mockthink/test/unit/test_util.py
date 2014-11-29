@@ -306,3 +306,44 @@ class TestUtil(unittest.TestCase):
         ]
         get_val = lambda doc: doc['val']
         self.assertEqual({'val': 28}, util.max_mapped(get_val, sequence))
+
+    def test_deep_extend_pair(self):
+        obj = {
+            'x': {
+                'x1': {
+                    'v1': 5,
+                    'v2': 7
+                },
+                'nums': [1, 3, 5]
+            },
+            'a_list': [10, 20]
+        }
+        ext_with = {
+            'x': {
+                'x2': {
+                    'x2-key': 'x2-val'
+                },
+                'x1': {
+                    'v2': 'new-v2-val',
+                    'v3': 'v3-val'
+                },
+                'nums': [7, 9]
+            },
+            'a_list': 'new-a-list-val'
+        }
+        expected = {
+            'x': {
+                'x2': {
+                    'x2-key': 'x2-val'
+                },
+                'x1': {
+                    'v1': 5,
+                    'v2': 'new-v2-val',
+                    'v3': 'v3-val'
+                },
+                'nums': [1, 3, 5, 7, 9]
+            },
+            'a_list': 'new-a-list-val'
+        }
+        result = util.deep_extend_pair(obj, ext_with)
+        self.assertEqual(expected, result)

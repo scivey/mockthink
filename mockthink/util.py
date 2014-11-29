@@ -27,6 +27,36 @@ def extend(*dicts):
         out.update(one_dict)
     return out
 
+def clone(x):
+    if isinstance(x, dict):
+        return obj_clone(x)
+    elif isinstance(x, list):
+        return clone_array(x)
+    else:
+        return x
+
+def deep_extend_pair(dict1, dict2):
+    out = {}
+    out.update(dict1)
+    for k, v in dict2.iteritems():
+        if k not in out:
+            out[k] = clone(v)
+        else:
+            d1_val = dict1[k]
+            if isinstance(d1_val, dict) and isinstance(v, dict):
+                out[k] = deep_extend_pair(d1_val, v)
+            elif isinstance(d1_val, list) and isinstance(v, list):
+                out[k] = cat(d1_val, v)
+            else:
+                out[k] = clone(v)
+    return out
+
+def deep_extend(*dicts):
+    out = {}
+    for one_dict in dicts:
+        out = deep_extend_pair(out, one_dict)
+    return out
+
 def cat(*lists):
     out = []
     for one_list in lists:
