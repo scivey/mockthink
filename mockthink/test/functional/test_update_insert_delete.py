@@ -112,6 +112,35 @@ class TestUpdating(MockTest):
         assert(isinstance(result[0]['id'], unicode))
         assert(isinstance(result[1]['id'], unicode))
 
+class TestUpdateRql(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        return as_db_and_table('things', 'muppets', data)
+
+    def test_update_many(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'unknown', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'unknown', 'name': 'Ms. Piggy'}
+        ]
+        r.db('things').table('muppets').update(
+            r.row.merge({'species': 'unknown'})
+        ).run(conn)
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_update_one(self, conn):
+        expected = {'id': 'kermit-id', 'species': 'unknown', 'name': 'Kermit'}
+        r.db('things').table('muppets').get('kermit-id').update(
+            r.row.merge({'species': 'unknown'})
+        ).run(conn)
+        result = r.db('things').table('muppets').get('kermit-id').run(conn)
+        self.assertEqual(expected, result)
+
+
+
 
 class TestDelete(MockTest):
     def get_data(self):

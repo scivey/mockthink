@@ -357,10 +357,16 @@ class UpdateBase(object):
 
 class UpdateByFunc(ByFuncBase, UpdateBase):
     def do_run(self, sequence, map_fn, arg, scope):
-        return self.update_table(map(map_fn, sequence), arg, scope)
+        pprint({'UpdateByFunc': 'do_run'})
+        if isinstance(sequence, dict):
+            updated = [map_fn(sequence)]
+        else:
+            updated = map(map_fn, sequence)
+        return self.update_table(updated, arg, scope)
 
 class UpdateWithObj(BinExp, UpdateBase):
     def do_run(self, sequence, to_update, arg, scope):
+        pprint({'UpdateWithObj': 'do_run'})
         return self.update_table(util.maybe_map(util.extend_with(to_update), sequence), arg, scope)
 
 class Replace(BinExp, UpdateBase):
