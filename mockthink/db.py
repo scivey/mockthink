@@ -88,7 +88,7 @@ class MockDbData(object):
         self.tables_by_name = tables_by_name
 
     def create_table(self, table_name):
-        return self.set_table(table_name, MockTableData([]))
+        return self.set_table(table_name, MockTableData([], {}))
 
     def list_tables(self):
         return self.tables_by_name.keys()
@@ -117,6 +117,19 @@ class MockDb(object):
         dbs_by_name = util.obj_clone(self.dbs_by_name)
         dbs_by_name[db_name] = db_data_instance
         return MockDb(dbs_by_name)
+
+    def create_table_in_db(self, db_name, table_name):
+        new_db = self.get_db(db_name)
+        new_db = new_db.create_table(table_name)
+        return self.set_db(db_name, new_db)
+
+    def drop_table_in_db(self, db_name, table_name):
+        new_db = self.get_db(db_name)
+        new_db = new_db.drop_table(table_name)
+        return self.set_db(db_name, new_db)
+
+    def list_tables_in_db(self, db_name):
+        return self.get_db(db_name).list_tables()
 
     def create_db(self, db_name):
         return self.set_db(db_name, MockDbData({}))

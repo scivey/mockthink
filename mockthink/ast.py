@@ -609,6 +609,42 @@ class Difference(BinExp):
                 yield elem
 
 
+
+
+#   #################################
+#     Table and database manipulation
+#   #################################
+
+class TableCreate(BinExp):
+    def do_run(self, left, table_name, arg, scope):
+        db_name = self.find_db_scope()
+        return arg.create_table_in_db(db_name, table_name)
+
+class TableDrop(BinExp):
+    def do_run(self, db, table_name, arg, scope):
+        db_name = self.find_db_scope()
+        return arg.drop_table_in_db(db_name, table_name)
+
+class TableList(MonExp):
+    def do_run(self, db, arg, scope):
+        db_name = self.find_db_scope()
+        return arg.list_tables_in_db(db_name)
+
+
+class DbCreate(MonExp):
+    def do_run(self, db_name, arg, scope):
+        return arg.create_db(db_name)
+
+class DbDrop(MonExp):
+    def do_run(self, db_name, arg, scope):
+        return arg.drop_db(db_name)
+
+class DbList(RBase):
+    def __init__(self, *args):
+        pass
+    def run(self, arg, scope):
+        return arg.list_dbs()
+
 #   #################################
 #     Index manipulation functions
 #   #################################

@@ -126,7 +126,8 @@ def binop_splat(Mt_Constructor, node):
 
 #   0-ary reql terms which don't need any special handling
 NORMAL_ZEROPS = {
-    r_ast.Now: mt_ast.Now
+    r_ast.Now: mt_ast.Now,
+    r_ast.DbList: mt_ast.DbList
 }
 
 
@@ -148,6 +149,9 @@ NORMAL_MONOPS = {
     r_ast.Sync: mt_ast.Sync,
     r_ast.Ungroup: mt_ast.UnGroup,
     r_ast.Not: mt_ast.Not,
+    r_ast.TableList: mt_ast.TableList,
+    r_ast.DbDrop: mt_ast.DbDrop,
+    r_ast.DbCreate: mt_ast.DbCreate,
     r_ast.Year: mt_ast.Year,
     r_ast.Month: mt_ast.Month,
     r_ast.Day: mt_ast.Day,
@@ -191,7 +195,9 @@ NORMAL_BINOPS = {
     r_ast.SetIntersection: mt_ast.SetIntersection,
     r_ast.Reduce: mt_ast.Reduce,
     r_ast.Insert: mt_ast.Insert,
-    r_ast.IndexDrop: mt_ast.IndexDrop
+    r_ast.IndexDrop: mt_ast.IndexDrop,
+    r_ast.TableCreate: mt_ast.TableCreate,
+    r_ast.TableDrop: mt_ast.TableDrop
 }
 
 
