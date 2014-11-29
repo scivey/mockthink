@@ -17,7 +17,13 @@ class AttrHaving(object):
 # #################
 #   Base classes
 # #################
-
+class LITERAL_OBJECT(dict):
+    @staticmethod
+    def from_dict(a_dict):
+        out = LITERAL_OBJECT()
+        for k, v in a_dict.iteritems():
+            out[k] = v
+        return out
 
 class RBase(object):
     def __init__(self, *args):
@@ -160,9 +166,12 @@ class ByFuncBase(RBase):
         map_fn = lambda x: self.right.run(x, scope)
         return self.do_run(left, map_fn, arg, scope)
 
-class MakeObj(RBase):
+class MakeObjBase(RBase):
     def __init__(self, vals):
         self.vals = vals
+
+    def do_run(self, obj, arg, scope):
+        raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
 
     def run(self, arg, scope):
         return {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
@@ -177,6 +186,15 @@ class MakeArray(RBase):
 # #################
 #   Query handlers
 # #################
+
+
+class MakeObj(MakeObjBase):
+    def do_run(self, obj, arg, scope):
+        return obj
+
+class Literal(MakeObjBase):
+    def do_run(self, obj, arg, scope):
+        return LITERAL_OBJECT.from_dict(obj)
 
 
 
@@ -952,9 +970,6 @@ class During(Ternary):
 
 
 class Contains(RBase):
-    pass
-
-class Literal(RBase):
     pass
 
 class StrMatch(RBase):

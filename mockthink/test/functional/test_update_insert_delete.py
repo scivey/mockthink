@@ -1,4 +1,5 @@
 import rethinkdb as r
+from rethinkdb import RqlRuntimeError
 from mockthink.test.common import as_db_and_table
 from mockthink.test.functional.common import MockTest
 from pprint import pprint
@@ -170,7 +171,259 @@ class TestUpdateRql(MockTest):
         result = r.db('things').table('muppets').get('kermit-id').run(conn)
         self.assertEqual(expected, result)
 
+class TestNestedUpdateNotLit(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'one',
+                'points': {
+                    'pt1': {
+                        'x': 'x-1',
+                        'y': 'y-1'
+                        }
+                    }
+            },
+            {
+                'id': 'two',
+                'points': {
+                    'pt1': {
+                        'x': 'x-2',
+                        'y': 'y-2'
+                        }
+                    }
+            },
+            {
+                'id': 'three',
+                'things': {
+                    'x': [1, 3, 5]
+                }
+            }
+        ]
+        return as_db_and_table('things', 'points', data)
 
+    def test_update_merge(self, conn):
+        expected = {
+            'id': 'one',
+            'points': {
+                'pt1': {
+                    'x': 'x-1',
+                    'y': 'y-1',
+                    'z': 'z-1'
+                    }
+            }
+        }
+
+        r.db('things').table('points').filter({'id': 'one'}).update(
+            r.row.merge({'points': {'pt1': {'z': 'z-1'}}})
+        ).run(conn)
+        result = r.db('things').table('points').get('one').run(conn)
+        self.assertEqual(expected, result)
+
+    def test_update_no_merge(self, conn):
+        expected = {
+            'id': 'one',
+            'points': {
+                'pt1': {
+                    'x': 'x-1',
+                    'y': 'y-1',
+                    'z': 'z-1'
+                    }
+            }
+        }
+
+        r.db('things').table('points').filter({'id': 'one'}).update(
+            {'points': {'pt1': {'z': 'z-1'}}}
+        ).run(conn)
+        result = r.db('things').table('points').get('one').run(conn)
+        self.assertEqual(expected, result)
+
+    def test_update_merge_deep(self, conn):
+        # this behavior is pretty weird, but it's what rethink does
+        expected = {
+            'id': 'one',
+            'points': {
+                'pt1': {
+                    'x': 'x-1',
+                    'y': 'y-1'
+                    }
+            },
+            'pt1': {
+                'x': 'x-1',
+                'y': 'y-1',
+                'z': 'z-1'
+            }
+        }
+
+        r.db('things').table('points').filter({'id': 'one'}).update(
+            r.row['points'].merge({'pt1': {'z': 'z-1'}})
+        ).run(conn)
+        result = r.db('things').table('points').get('one').run(conn)
+        self.assertEqual(expected, result)
+
+    def test_update_merge_array(self, conn):
+        expected = {
+            'id': 'three',
+            'things': {
+                'x': [1, 3, 5, 7, 9]
+            }
+        }
+        r.db('things').table('points').filter({'id': 'three'}).update(
+            r.row.merge({'things': {'x': [7, 9]}})
+        ).run(conn)
+        result = r.db('things').table('points').get('three').run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
+
+    def test_update_no_merge_array(self, conn):
+        expected = {
+            'id': 'three',
+            'things': {
+                'x': [1, 3, 5, 7, 9]
+            }
+        }
+        r.db('things').table('points').filter({'id': 'three'}).update(
+            {'things': {'x': [7, 9]}}
+        ).run(conn)
+        result = r.db('things').table('points').get('three').run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
+
+    def test_update_merge_array_deep(self, conn):
+        expected = {
+            'id': 'three',
+            'things': {
+                'x': [1, 3, 5]
+            },
+            'x': [1, 3, 5, 7, 9]
+        }
+        r.db('things').table('points').filter({'id': 'three'}).update(
+            r.row['things'].merge({'x': [7, 9]})
+        ).run(conn)
+        result = r.db('things').table('points').get('three').run(conn)
+        pprint(result)
+        self.assertEqUnordered(expected, result)
+
+
+class TestLiteral(MockTest):
+    def get_data(self):
+        data = [
+            {
+                'id': 'one',
+                'points': {
+                    'pt1': {
+                        'x': 'x-1',
+                        'y': 'y-1'
+                        }
+                    }
+            },
+            {
+                'id': 'two',
+                'points': {
+                    'pt1': {
+                        'x': 'x-2',
+                        'y': 'y-2'
+                        }
+                    }
+            },
+            {
+                'id': 'three',
+                'things': {
+                    'x': [1, 3, 5]
+                }
+            }
+        ]
+        return as_db_and_table('things', 'points', data)
+
+    def test_map_merge_no_literal(self, conn):
+        expected = {
+            'id': 'one',
+            'points': {
+                'pt1': {
+                    'x': 'x-1',
+                    'y': 'y-1',
+                    'z': 'z-1'
+                }
+            }
+        }
+
+        result = r.db('things').table('points').filter({'id': 'one'}).map(
+            lambda doc: doc.merge({'points': {'pt1': {'z': 'z-1'}}})
+        ).run(conn)
+        self.assertEqual(expected, list(result)[0])
+
+    def test_map_merge_literal(self, conn):
+        expected = {
+            'id': 'one',
+            'points': {
+                'pt1': {
+                    'z': 'z-1'
+                }
+            }
+        }
+        result = r.db('things').table('points').filter({'id': 'one'}).map(
+            lambda doc: doc.merge({'points': {'pt1': r.literal({'z': 'z-1'})}})
+        ).run(conn)
+        self.assertEqual(expected, list(result)[0])
+
+    def test_top_level_literal_throws_merge(self, conn):
+        err = None
+        try:
+            result = r.db('things').table('points').filter({'id': 'one'}).map(
+                lambda doc: doc.merge(r.literal({'points': {'pt1': {'z': 'z-1'}}}))
+            ).run(conn)
+        except RqlRuntimeError as e:
+            err = e
+        assert(isinstance(err, RqlRuntimeError))
+
+    def test_nested_literal_throws_merge(self, conn):
+        err = None
+        try:
+            result = r.db('things').table('points').filter({'id': 'one'}).map(
+                lambda doc: doc.merge({'points': r.literal({'pt1': r.literal({'z': 'z-1'})})})
+            ).run(conn)
+        except RqlRuntimeError as e:
+            err = e
+        assert(isinstance(err, RqlRuntimeError))
+
+    def test_update_literal(self, conn):
+        expected = {
+            'id': 'one',
+            'points': {
+                'pt1': {
+                    'z': 'z-1'
+                }
+            }
+        }
+        r.db('things').table('points').filter({'id': 'one'}).update(
+            {'points': r.literal({'pt1': {'z': 'z-1'}})}
+        ).run(conn)
+        result = r.db('things').table('points').get('one').run(conn)
+        self.assertEqual(expected, result)
+
+    def test_top_level_literal_on_update_does_nothing(self, conn):
+        expected = {
+            'id': 'one',
+            'points': {
+                'pt1': {
+                    'z': 'z-1'
+                }
+            }
+        }
+        r.db('things').table('points').filter({'id': 'one'}).update(
+            r.literal({'points': {'pt1': {'z': 'z-1'}}})
+        ).run(conn)
+        result = r.db('things').table('points').get('one').run(conn)
+        self.assertEqual(expected, result)
+
+    # def test_nested_literal_throws_update(self, conn):
+    #     err = None
+    #     try:
+    #         r.db('things').table('points').filter({'id': 'one'}).update(
+    #             {'points': r.literal({'pt1': r.literal({'z': 'z-1'})})}
+    #         ).run(conn)
+    #     except RqlRuntimeError as e:
+    #         err = e
+    #     assert(isinstance(err, RqlRuntimeError))
 
 
 class TestDelete(MockTest):
