@@ -75,3 +75,38 @@ class TestTableMod(MockTest):
         self.assertEqual(expected_2, set(list(result_2)))
 
 
+class TestDbMod(MockTest):
+    def get_data(self):
+        return {
+            'dbs': {
+                'db_one': {
+                    'tables': {
+                        'one_x': [],
+                        'one_y': []
+                    }
+                },
+                'db_two': {
+                    'tables': {
+                        'two_x': [],
+                        'two_y': []
+                    }
+                }
+            }
+        }
+
+    def test_db_list(self, conn):
+        expected = set(['db_one', 'db_two'])
+        result = r.db_list().run(conn)
+        self.assertEqual(expected, set(list(result)))
+
+    def test_db_create(self, conn):
+        expected = set(['db_one', 'db_two', 'db_three'])
+        r.db_create('db_three').run(conn)
+        result = r.db_list().run(conn)
+        self.assertEqual(expected, set(list(result)))
+
+    def test_db_drop(self, conn):
+        expected = set(['db_one'])
+        r.db_drop('db_two').run(conn)
+        result = r.db_list().run(conn)
+        self.assertEqual(expected, set(list(result)))

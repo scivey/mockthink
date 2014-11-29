@@ -640,7 +640,7 @@ class DbDrop(MonExp):
         return arg.drop_db(db_name)
 
 class DbList(RBase):
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         pass
     def run(self, arg, scope):
         return arg.list_dbs()
