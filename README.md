@@ -119,7 +119,7 @@ Both the functional and integration tests have two modes of execution, `mockthin
 
 The [vast majority of query terms are already implemented](https://github.com/scivey/mockthink/blob/master/mockthink/ast.py).  The following terms remain prior to initial release:
 
-* `index_status`, `info`, `http`, `coerce_to`, `expr`, `default`, `for_each`, `binary`, `args`, `contains`, `match`
+* `index_status`, `info`, `http`, `coerce_to`, `expr`, `default`, `for_each`, `binary`, `args`, `match`
 * ReQL time functions: to/from iso8601, to/from epoch time.
 
 
