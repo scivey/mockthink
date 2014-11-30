@@ -94,7 +94,7 @@ def handle_n_ary(arity_type_map, node):
 def makearray_of_datums(datum_list):
     out = []
     for elem in datum_list:
-        expected_types = (r_ast.Datum, r_ast.Asc, r_ast.Desc)
+        expected_types = (r_ast.Datum, r_ast.Asc, r_ast.Desc, r_ast.Func, r_ast.MakeArray, r_ast.MakeObj)
         if elem.__class__ not in expected_types:
             raise TypeError('unexpected elem type: %p' % elem)
         out.append(type_dispatch(elem))
@@ -444,6 +444,17 @@ def handle_count(node):
                 optargs=optargs
             )
     raise TypeError
+
+
+@handles_type(r_ast.Contains)
+def handle_contains(node):
+    sequence = type_dispatch(node.args[0])
+    optargs = process_optargs(node)
+    rest = makearray_of_datums(node.args[1:])
+    if isinstance(node.args[1], r_ast.Func):
+        return mt_ast.ContainsFuncs(sequence, rest, optargs=optargs)
+    else:
+        return mt_ast.ContainsElems(sequence, rest, optargs=optargs)
 
 
 

@@ -370,3 +370,14 @@ def dictable_distinct(sequence):
         if not seen.has(elem):
             seen.add(elem)
             yield elem
+
+
+@curry2
+def any_passing(pred, sequence):
+    result = False
+    for elem in sequence:
+        if pred(elem):
+            result = True
+            break
+    return result
+

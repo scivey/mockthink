@@ -476,6 +476,35 @@ class Difference(BinExp):
                 yield elem
 
 
+class ContainsElems(BinExp):
+    def do_run(self, sequence, test_for, arg, scope):
+        sequence = list(sequence)
+        result = True
+        for elem in test_for:
+            if elem not in sequence:
+                result = False
+                break
+        return result
+
+class ContainsFuncs(RBase):
+    def __init__(self, left, right, optargs={}):
+        assert(isinstance(right, MakeArray))
+        self.left = left
+        self.right = right
+        self.optargs = optargs
+
+    def iter_preds(self, scope):
+        for pred in self.right.vals:
+            yield (lambda doc: pred.run([doc], scope))
+
+    def run(self, arg, scope):
+        sequence = list(self.left.run(arg, scope))
+        result = True
+        for pred in self.iter_preds(scope):
+            if not util.any_passing(pred, sequence):
+                result = False
+                break
+        return result
 
 
 #   #################################
@@ -811,10 +840,6 @@ class During(Ternary):
             options['left_bound'], options['right_bound']
         )
         return (left_test(to_test, left) and right_test(to_test, right))
-
-
-class Contains(RBase):
-    pass
 
 class StrMatch(RBase):
     pass
