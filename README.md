@@ -109,7 +109,7 @@ Avoiding network calls (for tests themselves as well as setup/teardown) makes te
 
 The most confusing test failures are those caused by errors in test frameworks and harnesses themselves.  This means they need to be tested very thoroughly.
 
-The main testing is a [suite of functional tests](https://github.com/scivey/mockthink/blob/master/mockthink/test/functional/__init__.py) which are targeted at the individual query level, e.g. [testing all the ways in which `r.merge` might be called](https://github.com/scivey/mockthink/blob/master/mockthink/test/functional/__init__.py#L657).  These are all complete ReQL queries, but avoid complexity beyond the target query to make failures easier to diagnose.
+The main testing is a [suite of functional tests](https://github.com/scivey/mockthink/tree/master/mockthink/test/functional) which are targeted at the individual query level, e.g. [testing all the ways in which `r.merge` might be called](https://github.com/scivey/mockthink/blob/master/mockthink/test/functional/test_merge.py).  These are all complete ReQL queries, but avoid complexity beyond the target query to make failures easier to diagnose.
 
 The [integration tests](https://github.com/scivey/mockthink/blob/master/mockthink/test/integration/__init__.py) cover more complicated queries, e.g. `eq_join`->`map`->`eq_join`->`map`.
 
@@ -119,8 +119,8 @@ Both the functional and integration tests have two modes of execution, `mockthin
 
 The [vast majority of query terms are already implemented](https://github.com/scivey/mockthink/blob/master/mockthink/ast.py).  The following terms remain prior to initial release:
 
-* `index_status`, `distinct`, `info`, `http`, `coerce_to`, `expr`, `default`, `for_each`, `binary`, `args`, `contains`, `match`.
-* ReQL time functions (`r.now`, `r.date`, etc)
+* `index_status`, `info`, `http`, `coerce_to`, `expr`, `default`, `for_each`, `binary`, `args`, `contains`, `match`
+* ReQL time functions: to/from iso8601, to/from epoch time.
 
 
 ### Will be implemented after initial release:
