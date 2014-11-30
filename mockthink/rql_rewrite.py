@@ -161,7 +161,8 @@ NORMAL_MONOPS = {
     r_ast.TimeOfDay: mt_ast.TimeOfDay,
     r_ast.DayOfWeek: mt_ast.DayOfWeek,
     r_ast.Date: mt_ast.Date,
-    r_ast.ToEpochTime: mt_ast.ToEpochTime
+    r_ast.ToEpochTime: mt_ast.ToEpochTime,
+    r_ast.Literal: mt_ast.Literal
 }
 
 #   2-ary reql terms which don't need any special handling

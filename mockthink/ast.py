@@ -8,192 +8,21 @@ from pprint import pprint
 from . import util, joins, rtime
 from .scope import Scope
 
-class AttrHaving(object):
-    def __init__(self, attrs):
-        for k, v in attrs.iteritems():
-            setattr(self, k, v)
+from . import ast_base
+from .ast_base import RBase, MonExp, BinExp, Ternary, ByFuncBase
+from .ast_base import LITERAL_OBJECT, LITERAL_LIST, RDatum, RFunc, MakeObj, MakeArray
+from .ast_base import LITERAL_OBJECT, LITERAL_LIST, RDatum, RFunc, MakeObj, MakeArray
 
 
-# #################
-#   Base classes
-# #################
-class LITERAL_OBJECT(dict):
-    @staticmethod
-    def from_dict(a_dict):
-        out = LITERAL_OBJECT()
-        for k, v in a_dict.iteritems():
-            out[k] = v
-        return out
-
-class RBase(object):
-    def __init__(self, *args):
-        pass
-
-    def find_table_scope(self):
-        result = None
-        if isinstance(self, RTable):
-            result = self.get_table_name()
-        elif hasattr(self, 'left'):
-            result = self.left.find_table_scope()
-        return result
-
-    def find_db_scope(self):
-        result = None
-        if isinstance(self, RDb):
-            result = self.get_db_name()
-        elif hasattr(self, 'left'):
-            result = self.left.find_db_scope()
-        return result
-
-    def find_index_func_for_scope(self, index_name, db_arg):
-        table = self.find_table_scope()
-        db = self.find_db_scope()
-        return db_arg.get_index_func_in_table_in_db(
-            self.find_db_scope(),
-            self.find_table_scope(),
-            index_name
-        )
-
-    def raise_rql_runtime_error(self, msg):
-        from rethinkdb import RqlRuntimeError
-        # temporary jankiness to get it working
-        # doing it this way means error messages won't
-        # be properly printed
-        term = AttrHaving({
-            'args': (),
-            'optargs': {},
-            'compose': (lambda x,y: 'COMPOSED')
-        })
-        raise RqlRuntimeError(msg, term, [])
-
-    def raise_rql_compile_error(self, msg):
-        term = AttrHaving({
-            'args': (),
-            'optargs': {},
-            'compose': (lambda x,y: 'COMPOSED')
-        })
-        raise RqlCompileError(msg, term, [])
-
-
-class RDatum(RBase):
-    def __init__(self, val, optargs={}):
-        self.val = val
-
-    def __str__(self):
-        return "<DATUM: %s>" % self.val
-
-    def run(self, arg, scope):
-        return self.val
-
-class RFunc(RBase):
-    def __init__(self, param_names, body, optargs={}):
-        self.param_names = param_names
-        self.body = body
-
-    def __str__(self):
-        params = ", ".join(self.param_names)
-        return "<RFunc: [%s] { %s }>" % (params, self.body)
-
-    def run(self, args, scope):
-        if not isinstance(args, list):
-            args = [args]
-        bound = util.as_obj(zip(self.param_names, args))
-        call_scope = scope.push(bound)
-        return self.body.run(None, call_scope)
-
-class MonExp(RBase):
-    def __init__(self, left, optargs={}):
-        self.left = left
-        self.optargs = optargs
-
-    def __str__(self):
-        class_name = self.__class__.__name__
-        return "<%s: %s>" % (class_name, self.left)
-
-    def do_run(self, left, arg, scope):
-        raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
-
-    def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        return self.do_run(left, arg, scope)
-
-
-class BinExp(RBase):
-    def __init__(self, left, right, optargs={}):
-        self.left = left
-        self.right = right
-        self.optargs = optargs
-
-    def __str__(self):
-        class_name = self.__class__.__name__
-        return "<%s: (%s, %s)>" % (class_name, self.left, self.right)
-
-    def do_run(self, left, right, arg, scope):
-        raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
-
-    def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        right = self.right.run(arg, scope)
-        return self.do_run(left, right, arg, scope)
-
-class Ternary(RBase):
-    def __init__(self, left, middle, right, optargs={}):
-        self.left = left
-        self.middle = middle
-        self.right = right
-        self.optargs = optargs
-
-    def do_run(self, left, middle, right, arg, scope):
-        raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
-
-    def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        middle = self.middle.run(arg, scope)
-        right = self.right.run(arg, scope)
-        return self.do_run(left, middle, right, arg, scope)
-
-class ByFuncBase(RBase):
-    def __init__(self, left, right, optargs={}):
-        self.left = left
-        self.right = right
-        self.optargs = optargs
-
-    def do_run(self, left, map_fn, arg, scope):
-        raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
-
-    def run(self, arg, scope):
-        left = self.left.run(arg, scope)
-        map_fn = lambda x: self.right.run(x, scope)
-        return self.do_run(left, map_fn, arg, scope)
-
-class MakeObjBase(RBase):
-    def __init__(self, vals):
-        self.vals = vals
-
-    def do_run(self, obj, arg, scope):
-        raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
-
-    def run(self, arg, scope):
-        return {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
-
-class MakeArray(RBase):
-    def __init__(self, vals):
-        self.vals = vals
-
-    def run(self, arg, scope):
-        return [elem.run(arg, scope) for elem in self.vals]
 
 # #################
 #   Query handlers
 # #################
 
 
-class MakeObj(MakeObjBase):
+class Literal(MonExp):
     def do_run(self, obj, arg, scope):
-        return obj
-
-class Literal(MakeObjBase):
-    def do_run(self, obj, arg, scope):
+        pprint({'literal': obj})
         return LITERAL_OBJECT.from_dict(obj)
 
 class RError0(RBase):
@@ -213,10 +42,11 @@ class Uuid(RBase):
         return uuid.uuid4()
 
 class RDb(MonExp):
+
     def do_run(self, db_name, arg, scope):
         return arg.get_db(db_name)
 
-    def get_db_name(self):
+    def find_db_scope(self):
         return self.left.run(None, Scope({}))
 
 class TypeOf(MonExp):
@@ -275,7 +105,7 @@ class Json(MonExp):
         return json.loads(json_str)
 
 class RTable(BinExp):
-    def get_table_name(self):
+    def find_table_scope(self):
         return self.right.run(None, Scope({}))
 
     def do_run(self, data, table_name, arg, scope):
@@ -373,11 +203,14 @@ class UpdateBase(object):
 
 class UpdateByFunc(ByFuncBase, UpdateBase):
     def do_run(self, sequence, map_fn, arg, scope):
-        return self.update_table(util.maybe_map(map_fn, sequence), arg, scope)
+        def mapper(doc):
+            ext_with = map_fn(doc)
+            return ast_base.rql_merge_with(ext_with, doc)
+        return self.update_table(util.maybe_map(mapper, sequence), arg, scope)
 
 class UpdateWithObj(BinExp, UpdateBase):
     def do_run(self, sequence, to_update, arg, scope):
-        return self.update_table(util.maybe_map(util.extend_with(to_update), sequence), arg, scope)
+        return self.update_table(util.maybe_map(ast_base.rql_merge_with(to_update), sequence), arg, scope)
 
 class Replace(BinExp, UpdateBase):
     def do_run(self, left, right, arg, scope):
@@ -430,7 +263,13 @@ class PluckPoly(BinExp):
 
 class MergePoly(BinExp):
     def do_run(self, left, ext_with, arg, scope):
-        return util.maybe_map(util.extend_with(ext_with), left)
+        if ast_base.is_literal(ext_with):
+            self.raise_rql_runtime_error('invalid top-level r.literal()')
+        elif ast_base.has_nested_literal(ext_with):
+            self.raise_rql_runtime_error('invalid nested r.literal()')
+
+        return util.maybe_map(ast_base.rql_merge_with(ext_with), left)
+
 
 class HasFields(BinExp):
     def do_run(self, left, fields, arg, scope):

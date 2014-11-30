@@ -258,6 +258,7 @@ class TestNestedUpdateNotLit(MockTest):
             r.row['points'].merge({'pt1': {'z': 'z-1'}})
         ).run(conn)
         result = r.db('things').table('points').get('one').run(conn)
+        pprint({'merge_deep': result})
         self.assertEqual(expected, result)
 
     def test_update_merge_array(self, conn):
@@ -377,12 +378,15 @@ class TestLiteral(MockTest):
 
     def test_nested_literal_throws_merge(self, conn):
         err = None
+        result = None
         try:
             result = r.db('things').table('points').filter({'id': 'one'}).map(
                 lambda doc: doc.merge({'points': r.literal({'pt1': r.literal({'z': 'z-1'})})})
             ).run(conn)
         except RqlRuntimeError as e:
             err = e
+        pprint(err)
+        pprint(result)
         assert(isinstance(err, RqlRuntimeError))
 
     def test_update_literal(self, conn):
