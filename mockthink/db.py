@@ -1,7 +1,7 @@
 import rethinkdb
 import datetime
 import contextlib
-
+from pprint import pprint
 from . import util, ast, rtime
 from .rql_rewrite import rewrite_query
 from .scope import Scope
@@ -72,6 +72,12 @@ class MockTableData(object):
 
     def index_exists(self, index):
         return index in self.indexes
+
+    def _index_values(self, index_name):
+        func = self.get_index_func(index_name)
+        out = [func(elem) for elem in self.rows]
+        pprint({'func': func, 'out': out})
+        return out
 
     def get_index_func(self, index):
         return self.indexes[index]

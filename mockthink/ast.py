@@ -69,6 +69,13 @@ class TypeOf(MonExp):
         raise TypeError
 
 
+class Distinct(MonExp):
+    def do_run(self, table_or_seq, arg, scope):
+        if 'index' in self.optargs:
+            # table
+            table_or_seq = table_or_seq._index_values(self.optargs['index'])
+        return list(util.dictable_distinct(table_or_seq))
+
 class Zip(MonExp):
     def do_run(self, sequence, arg, scope):
         out = []
@@ -837,7 +844,4 @@ class Info(RBase):
     pass
 
 class Http(RBase):
-    pass
-
-class Distinct(RBase):
     pass

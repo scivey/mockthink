@@ -328,3 +328,45 @@ def without_indices(indices, sequence):
 @curry2
 def eq(x, y):
     return x == y
+
+def sorted_iteritems(a_dict):
+    keys = a_dict.keys()
+    keys.sort()
+    for k in keys:
+        yield k, a_dict[k]
+
+def sorted_list(a_list):
+    a_list = clone_array(a_list)
+    a_list.sort()
+    return a_list
+
+def make_hashable(x):
+    if is_simple(x):
+        return x
+    elif isinstance(x, list):
+        return tuple(make_hashable(elem) for elem in sorted_list(x))
+    elif isinstance(x, dict):
+        out = []
+        for k, v in sorted_iteritems(x):
+            out.append((k, make_hashable(v)))
+        return tuple(elem for elem in out)
+
+class DictableSet(set):
+    def __init__(self, elems):
+        elems = map(make_hashable, elems)
+        super(DictableSet, self).__init__(elems)
+
+    def add(self, elem):
+        elem = make_hashable(elem)
+        super(DictableSet, self).add(elem)
+
+    def has(self, elem):
+        return (make_hashable(elem) in self)
+
+
+def dictable_distinct(sequence):
+    seen = DictableSet([])
+    for elem in sequence:
+        if not seen.has(elem):
+            seen.add(elem)
+            yield elem

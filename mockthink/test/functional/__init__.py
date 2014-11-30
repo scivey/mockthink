@@ -7,6 +7,7 @@ from mockthink.test.functional import test_math, test_merge, test_misc, test_ord
 from mockthink.test.functional import test_pluck, test_strings, test_time, test_typeof_coerce
 from mockthink.test.functional import test_update_insert_delete, test_without
 from mockthink.test.functional import test_aggregation, test_logic, test_table_db_mod
+from mockthink.test.functional import test_distinct
 
 
 from mockthink.test.functional.common import run_tests_with_rethink, run_tests_with_mockthink

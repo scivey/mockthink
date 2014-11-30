@@ -347,3 +347,18 @@ class TestUtil(unittest.TestCase):
         }
         result = util.deep_extend_pair(obj, ext_with)
         self.assertEqual(expected, result)
+
+
+class TestDictableSet(unittest.TestCase):
+    def test_simple(self):
+        x = {'x': 10}
+        foo = util.DictableSet([x])
+        self.assertTrue(foo.has(x))
+        y = {'y': 15}
+        self.assertFalse(foo.has(y))
+
+    def test_reordered_vals(self):
+        get_doc = lambda: {'x': [5, 10]}
+        foo = util.DictableSet([get_doc()])
+        self.assertTrue(foo.has(get_doc()))
+        self.assertTrue(foo.has({'x': [10, 5]}))
