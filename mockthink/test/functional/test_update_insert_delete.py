@@ -847,6 +847,7 @@ class TestDeleteReturnChanges(MockTest):
         report = r.db('ephemeral').table('people').get('joe-id').delete(
             return_changes=True
         ).run(conn)
+        pprint(report)
         self.assertEqual(expected_changes, report['changes'])
         self.assertEqual(1, report['deleted'])
         result = r.db('ephemeral').table('people').run(conn)

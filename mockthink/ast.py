@@ -248,11 +248,22 @@ class Replace(BinExp, UpdateBase):
         return self.update_table(right, arg, scope)
 
 class Delete(MonExp):
+    def get_delete_settings(self):
+        defaults = {
+            'durability': 'hard',
+            'return_changes': False
+        }
+        return util.extend(defaults, self.optargs)
+
     def do_run(self, sequence, arg, scope):
         current_table = self.find_table_scope()
         current_db = self.find_db_scope()
-        result, report = arg.remove_by_id_in_table_in_db(current_db, current_table, list(sequence))
-        if not settings['return_changes']:
+        if isinstance(sequence, dict):
+            sequence = [sequence]
+        else:
+            sequence = list(sequence)
+        result, report = arg.remove_by_id_in_table_in_db(current_db, current_table, sequence)
+        if not self.get_delete_settings()['return_changes']:
             del report['changes']
         return result, report
 

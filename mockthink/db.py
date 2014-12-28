@@ -41,12 +41,17 @@ def replace_array_elems_by_id(existing, replace_with):
     return to_return, fill_missing_report_results(report)
 
 def remove_array_elems_by_id(existing, to_remove):
-    existing = util.clone_array(existing)
-    result = existing
+    report = {
+        'deleted': 0,
+        'changes': []
+    }
+    result = util.clone_array(existing)
     for elem in to_remove:
         if elem in result:
+            report['deleted'] += 1
+            report['changes'].append({'old_val': elem, 'new_val': None})
             result.remove(elem)
-    return result
+    return result, report
 
 def insert_into_table_with_conflict_setting(existing, to_insert, conflict):
     assert(conflict in ('error', 'update', 'replace'))
@@ -109,7 +114,8 @@ class MockTableData(object):
     def remove_by_id(self, to_remove):
         if not isinstance(to_remove, list):
             to_remove = [to_remove]
-        return MockTableData(remove_array_elems_by_id(self.rows, to_remove), self.indexes)
+        new_data, report = remove_array_elems_by_id(self.rows, to_remove)
+        return MockTableData(new_data, self.indexes), report
 
     def get_rows(self):
         return self.rows
