@@ -6,7 +6,21 @@ from . import util, ast, rtime
 from .rql_rewrite import rewrite_query
 from .scope import Scope
 
+def fill_missing_report_results(report):
+    defaults = {
+        'errors': 0,
+        'replaced': 0,
+        'inserted': 0,
+        'deleted': 0,
+        'changes': []
+    }
+    return util.extend(defaults, report)
+
 def replace_array_elems_by_id(existing, replace_with):
+    report = {
+        'replaced': 0,
+        'changes': []
+    }
     elem_index_by_id = {}
     for index in xrange(0, len(existing)):
         elem = existing[index]
@@ -16,9 +30,15 @@ def replace_array_elems_by_id(existing, replace_with):
 
     for elem in replace_with:
         index = elem_index_by_id[util.getter('id')(elem)]
+        change = {
+            'old_val': existing[index],
+            'new_val': elem
+        }
+        report['changes'].append(change)
+        report['replaced'] += 1
         to_return[index] = elem
 
-    return to_return
+    return to_return, fill_missing_report_results(report)
 
 def remove_array_elems_by_id(existing, to_remove):
     existing = util.clone_array(existing)
@@ -35,7 +55,6 @@ def insert_into_table_with_conflict_setting(existing, to_insert, conflict):
     result = []
     result_report = {
         'errors': 0,
-        'updated': 0,
         'inserted': 0,
         'replaced': 0,
         'changes': []
@@ -64,7 +83,7 @@ def insert_into_table_with_conflict_setting(existing, to_insert, conflict):
 
     not_updated = [row for row in existing if row['id'] not in seen]
     result = not_updated + result
-    return result, result_report
+    return result, fill_missing_report_results(result_report)
 
 class MockTableData(object):
     def __init__(self, rows, indexes):
@@ -74,10 +93,11 @@ class MockTableData(object):
     def replace_all(self, rows, indexes):
         return MockTableData(rows, indexes)
 
-    def update_by_id(self, new_data):
-        if not isinstance(new_data, list):
-            new_data = [new_data]
-        return MockTableData(replace_array_elems_by_id(self.rows, new_data), self.indexes)
+    def update_by_id(self, updated_rows):
+        if not isinstance(updated_rows, list):
+            updated_rows = [updated_rows]
+        new_data, report = replace_array_elems_by_id(self.rows, updated_rows)
+        return MockTableData(new_data, self.indexes), report
 
     def insert(self, new_rows, conflict):
         assert(conflict in ('error', 'update', 'replace'))
@@ -197,8 +217,8 @@ class MockDb(object):
         return self._replace_table(db_name, table_name, new_table_data), changes
 
     def update_by_id_in_table_in_db(self, db_name, table_name, elem_list):
-        new_table_data = self.get_db(db_name).get_table(table_name).update_by_id(elem_list)
-        return self._replace_table(db_name, table_name, new_table_data)
+        new_table_data, changes = self.get_db(db_name).get_table(table_name).update_by_id(elem_list)
+        return self._replace_table(db_name, table_name, new_table_data), changes
 
     def _replace_table(self, db_name, table_name, new_table_data):
         new_db = self.get_db(db_name).set_table(table_name, new_table_data)

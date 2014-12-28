@@ -221,11 +221,14 @@ class UpdateBase(object):
             self.raise_rql_runtime_error('attempted nested query in update without non-atomic flag')
 
     def update_table(self, result_sequence, arg, scope):
+        settings = self.get_update_settings()
         current_db = self.find_db_scope()
         current_table = self.find_table_scope()
         result_sequence = util.ensure_list(result_sequence)
-        return arg.update_by_id_in_table_in_db(current_db, current_table, result_sequence)
-
+        result, report = arg.update_by_id_in_table_in_db(current_db, current_table, result_sequence)
+        if not settings['return_changes']:
+            del report['changes']
+        return result, report
 
 class UpdateByFunc(ByFuncBase, UpdateBase):
     def do_run(self, sequence, map_fn, arg, scope):
