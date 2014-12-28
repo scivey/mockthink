@@ -42,9 +42,12 @@ class Uuid(RBase):
         return uuid.uuid4()
 
 class RDb(MonExp):
-
     def do_run(self, db_name, arg, scope):
-        return arg.get_db(db_name)
+        if hasattr(self, 'mockdb_ref'):
+            db = self.mockdb_ref
+        else:
+            db = arg
+        return db.get_db(db_name)
 
     def find_db_scope(self):
         return self.left.run(None, Scope({}))
@@ -278,6 +281,10 @@ class WithoutPoly(BinExp):
 
 class PluckPoly(BinExp):
     def do_run(self, left, attrs, arg, scope):
+        pprint({
+            'left': left,
+            'attrs': attrs
+        })
         return util.maybe_map(util.pluck_with(*attrs), left)
 
 class MergePoly(BinExp):

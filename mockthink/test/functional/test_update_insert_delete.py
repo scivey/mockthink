@@ -387,26 +387,26 @@ class TestUpdate(MockTest):
         self.assertEqual(expected, list(result))
 
 
-# class TestUpdateNestedQuery(MockTest):
-#     def get_data(self):
-#         data = [
-#             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
-#             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
-#         ]
-#         return as_db_and_table('things', 'muppets', data)
+class TestUpdateNestedQuery(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        return as_db_and_table('things', 'muppets', data)
 
-#     def test_update_nonatomic_on(self, conn):
-#         expected = {
-#             'id': 'kermit-id',
-#             'species': 'pig',
-#             'name': 'Kermit',
-#         }
-#         r.db('things').table('muppets').get('kermit-id').update(
-#             lambda doc: doc.merge(r.db('things').table('muppets').get('piggy-id').pluck('species')),
-#             non_atomic=True
-#         ).run(conn)
-#         result = r.db('things').table('muppets').get('kermit-id').run(conn)
-#         self.assertEqual(expected, result)
+    def test_update_nonatomic_on(self, conn):
+        expected = {
+            'id': 'kermit-id',
+            'species': 'pig',
+            'name': 'Kermit',
+        }
+        r.db('things').table('muppets').get('kermit-id').update(
+            lambda doc: doc.merge(r.db('things').table('muppets').get('piggy-id').pluck('species')),
+            non_atomic=True
+        ).run(conn)
+        result = r.db('things').table('muppets').get('kermit-id').run(conn)
+        self.assertEqual(expected, result)
 
 
 

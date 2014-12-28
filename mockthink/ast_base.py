@@ -175,6 +175,7 @@ class MakeObj(RBase):
         for k, v in self.vals.iteritems():
             self.set_mock_ref(v)
             out[k] = v.run(arg, scope)
+        return out
 
 class MakeArray(RBase):
     def __init__(self, vals):
@@ -185,7 +186,7 @@ class MakeArray(RBase):
         for elem in self.vals:
             self.set_mock_ref(elem)
             out.append(elem.run(arg, scope))
-
+        return out
 
 class LITERAL_OBJECT(dict):
     @staticmethod
