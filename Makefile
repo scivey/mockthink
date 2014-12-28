@@ -19,5 +19,3 @@ test-unit:
 	$(SET_PATH) && nosetests ./mockthink/test/unit
 
 test: test-unit test-integration test-functional
-
-
