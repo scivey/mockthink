@@ -28,6 +28,55 @@ def remove_array_elems_by_id(existing, to_remove):
             result.remove(elem)
     return result
 
+def insert_update_one_row(existing_row, new_row):
+    result = {}
+    changes = {}
+    result.update(existing_row)
+    for k, v in new_row.iteritems():
+        if (k not in existing_row) or (existing_row[k] != v):
+            changes[k] = v
+        result[k] = v
+    return result, changes
+
+def insert_replace_one_row(existing_row, new_row):
+    result = {}
+    changes = {}
+    for k, v in new_row.iteritems():
+        result[k] = v
+        if (k not in existing_row) or (existing_row[k] != v):
+            changes[k] = v
+    return result, changes
+
+def insert_into_table_with_conflict_setting(existing, to_insert, conflict):
+    # conflict: {'error', 'update', 'replace'}
+    existing_by_id = {row['id']: row for row in existing}
+    seen = set([])
+    result = []
+    result_report = {
+        'errors': 0,
+        'updated': 0,
+        'inserted': 0,
+        'replaced': 0,
+        'changes': []
+    }
+    for doc in to_insert:
+        if doc['id'] in existing_by_id:
+            if conflict == 'error':
+                result_report['errors'] += 1
+                continue
+            elif conflict == 'update':
+                result_row, changes = insert_update_one_row(existing_by_id[doc['id']], doc)
+                result_report['updated'] += 1
+            elif conflict == 'replace':
+                result_row, changes = insert_replace_one_row(existing_by_id[doc['id']], doc)
+                result_report['replaced'] += 1
+        else:
+            result_row = doc
+            changes = doc
+        result.append(result_row)
+        result_report['changes'].append(changes)
+        result_report['inserted'] += 1
+    return result, result_report
 
 class MockTableData(object):
     def __init__(self, rows, indexes):
@@ -42,9 +91,11 @@ class MockTableData(object):
             new_data = [new_data]
         return MockTableData(replace_array_elems_by_id(self.rows, new_data), self.indexes)
 
-    def insert(self, new_rows):
+    def insert(self, new_rows, conflict):
         if not isinstance(new_rows, list):
             new_rows = [new_rows]
+        current_data = self.rows
+        current_by_id = {row['id']: row for row in self.rows}
         return MockTableData(util.cat(self.rows, new_rows), self.indexes)
 
     def remove_by_id(self, to_remove):
@@ -152,8 +203,8 @@ class MockDb(object):
         new_db = db.set_table(table_name, table_data_instance)
         return self.set_db(db_name, new_db)
 
-    def insert_into_table_in_db(self, db_name, table_name, elem_list):
-        new_table_data = self.get_db(db_name).get_table(table_name).insert(elem_list)
+    def insert_into_table_in_db(self, db_name, table_name, elem_list, conflict):
+        new_table_data = self.get_db(db_name).get_table(table_name).insert(elem_list, conflict)
         return self._replace_table(db_name, table_name, new_table_data)
 
     def update_by_id_in_table_in_db(self, db_name, table_name, elem_list):
