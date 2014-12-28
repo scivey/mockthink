@@ -54,7 +54,7 @@ class AssertionMixin(object):
             raise e
 
     def assertEqUnordered(self, x, y, msg=''):
-        return assertEqUnordered(self, x, y, msg)
+        return assertEqUnordered(x, y, msg)
 
 def as_db_and_table(db_name, table_name, data):
     return {
