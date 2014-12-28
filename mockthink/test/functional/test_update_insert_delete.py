@@ -142,22 +142,23 @@ class TestInsertDurability(MockTest):
         result = r.db('things').table('muppets').run(conn)
         self.assertEqUnordered(expected, list(result))
 
-    # !!! For this test, need to do something to make it deterministic for the actual db test,
-    # e.g. call table.sync().  However, not sure if I want to expose real vs mock db to the tests.
-    #
-    # def test_durability_does_nothing_for_mock_2(self, conn):
-    #     expected = [
-    #         {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
-    #         {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
-    #         {'id': 'elmo-id', 'species': 'methhead', 'name': 'Elmo'}
-    #     ]
-    #     r.db('things').table('muppets').insert({
-    #         'id': 'elmo-id',
-    #         'species': 'methhead',
-    #         'name': 'Elmo'
-    #     }, durability='soft').run(conn)
-    #     result = r.db('things').table('muppets').run(conn)
-    #     self.assertEqUnordered(expected, list(result))
+
+    # this isn't effectively testing the mock, since the point is that table.sync() doesn't do anything
+    # for the mockthink version.  need to do something better here.
+    def test_durability_does_nothing_for_mock_2(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+            {'id': 'elmo-id', 'species': 'methhead', 'name': 'Elmo'}
+        ]
+        r.db('things').table('muppets').insert({
+            'id': 'elmo-id',
+            'species': 'methhead',
+            'name': 'Elmo'
+        }, durability='soft').run(conn)
+        r.db('things').table('muppets').sync().run(conn)
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
 
 
 class TestInsertConflicts(MockTest):
@@ -170,7 +171,7 @@ class TestInsertConflicts(MockTest):
 
     def test_conflict_error(self, conn):
         expected = [
-            {'id': 'kermit-id', 'x-key': 'x-val', 'name': 'New Kermit'},
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
         ]
 
@@ -179,8 +180,8 @@ class TestInsertConflicts(MockTest):
                 'id': 'kermit-id',
         }, conflict='error').run(conn)
         self.assertEqual(1, result_obj['errors'])
-        self.assertEqual(0, result_obj['updated'])
         self.assertEqual(0, result_obj['inserted'])
+        self.assertEqual(0, result_obj['replaced'])
 
         # ensure the table really is unchanged.
         result = r.db('things').table('muppets').run(conn)
@@ -188,7 +189,7 @@ class TestInsertConflicts(MockTest):
 
     def test_conflict_has_error_as_default(self, conn):
         expected = [
-            {'id': 'kermit-id', 'x-key': 'x-val', 'name': 'New Kermit'},
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
         ]
 
@@ -197,8 +198,8 @@ class TestInsertConflicts(MockTest):
                 'id': 'kermit-id',
         }, conflict='error').run(conn)
         self.assertEqual(1, result_obj['errors'])
-        self.assertEqual(0, result_obj['updated'])
         self.assertEqual(0, result_obj['inserted'])
+        self.assertEqual(0, result_obj['replaced'])
 
         # ensure the table really is unchanged.
         result = r.db('things').table('muppets').run(conn)
@@ -216,8 +217,7 @@ class TestInsertConflicts(MockTest):
             'name': 'New Kermit'
         }, conflict='replace').run(conn)
         self.assertEqual(1, result_obj['replaced'])
-        self.assertEqual(1, result_obj['inserted'])
-        self.assertEqual(0, result_obj['updated'])
+        self.assertEqual(0, result_obj['inserted'])
         self.assertEqual(0, result_obj['errors'])
 
         result = r.db('things').table('muppets').run(conn)
@@ -233,9 +233,8 @@ class TestInsertConflicts(MockTest):
             'x-key': 'x-val',
             'name': 'Updated Kermit'
         }, conflict='update').run(conn)
-        self.assertEqual(1, result_obj['updated'])
-        self.assertEqual(1, result_obj['inserted'])
-        self.assertEqual(0, result_obj['replaced'])
+        self.assertEqual(1, result_obj['replaced'])
+        self.assertEqual(0, result_obj['inserted'])
         self.assertEqual(0, result_obj['errors'])
 
 
@@ -259,12 +258,16 @@ class TestInsertReturnChanges(MockTest):
             'species': 'methhead',
             'name': 'Elmo'
         }
+        expected_changes = [{
+            'old_val': None,
+            'new_val': elmo_doc
+        }]
 
         result_obj = r.db('things').table('muppets').insert(
             elmo_doc, return_changes=True
         ).run(conn)
 
-        self.assertEqual(result_obj['changes'], [elmo_doc])
+        self.assertEqual(result_obj['changes'], expected_changes)
 
         result = r.db('things').table('muppets').run(conn)
         self.assertEqUnordered(expected, list(result))
@@ -289,16 +292,73 @@ class TestInsertReturnChanges(MockTest):
                 'name': 'The Fonz'
             }
         ]
+        expected_changes = [
+            {
+                'old_val': None,
+                'new_val': to_insert[0]
+            },
+            {
+                'old_val': None,
+                'new_val': to_insert[1]
+            }
+        ]
 
         result_obj = r.db('things').table('muppets').insert(
             to_insert, return_changes=True
         ).run(conn)
 
-        self.assertEqUnordered(to_insert, result_obj['changes'])
+        self.assertEqUnordered(expected_changes, result_obj['changes'])
 
         result = r.db('things').table('muppets').run(conn)
         self.assertEqUnordered(expected, list(result))
 
+    def test_insert_array_with_update(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'New Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+            {'id': 'elmo-id', 'species': 'methhead', 'name': 'Elmo'},
+            {'id': 'fonz-id', 'species': 'guido', 'name': 'The Fonz'}
+        ]
+
+        to_insert = [
+            {
+                'id': 'elmo-id',
+                'species': 'methhead',
+                'name': 'Elmo'
+            },
+            {
+                'id': 'fonz-id',
+                'species': 'guido',
+                'name': 'The Fonz'
+            },
+            {
+                'id': 'kermit-id',
+                'name': 'New Kermit'
+            }
+        ]
+        expected_changes = [
+            {
+                'old_val': {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+                'new_val': {'id': 'kermit-id', 'species': 'frog', 'name': 'New Kermit'}
+            },
+            {
+                'old_val': None,
+                'new_val': to_insert[0]
+            },
+            {
+                'old_val': None,
+                'new_val': to_insert[1]
+            }
+        ]
+
+        result_obj = r.db('things').table('muppets').insert(
+            to_insert, return_changes=True, conflict='update'
+        ).run(conn)
+
+        self.assertEqUnordered(expected_changes, result_obj['changes'])
+
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
 
 
 

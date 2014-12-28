@@ -4,23 +4,6 @@ from pprint import pprint
 from ..common import TestCase
 from ... import db, util
 
-class TestDbRowInsert(TestCase):
-    def test_insert_update_one_row(self):
-        existing = {'id': 'x', 'name': 'john', 'age': 26}
-        expected_result = {'id': 'x', 'name': 'john', 'nickname': 'johnny', 'age': 30}
-        expected_changes = {'id': 'x', 'nickname': 'johnny', 'age': 30}
-        result, changes = db.insert_update_one_row(existing, {'id': 'x', 'nickname': 'johnny', 'age': 30})
-        self.assertEqual(expected_result, result)
-        self.assertEqual(expected_changes, changes)
-
-    def test_insert_replace_one_row(self):
-        existing = {'id': 'x', 'name': 'john', 'age': 26}
-        expected_result = {'id': 'x', 'nickname': 'johnny', 'age': 30}
-        expected_changes = {'id': 'x', 'nickname': 'johnny', 'age': 30}
-        result, changes = db.insert_replace_one_row(existing, {'id': 'x', 'nickname': 'johnny', 'age': 30})
-        self.assertEqual(expected_result, result)
-        self.assertEqual(expected_changes, changes)
-
 def db_insert_starting_data():
     return [
         {'id': 'a', 'name': 'a-name', 'age': 'a-age'},
@@ -39,10 +22,15 @@ class TestDbInsertWithConflictSettings(TestCase):
         ]
         expected_report = {
             'replaced': 0,
-            'updated': 0,
             'inserted': 1,
             'errors': 1,
-            'changes': [{'id': 'd', 'name': 'deshawn'}]
+            'changes': [{
+                'old_val': None,
+                'new_val': {
+                    'id': 'd',
+                    'name': 'deshawn'
+                }
+            }]
         }
         to_insert = [
             {'id': 'c', 'something': 'someval'},
@@ -54,7 +42,7 @@ class TestDbInsertWithConflictSettings(TestCase):
             conflict='error'
         )
         self.assertEqual(expected_result, result)
-        keys = ('replaced', 'updated', 'inserted', 'errors', 'changes')
+        keys = ('replaced', 'inserted', 'errors', 'changes')
         self.assert_key_equality(keys, expected_report, report)
 
     def test_update(self):
@@ -65,13 +53,18 @@ class TestDbInsertWithConflictSettings(TestCase):
             {'id': 'd', 'name': 'deshawn'}
         ]
         expected_report = {
-            'replaced': 0,
-            'updated': 1,
-            'inserted': 2,
+            'replaced': 1,
+            'inserted': 1,
             'errors': 0,
             'changes': [
-                {'id': 'c', 'name': 'new c name', 'new_c_key': 'new_c_val'},
-                {'id': 'd', 'name': 'deshawn'},
+                {
+                    'old_val': {'id': 'c', 'name': 'c-name', 'age': 'c-age'},
+                    'new_val': {'id': 'c', 'name': 'new c name', 'new_c_key': 'new_c_val', 'age': 'c-age'}
+                },
+                {
+                    'old_val': None,
+                    'new_val': {'id': 'd', 'name': 'deshawn'}
+                }
             ]
         }
         to_insert = [
@@ -84,7 +77,7 @@ class TestDbInsertWithConflictSettings(TestCase):
             conflict='update'
         )
         self.assertEqual(expected_result, result)
-        keys = ('replaced', 'updated', 'inserted', 'errors', 'changes')
+        keys = ('replaced', 'inserted', 'errors', 'changes')
         self.assert_key_equality(keys, expected_report, report)
 
     def test_replace(self):
@@ -96,12 +89,17 @@ class TestDbInsertWithConflictSettings(TestCase):
         ]
         expected_report = {
             'replaced': 1,
-            'updated': 0,
-            'inserted': 2,
+            'inserted': 1,
             'errors': 0,
             'changes': [
-                {'id': 'c', 'name': 'new c name', 'new_c_key': 'new_c_val'},
-                {'id': 'd', 'name': 'deshawn'},
+                {
+                    'old_val': {'id': 'c', 'name': 'c-name', 'age': 'c-age'},
+                    'new_val': {'id': 'c', 'name': 'new c name', 'new_c_key': 'new_c_val'}
+                },
+                {
+                    'old_val': None,
+                    'new_val': {'id': 'd', 'name': 'deshawn'}
+                }
             ]
         }
         to_insert = [
@@ -114,6 +112,6 @@ class TestDbInsertWithConflictSettings(TestCase):
             conflict='replace'
         )
         self.assertEqual(expected_result, result)
-        keys = ('replaced', 'updated', 'inserted', 'errors', 'changes')
+        keys = ('replaced', 'inserted', 'errors', 'changes')
         self.assert_key_equality(keys, expected_report, report)
 

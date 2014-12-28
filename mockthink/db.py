@@ -28,29 +28,8 @@ def remove_array_elems_by_id(existing, to_remove):
             result.remove(elem)
     return result
 
-def insert_update_one_row(existing_row, new_row):
-    assert(existing_row['id'] == new_row['id'])
-    result = {}
-    changes = {'id': existing_row['id']}
-    result.update(existing_row)
-    for k, v in new_row.iteritems():
-        if (k not in existing_row) or (existing_row[k] != v):
-            changes[k] = v
-        result[k] = v
-    return result, changes
-
-def insert_replace_one_row(existing_row, new_row):
-    assert(existing_row['id'] == new_row['id'])
-    result = {}
-    changes = {'id': existing_row['id']}
-    for k, v in new_row.iteritems():
-        result[k] = v
-        if (k not in existing_row) or (existing_row[k] != v):
-            changes[k] = v
-    return result, changes
-
 def insert_into_table_with_conflict_setting(existing, to_insert, conflict):
-    # conflict: {'error', 'update', 'replace'}
+    assert(conflict in ('error', 'update', 'replace'))
     existing_by_id = {row['id']: row for row in existing}
     seen = set([])
     result = []
@@ -62,24 +41,26 @@ def insert_into_table_with_conflict_setting(existing, to_insert, conflict):
         'changes': []
     }
     for doc in to_insert:
+        change = {}
         if doc['id'] in existing_by_id:
+            existing_row = existing_by_id[doc['id']]
+            change['old_val'] = existing_row
             if conflict == 'error':
                 result_report['errors'] += 1
                 continue
             elif conflict == 'update':
-                result_row, changes = insert_update_one_row(existing_by_id[doc['id']], doc)
-                result_report['updated'] += 1
-                seen.add(doc['id'])
+                result_row = util.extend(existing_row, doc)
             elif conflict == 'replace':
-                result_row, changes = insert_replace_one_row(existing_by_id[doc['id']], doc)
-                result_report['replaced'] += 1
-                seen.add(doc['id'])
+                result_row = doc
+            result_report['replaced'] += 1
+            seen.add(doc['id'])
         else:
+            change['old_val'] = None
+            result_report['inserted'] += 1
             result_row = doc
-            changes = doc
         result.append(result_row)
-        result_report['changes'].append(changes)
-        result_report['inserted'] += 1
+        change['new_val'] = result_row
+        result_report['changes'].append(change)
 
     not_updated = [row for row in existing if row['id'] not in seen]
     result = not_updated + result
