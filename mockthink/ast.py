@@ -118,6 +118,9 @@ class RTable(BinExp):
     def find_table_scope(self):
         return self.right.run(None, Scope({}))
 
+    def has_table_scope(self):
+        return True
+
     def do_run(self, data, table_name, arg, scope):
         return data.get_table(table_name)
 
@@ -205,14 +208,28 @@ class UpdateBase(object):
     def __init__(self, *args):
         pass
 
+    def get_update_settings(self):
+        defaults = {
+            'durability': 'hard',
+            'return_changes': False,
+            'non_atomic': False
+        }
+        return util.extend(defaults, self.optargs)
+
+    def validate_nested_query_status(self):
+        if self.right.has_table_scope() and (not self.get_update_settings()['non_atomic']):
+            self.raise_rql_runtime_error('attempted nested query in update without non-atomic flag')
+
     def update_table(self, result_sequence, arg, scope):
         current_db = self.find_db_scope()
         current_table = self.find_table_scope()
         result_sequence = util.ensure_list(result_sequence)
         return arg.update_by_id_in_table_in_db(current_db, current_table, result_sequence)
 
+
 class UpdateByFunc(ByFuncBase, UpdateBase):
     def do_run(self, sequence, map_fn, arg, scope):
+        self.validate_nested_query_status()
         def mapper(doc):
             ext_with = map_fn(doc)
             return ast_base.rql_merge_with(ext_with, doc)
@@ -220,6 +237,7 @@ class UpdateByFunc(ByFuncBase, UpdateBase):
 
 class UpdateWithObj(BinExp, UpdateBase):
     def do_run(self, sequence, to_update, arg, scope):
+        self.validate_nested_query_status()
         return self.update_table(util.maybe_map(ast_base.rql_merge_with(to_update), sequence), arg, scope)
 
 class Replace(BinExp, UpdateBase):

@@ -395,7 +395,7 @@ class TestUpdateNestedQuery(MockTest):
         ]
         return as_db_and_table('things', 'muppets', data)
 
-    def test_update_nonatomic_on(self, conn):
+    def test_update_nonatomic_happy(self, conn):
         expected = {
             'id': 'kermit-id',
             'species': 'pig',
@@ -408,6 +408,26 @@ class TestUpdateNestedQuery(MockTest):
         result = r.db('things').table('muppets').get('kermit-id').run(conn)
         self.assertEqual(expected, result)
 
+    def test_update_nonatomic_error(self, conn):
+        err = None
+        try:
+            r.db('things').table('muppets').get('kermit-id').update(
+                lambda doc: doc.merge(r.db('things').table('muppets').get('piggy-id').pluck('species')),
+                non_atomic=False
+            ).run(conn)
+        except RqlRuntimeError as e:
+            err = e
+        assert(isinstance(err, RqlRuntimeError))
+
+    def test_update_nonatomic_error_is_default(self, conn):
+        err = None
+        try:
+            r.db('things').table('muppets').get('kermit-id').update(
+                lambda doc: doc.merge(r.db('things').table('muppets').get('piggy-id').pluck('species'))
+            ).run(conn)
+        except RqlRuntimeError as e:
+            err = e
+        assert(isinstance(err, RqlRuntimeError))
 
 
 

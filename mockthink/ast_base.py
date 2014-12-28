@@ -34,6 +34,15 @@ class RBase(object):
             result = self.left.find_db_scope()
         return result
 
+    def has_table_scope(self):
+        result = None
+        for part in ('left', 'middle', 'right'):
+            if hasattr(self, part):
+                result = getattr(self, part).has_table_scope()
+                if result:
+                    break
+        return result
+
     def find_index_func_for_scope(self, index_name, db_arg):
         table = self.find_table_scope()
         db = self.find_db_scope()
@@ -81,6 +90,9 @@ class RFunc(RBase):
     def __init__(self, param_names, body, optargs={}):
         self.param_names = param_names
         self.body = body
+
+    def has_table_scope(self):
+        return self.body.has_table_scope()
 
     def __str__(self):
         params = ", ".join(self.param_names)
