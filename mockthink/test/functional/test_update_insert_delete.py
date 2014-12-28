@@ -120,6 +120,189 @@ class TestInsert(MockTest):
         assert(isinstance(result[1]['id'], unicode))
 
 
+class TestInsertDurability(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        return as_db_and_table('things', 'muppets', data)
+
+    def test_durability_does_nothing_for_mock_1(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+            {'id': 'elmo-id', 'species': 'methhead', 'name': 'Elmo'}
+        ]
+        r.db('things').table('muppets').insert({
+            'id': 'elmo-id',
+            'species': 'methhead',
+            'name': 'Elmo'
+        }, durability='hard').run(conn)
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    # !!! For this test, need to do something to make it deterministic for the actual db test,
+    # e.g. call table.sync().  However, not sure if I want to expose real vs mock db to the tests.
+    #
+    # def test_durability_does_nothing_for_mock_2(self, conn):
+    #     expected = [
+    #         {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+    #         {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+    #         {'id': 'elmo-id', 'species': 'methhead', 'name': 'Elmo'}
+    #     ]
+    #     r.db('things').table('muppets').insert({
+    #         'id': 'elmo-id',
+    #         'species': 'methhead',
+    #         'name': 'Elmo'
+    #     }, durability='soft').run(conn)
+    #     result = r.db('things').table('muppets').run(conn)
+    #     self.assertEqUnordered(expected, list(result))
+
+
+class TestInsertConflicts(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        return as_db_and_table('things', 'muppets', data)
+
+    def test_conflict_error(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'x-key': 'x-val', 'name': 'New Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+        ]
+
+        # try to insert and assert that errors are raised
+        result_obj = r.db('things').table('muppets').insert({
+                'id': 'kermit-id',
+        }, conflict='error').run(conn)
+        self.assertEqual(1, result_obj['errors'])
+        self.assertEqual(0, result_obj['updated'])
+        self.assertEqual(0, result_obj['inserted'])
+
+        # ensure the table really is unchanged.
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_conflict_has_error_as_default(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'x-key': 'x-val', 'name': 'New Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+        ]
+
+        # try to insert and assert that errors are raised
+        result_obj = r.db('things').table('muppets').insert({
+                'id': 'kermit-id',
+        }, conflict='error').run(conn)
+        self.assertEqual(1, result_obj['errors'])
+        self.assertEqual(0, result_obj['updated'])
+        self.assertEqual(0, result_obj['inserted'])
+
+        # ensure the table really is unchanged.
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_conflict_replace(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'x-key': 'x-val', 'name': 'New Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+        ]
+
+        result_obj = r.db('things').table('muppets').insert({
+            'id': 'kermit-id',
+            'x-key': 'x-val',
+            'name': 'New Kermit'
+        }, conflict='replace').run(conn)
+        self.assertEqual(1, result_obj['replaced'])
+        self.assertEqual(1, result_obj['inserted'])
+        self.assertEqual(0, result_obj['updated'])
+        self.assertEqual(0, result_obj['errors'])
+
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_conflict_update(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'x-key': 'x-val', 'name': 'Updated Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+        ]
+        result_obj = r.db('things').table('muppets').insert({
+            'id': 'kermit-id',
+            'x-key': 'x-val',
+            'name': 'Updated Kermit'
+        }, conflict='update').run(conn)
+        self.assertEqual(1, result_obj['updated'])
+        self.assertEqual(1, result_obj['inserted'])
+        self.assertEqual(0, result_obj['replaced'])
+        self.assertEqual(0, result_obj['errors'])
+
+
+class TestInsertReturnChanges(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        return as_db_and_table('things', 'muppets', data)
+
+    def test_insert_one(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+            {'id': 'elmo-id', 'species': 'methhead', 'name': 'Elmo'}
+        ]
+
+        elmo_doc = {
+            'id': 'elmo-id',
+            'species': 'methhead',
+            'name': 'Elmo'
+        }
+
+        result_obj = r.db('things').table('muppets').insert(
+            elmo_doc, return_changes=True
+        ).run(conn)
+
+        self.assertEqual(result_obj['changes'], [elmo_doc])
+
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_insert_array(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+            {'id': 'elmo-id', 'species': 'methhead', 'name': 'Elmo'},
+            {'id': 'fonz-id', 'species': 'guido', 'name': 'The Fonz'}
+        ]
+
+        to_insert = [
+            {
+                'id': 'elmo-id',
+                'species': 'methhead',
+                'name': 'Elmo'
+            },
+            {
+                'id': 'fonz-id',
+                'species': 'guido',
+                'name': 'The Fonz'
+            }
+        ]
+
+        result_obj = r.db('things').table('muppets').insert(
+            to_insert, return_changes=True
+        ).run(conn)
+
+        self.assertEqUnordered(to_insert, result_obj['changes'])
+
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+
+
+
+
 class TestUpdate(MockTest):
     def get_data(self):
         data = [
@@ -142,6 +325,9 @@ class TestUpdate(MockTest):
         r.db('things').table('muppets').update({'is_muppet': 'very'}).run(conn)
         result = r.db('things').table('muppets').run(conn)
         self.assertEqual(expected, list(result))
+
+
+
 
 
 class TestUpdateRql(MockTest):

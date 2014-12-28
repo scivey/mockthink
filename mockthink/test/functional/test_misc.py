@@ -156,7 +156,7 @@ class TestHasFields(MockTest):
             {'id': 'sam', 'first_name': 'Sam', 'last_name': 'SamLast', 'age': 31}
         ]
         result = r.db('x').table('people').has_fields('last_name', 'age').run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
     def test_has_fields_array(self, conn):
         expected = [
@@ -164,7 +164,7 @@ class TestHasFields(MockTest):
             {'id': 'sam', 'first_name': 'Sam', 'last_name': 'SamLast', 'age': 31}
         ]
         result = r.db('x').table('people').has_fields(['last_name', 'age']).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
 class TestIsEmpty(MockTest):
     def get_data(self):
@@ -375,7 +375,7 @@ class TestJson(MockTest):
         result = r.db('d').table('t').map(
             lambda doc: doc.merge(r.json('{"nums": [1, 2, 3]}'))
         ).run(conn)
-        self.assertEqUnordered(expected, result)
+        self.assertEqUnordered(expected, list(result))
 
 class TestReduce(MockTest):
     def get_data(self):
