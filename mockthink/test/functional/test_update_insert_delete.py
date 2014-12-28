@@ -429,6 +429,63 @@ class TestUpdateNestedQuery(MockTest):
             err = e
         assert(isinstance(err, RqlRuntimeError))
 
+class TestUpdateReturnChanges(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
+        ]
+        return as_db_and_table('things', 'muppets', data)
+
+    def test_update_one(self, conn):
+        expected = {'id': 'kermit-id', 'species': 'frog', 'name': 'New Kermit', 'new_key': 'new_key_val'}
+        expected_changes = [{
+            'old_val': {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+            'new_val': {
+                'id': 'kermit-id',
+                'species': 'frog',
+                'name': 'New Kermit',
+                'new_key': 'new_key_val'
+            }
+        }]
+
+        result_obj = r.db('things').table('muppets').get('kermit-id').update(
+            {'name': 'New Kermit', 'new_key': 'new_key_val'},
+            return_changes=True
+        ).run(conn)
+
+        self.assertEqual(expected_changes, result_obj['changes'])
+        self.assertEqual(1, result_obj['replaced'])
+        self.assertEqual(0, result_obj['inserted'])
+        result = r.db('things').table('muppets').get('kermit-id').run(conn)
+        self.assertEqual(expected, result)
+
+    def test_update_many(self, conn):
+        expected = [
+            {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit', 'new_key': 'new_key_val'},
+            {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy', 'new_key': 'new_key_val'}
+        ]
+        expected_changes = [
+            {
+                'old_val': {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
+                'new_val': {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit', 'new_key': 'new_key_val'}
+            },
+            {
+                'old_val': {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'},
+                'new_val': {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy', 'new_key': 'new_key_val'}
+            }
+        ]
+        result_obj = r.db('things').table('muppets').update({
+            'new_key': 'new_key_val'
+        }, return_changes=True).run(conn)
+
+        self.assertEqUnordered(expected_changes, result_obj['changes'])
+        self.assertEqual(2, result_obj['replaced'])
+        self.assertEqual(0, result_obj['inserted'])
+        self.assertEqual(0, result_obj['errors'])
+
+        result = r.db('things').table('muppets').run(conn)
+        self.assertEqUnordered(expected, list(result))
 
 
 class TestUpdateRql(MockTest):
