@@ -274,6 +274,7 @@ class MockThink(object):
             temp_now_time = True
             self.now_time = self.get_now_time()
 
+        query.mockdb_ref = self.data
         result = query.run(self.data, Scope({}))
         changes = None
         if isinstance(result, tuple) and isinstance(result[0], MockDb):

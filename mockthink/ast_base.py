@@ -63,6 +63,9 @@ class RBase(object):
         })
         raise RqlCompileError(msg, term, [])
 
+    def set_mock_ref(self, other):
+        if hasattr(self, 'mockdb_ref'):
+            other.mockdb_ref = self.mockdb_ref
 
 class RDatum(RBase):
     def __init__(self, val, optargs={}):
@@ -84,6 +87,7 @@ class RFunc(RBase):
         return "<RFunc: [%s] { %s }>" % (params, self.body)
 
     def run(self, args, scope):
+        self.set_mock_ref(self.body)
         if not isinstance(args, list):
             args = [args]
         bound = util.as_obj(zip(self.param_names, args))
@@ -103,6 +107,7 @@ class MonExp(RBase):
         raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
 
     def run(self, arg, scope):
+        self.set_mock_ref(self.left)
         left = self.left.run(arg, scope)
         return self.do_run(left, arg, scope)
 
@@ -121,6 +126,8 @@ class BinExp(RBase):
         raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
 
     def run(self, arg, scope):
+        self.set_mock_ref(self.left)
+        self.set_mock_ref(self.right)
         left = self.left.run(arg, scope)
         right = self.right.run(arg, scope)
         return self.do_run(left, right, arg, scope)
@@ -136,6 +143,8 @@ class Ternary(RBase):
         raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
 
     def run(self, arg, scope):
+        for part in ('left', 'middle', 'right'):
+            self.set_mock_ref(getattr(self, part))
         left = self.left.run(arg, scope)
         middle = self.middle.run(arg, scope)
         right = self.right.run(arg, scope)
@@ -151,6 +160,8 @@ class ByFuncBase(RBase):
         raise NotImplementedError("method do_run not defined in class %s" % self.__class__.__name__)
 
     def run(self, arg, scope):
+        self.set_mock_ref(self.left)
+        self.set_mock_ref(self.right)
         left = self.left.run(arg, scope)
         map_fn = lambda x: self.right.run(x, scope)
         return self.do_run(left, map_fn, arg, scope)
@@ -160,14 +171,20 @@ class MakeObj(RBase):
         self.vals = vals
 
     def run(self, arg, scope):
-        return {k: v.run(arg, scope) for k, v in self.vals.iteritems()}
+        out = {}
+        for k, v in self.vals.iteritems():
+            self.set_mock_ref(v)
+            out[k] = v.run(arg, scope)
 
 class MakeArray(RBase):
     def __init__(self, vals):
         self.vals = vals
 
     def run(self, arg, scope):
-        return [elem.run(arg, scope) for elem in self.vals]
+        out = []
+        for elem in self.vals:
+            self.set_mock_ref(elem)
+            out.append(elem.run(arg, scope))
 
 
 class LITERAL_OBJECT(dict):
