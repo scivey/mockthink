@@ -251,7 +251,10 @@ class Delete(MonExp):
     def do_run(self, sequence, arg, scope):
         current_table = self.find_table_scope()
         current_db = self.find_db_scope()
-        return arg.remove_by_id_in_table_in_db(current_db, current_table, list(sequence))
+        result, report = arg.remove_by_id_in_table_in_db(current_db, current_table, list(sequence))
+        if not settings['return_changes']:
+            del report['changes']
+        return result, report
 
 def ensure_id(elem):
     if 'id' not in elem:

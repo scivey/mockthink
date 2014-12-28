@@ -821,3 +821,57 @@ class TestDelete(MockTest):
         r.db('ephemeral').table('people').delete().run(conn)
         result = r.db('ephemeral').table('people').run(conn)
         self.assertEqUnordered(expected, list(result))
+
+class TestDeleteReturnChanges(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'sam-id', 'name': 'sam'},
+            {'id': 'joe-id', 'name': 'joe'},
+            {'id': 'tom-id', 'name': 'tom'},
+            {'id': 'sally-id', 'name': 'sally'}
+        ]
+        return as_db_and_table('ephemeral', 'people', data)
+
+    def test_delete_one(self, conn):
+        expected = [
+            {'id': 'sam-id', 'name': 'sam'},
+            {'id': 'tom-id', 'name': 'tom'},
+            {'id': 'sally-id', 'name': 'sally'}
+        ]
+        expected_changes = [
+            {
+                'old_val': {'id': 'joe-id', 'name': 'joe'},
+                'new_val': None
+            }
+        ]
+        report = r.db('ephemeral').table('people').get('joe-id').delete(
+            return_changes=True
+        ).run(conn)
+        self.assertEqual(expected_changes, report['changes'])
+        self.assertEqual(1, report['deleted'])
+        result = r.db('ephemeral').table('people').run(conn)
+        self.assertEqUnordered(expected, list(result))
+
+    def test_delete_multiple(self, conn):
+        expected = [
+            {'id': 'sally-id', 'name': 'sally'},
+            {'id': 'joe-id', 'name': 'joe'}
+        ]
+        expected_changes = [
+            {
+                'old_val': {'id': 'sam-id', 'name': 'sam'},
+                'new_val': None
+            },
+            {
+                'old_val': {'id': 'tom-id', 'name': 'tom'},
+                'new_val': None
+            }
+        ]
+        report = r.db('ephemeral').table('people').get_all(
+            'sam-id', 'tom-id'
+        ).delete(return_changes=True).run(conn)
+        self.assertEqUnordered(expected_changes, report['changes'])
+        self.assertEqual(2, report['deleted'])
+        result = r.db('ephemeral').table('people').run(conn)
+        self.assertEqUnordered(expected, list(result))
+

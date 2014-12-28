@@ -213,20 +213,20 @@ class MockDb(object):
 
     def insert_into_table_in_db(self, db_name, table_name, elem_list, conflict):
         assert(conflict in ('error', 'update', 'replace'))
-        new_table_data, changes = self.get_db(db_name).get_table(table_name).insert(elem_list, conflict)
-        return self._replace_table(db_name, table_name, new_table_data), changes
+        new_table_data, report = self.get_db(db_name).get_table(table_name).insert(elem_list, conflict)
+        return self._replace_table(db_name, table_name, new_table_data), report
 
     def update_by_id_in_table_in_db(self, db_name, table_name, elem_list):
-        new_table_data, changes = self.get_db(db_name).get_table(table_name).update_by_id(elem_list)
-        return self._replace_table(db_name, table_name, new_table_data), changes
+        new_table_data, report = self.get_db(db_name).get_table(table_name).update_by_id(elem_list)
+        return self._replace_table(db_name, table_name, new_table_data), report
 
     def _replace_table(self, db_name, table_name, new_table_data):
         new_db = self.get_db(db_name).set_table(table_name, new_table_data)
         return self.set_db(db_name, new_db)
 
     def remove_by_id_in_table_in_db(self, db_name, table_name, elem_list):
-        new_table_data = self.get_db(db_name).get_table(table_name).remove_by_id(elem_list)
-        return self._replace_table(db_name, table_name, new_table_data)
+        new_table_data, report = self.get_db(db_name).get_table(table_name).remove_by_id(elem_list)
+        return self._replace_table(db_name, table_name, new_table_data), report
 
     def create_index_in_table_in_db(self, db_name, table_name, index_name, index_func):
         new_table_data = self.get_db(db_name).get_table(table_name).create_index(index_name, index_func)
