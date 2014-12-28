@@ -80,11 +80,11 @@ class MockTableData(object):
         return MockTableData(replace_array_elems_by_id(self.rows, new_data), self.indexes)
 
     def insert(self, new_rows, conflict):
+        assert(conflict in ('error', 'update', 'replace'))
         if not isinstance(new_rows, list):
             new_rows = [new_rows]
-        current_data = self.rows
-        current_by_id = {row['id']: row for row in self.rows}
-        return MockTableData(util.cat(self.rows, new_rows), self.indexes)
+        new_data, report = insert_into_table_with_conflict_setting(self.rows, new_rows, conflict)
+        return MockTableData(new_data, self.indexes), report
 
     def remove_by_id(self, to_remove):
         if not isinstance(to_remove, list):
@@ -192,8 +192,9 @@ class MockDb(object):
         return self.set_db(db_name, new_db)
 
     def insert_into_table_in_db(self, db_name, table_name, elem_list, conflict):
-        new_table_data = self.get_db(db_name).get_table(table_name).insert(elem_list, conflict)
-        return self._replace_table(db_name, table_name, new_table_data)
+        assert(conflict in ('error', 'update', 'replace'))
+        new_table_data, changes = self.get_db(db_name).get_table(table_name).insert(elem_list, conflict)
+        return self._replace_table(db_name, table_name, new_table_data), changes
 
     def update_by_id_in_table_in_db(self, db_name, table_name, elem_list):
         new_table_data = self.get_db(db_name).get_table(table_name).update_by_id(elem_list)
@@ -274,8 +275,13 @@ class MockThink(object):
             self.now_time = self.get_now_time()
 
         result = query.run(self.data, Scope({}))
+        changes = None
+        if isinstance(result, tuple) and isinstance(result[0], MockDb):
+            changes = result[1]
+            result = result[0]
         if isinstance(result, MockDb):
             self.data = result
+            result = changes
         elif isinstance(result, MockTableData):
             result = result.get_rows()
 

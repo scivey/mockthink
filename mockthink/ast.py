@@ -235,13 +235,25 @@ def ensure_id(elem):
     return elem
 
 class Insert(BinExp):
+    def get_insert_settings(self):
+        defaults = {
+            'durability': 'hard',
+            'return_changes': False,
+            'conflict': 'error'
+        }
+        return util.extend(defaults, self.optargs)
+
     def do_run(self, sequence, to_insert, arg, scope):
         current_table = self.find_table_scope()
         current_db = self.find_db_scope()
         if isinstance(to_insert, dict):
             to_insert = [to_insert]
         to_insert = map(ensure_id, list(to_insert))
-        return arg.insert_into_table_in_db(current_db, current_table, to_insert)
+        settings = self.get_insert_settings()
+        result, report = arg.insert_into_table_in_db(current_db, current_table, to_insert, conflict=settings['conflict'])
+        if not settings['return_changes']:
+            del report['changes']
+        return result, report
 
 class FilterWithFunc(ByFuncBase):
     def do_run(self, sequence, filt_fn, arg, scope):
