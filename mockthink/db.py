@@ -29,8 +29,9 @@ def remove_array_elems_by_id(existing, to_remove):
     return result
 
 def insert_update_one_row(existing_row, new_row):
+    assert(existing_row['id'] == new_row['id'])
     result = {}
-    changes = {}
+    changes = {'id': existing_row['id']}
     result.update(existing_row)
     for k, v in new_row.iteritems():
         if (k not in existing_row) or (existing_row[k] != v):
@@ -39,8 +40,9 @@ def insert_update_one_row(existing_row, new_row):
     return result, changes
 
 def insert_replace_one_row(existing_row, new_row):
+    assert(existing_row['id'] == new_row['id'])
     result = {}
-    changes = {}
+    changes = {'id': existing_row['id']}
     for k, v in new_row.iteritems():
         result[k] = v
         if (k not in existing_row) or (existing_row[k] != v):
