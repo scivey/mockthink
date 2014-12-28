@@ -67,15 +67,20 @@ def insert_into_table_with_conflict_setting(existing, to_insert, conflict):
             elif conflict == 'update':
                 result_row, changes = insert_update_one_row(existing_by_id[doc['id']], doc)
                 result_report['updated'] += 1
+                seen.add(doc['id'])
             elif conflict == 'replace':
                 result_row, changes = insert_replace_one_row(existing_by_id[doc['id']], doc)
                 result_report['replaced'] += 1
+                seen.add(doc['id'])
         else:
             result_row = doc
             changes = doc
         result.append(result_row)
         result_report['changes'].append(changes)
         result_report['inserted'] += 1
+
+    not_updated = [row for row in existing if row['id'] not in seen]
+    result = not_updated + result
     return result, result_report
 
 class MockTableData(object):
