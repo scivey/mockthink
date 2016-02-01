@@ -876,6 +876,12 @@ class ToEpochTime(MonExp):
     def do_run(self, dtime, arg, scope):
         return rtime.epoch_time(dtime)
 
+class ISO8601(MonExp):
+    def do_run(self, left, arg, scope):
+        left = left.run(arg, scope)
+        return left.strftime('%Y-%m-%d %H:%M:%S')
+
+
 class Time(MonExp):
     def do_run(self, parts, arg, scope):
         parts = list(parts)
@@ -907,8 +913,10 @@ class Binary(RBase):
 class ForEach(RBase):
     pass
 
-class RDefault(RBase):
-    pass
+class RDefault(BinExp):
+    def do_run(self, left, right, arg, scope):
+        if self.left.do_run(arg, scope) is None:
+            return self.right.run(arg, scope)
 
 class RExpr(RBase):
     pass
@@ -916,8 +924,15 @@ class RExpr(RBase):
 class Js(RBase):
     pass
 
-class CoerceTo(RBase):
-    pass
+class CoerceTo(BinExp):
+    def do_run(self, left, right, arg, scope):
+        res = self.left.do_run(arg, scope)
+        rname = self.right.do_run(arg, scope)
+        if rname.upper() == 'ARRAY':
+            if isinstance(res, dict):
+                return list(res.items())
+            return list(res)
+        return res
 
 class Info(RBase):
     pass

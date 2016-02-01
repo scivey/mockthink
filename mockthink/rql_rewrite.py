@@ -163,19 +163,21 @@ NORMAL_MONOPS = {
     r_ast.Date: mt_ast.Date,
     r_ast.ToEpochTime: mt_ast.ToEpochTime,
     r_ast.Literal: mt_ast.Literal,
-    r_ast.Distinct: mt_ast.Distinct
+    r_ast.Distinct: mt_ast.Distinct,
+    r_ast.ISO8601: mt_ast.ISO8601
 }
 
 #   2-ary reql terms which don't need any special handling
 NORMAL_BINOPS = {
-    r_ast.All: mt_ast.And,
-    r_ast.Any: mt_ast.Or,
+    r_ast.And: mt_ast.And,
+    r_ast.Or: mt_ast.Or,
     r_ast.Ge: mt_ast.Gte,
     r_ast.Lt: mt_ast.Lt,
     r_ast.Le: mt_ast.Lte,
     r_ast.Eq: mt_ast.Eq,
     r_ast.Ne: mt_ast.Neq,
     r_ast.Gt: mt_ast.Gt,
+    r_ast.Nth: mt_ast.Nth,
     r_ast.Add: mt_ast.Add,
     r_ast.Sub: mt_ast.Sub,
     r_ast.Mul: mt_ast.Mul,
@@ -199,7 +201,9 @@ NORMAL_BINOPS = {
     r_ast.Insert: mt_ast.Insert,
     r_ast.IndexDrop: mt_ast.IndexDrop,
     r_ast.TableCreate: mt_ast.TableCreate,
-    r_ast.TableDrop: mt_ast.TableDrop
+    r_ast.TableDrop: mt_ast.TableDrop,
+    r_ast.Default: mt_ast.RDefault,
+    r_ast.CoerceTo: mt_ast.CoerceTo
 }
 
 
@@ -380,19 +384,19 @@ def handle_order_by(node):
     right = mt_ast.MakeArray(right)
     return mt_ast.OrderBy(left, right, optargs=optargs)
 
-@handles_type(r_ast.IndexesOf)
-def handle_indexes_of(node):
-    optargs = process_optargs(node)
-    left = type_dispatch(node.args[0])
-    right = type_dispatch(node.args[1])
-    if isinstance(node.args[1], r_ast.Func):
-        return mt_ast.IndexesOfFunc(
-            left, right, optargs=optargs
-        )
-    else:
-        return mt_ast.IndexesOfValue(
-            left, right, optargs=optargs
-        )
+# @handles_type(r_ast.IndexesOf)
+# def handle_indexes_of(node):
+#     optargs = process_optargs(node)
+#     left = type_dispatch(node.args[0])
+#     right = type_dispatch(node.args[1])
+#     if isinstance(node.args[1], r_ast.Func):
+#         return mt_ast.IndexesOfFunc(
+#             left, right, optargs=optargs
+#         )
+#     else:
+#         return mt_ast.IndexesOfValue(
+#             left, right, optargs=optargs
+#         )
 
 @handles_type(r_ast.FunCall)
 def handle_funcall(node):
