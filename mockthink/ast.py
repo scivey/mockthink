@@ -3,6 +3,7 @@ import operator
 import random
 import uuid
 import json
+import dateutil.parser
 from pprint import pprint
 
 from . import util, joins, rtime
@@ -878,8 +879,9 @@ class ToEpochTime(MonExp):
 
 class ISO8601(MonExp):
     def do_run(self, left, arg, scope):
-        left = left.run(arg, scope)
-        return left.strftime('%Y-%m-%d %H:%M:%S')
+        if not isinstance(left, basestring):
+            left = left.run(arg, scope)
+        return dateutil.parser.parse(left)
 
 
 class Time(MonExp):

@@ -378,7 +378,7 @@ def handle_order_by(node):
         if isinstance(elem, r_ast.Datum):
             right.append(mt_ast.Asc(type_dispatch(elem)))
         else:
-            accepted = (r_ast.Desc, r_ast.Asc)
+            accepted = (r_ast.Desc, r_ast.Asc, r_ast.Func)
             assert(elem.__class__ in accepted)
             right.append(type_dispatch(elem))
     right = mt_ast.MakeArray(right)
