@@ -91,46 +91,51 @@ def insert_into_table_with_conflict_setting(existing, to_insert, conflict):
     return result, fill_missing_report_results(result_report)
 
 class MockTableData(object):
-    def __init__(self, rows, indexes):
+    def __init__(self, name, rows, indexes):
+        self.name = name
         self.rows = rows
         self.indexes = indexes
 
     def replace_all(self, rows, indexes):
-        return MockTableData(rows, indexes)
+        return MockTableData(self.name, rows, indexes)
 
     def update_by_id(self, updated_rows):
         if not isinstance(updated_rows, list):
             updated_rows = [updated_rows]
         new_data, report = replace_array_elems_by_id(self.rows, updated_rows)
-        return MockTableData(new_data, self.indexes), report
+        return MockTableData(self.name, new_data, self.indexes), report
 
     def insert(self, new_rows, conflict):
         assert(conflict in ('error', 'update', 'replace'))
         if not isinstance(new_rows, list):
             new_rows = [new_rows]
         new_data, report = insert_into_table_with_conflict_setting(self.rows, new_rows, conflict)
-        return MockTableData(new_data, self.indexes), report
+        return MockTableData(self.name, new_data, self.indexes), report
 
     def remove_by_id(self, to_remove):
         if not isinstance(to_remove, list):
             to_remove = [to_remove]
         new_data, report = remove_array_elems_by_id(self.rows, to_remove)
-        return MockTableData(new_data, self.indexes), report
+        return MockTableData(self.name, new_data, self.indexes), report
 
     def get_rows(self):
         return self.rows
 
-    def create_index(self, index_name, index_func):
-        return MockTableData(self.rows, util.extend(self.indexes, {index_name: index_func}))
+    def create_index(self, index_name, index_func, multi=False):
+        to_add = {
+            'func': index_func,
+            'multi': multi
+        }
+        return MockTableData(self.name, self.rows, util.extend(self.indexes, {index_name: to_add}))
 
     def rename_index(self, old_name, new_name):
         new_indexes = util.without([old_name], self.indexes)
         new_indexes[new_name] = self.indexes[old_name]
-        return MockTableData(self.rows, new_indexes)
+        return MockTableData(self.name, self.rows, new_indexes)
 
     def drop_index(self, index_name):
         new_indexes = util.without([index_name], self.indexes)
-        return MockTableData(self.rows, new_indexes)
+        return MockTableData(self.name, self.rows, new_indexes)
 
     def list_indexes(self):
         return self.indexes.keys()
@@ -145,7 +150,10 @@ class MockTableData(object):
         return out
 
     def get_index_func(self, index):
-        return self.indexes[index]
+        return self.indexes[index].get('func')
+
+    def is_multi_index(self, index):
+        return self.indexes[index].get('multi', False)
 
     def __iter__(self):
         for elem in self.rows:
@@ -154,12 +162,15 @@ class MockTableData(object):
     def __getitem__(self, index):
         return self.rows[index]
 
+    def __repr__(self):
+        return '<MockTableData name="%s"/>' % self.name
+
 class MockDbData(object):
     def __init__(self, tables_by_name):
         self.tables_by_name = tables_by_name
 
     def create_table(self, table_name):
-        return self.set_table(table_name, MockTableData([], {}))
+        return self.set_table(table_name, MockTableData(table_name, [], {}))
 
     def list_tables(self):
         return self.tables_by_name.keys()
@@ -234,8 +245,10 @@ class MockDb(object):
         new_table_data, report = self.get_db(db_name).get_table(table_name).remove_by_id(elem_list)
         return self._replace_table(db_name, table_name, new_table_data), report
 
-    def create_index_in_table_in_db(self, db_name, table_name, index_name, index_func):
-        new_table_data = self.get_db(db_name).get_table(table_name).create_index(index_name, index_func)
+    def create_index_in_table_in_db(self, db_name, table_name, index_name, index_func, multi=False):
+        new_table_data = self.get_db(db_name)\
+            .get_table(table_name)\
+            .create_index(index_name, index_func, multi=multi)
         return self._replace_table(db_name, table_name, new_table_data)
 
     def drop_index_in_table_in_db(self, db_name, table_name, index_name):
@@ -255,6 +268,9 @@ class MockDb(object):
     def get_index_func_in_table_in_db(self, db_name, table_name, index_name):
         return self.get_db(db_name).get_table(table_name).get_index_func(index_name)
 
+    def is_multi_index(self, db_name, table_name, index_name):
+        return self.get_db(db_name).get_table(table_name).is_multi_index(index_name)
+
     def get_now_time(self):
         return self.mockthink.get_now_time()
 
@@ -268,7 +284,9 @@ def objects_from_pods(data):
             else:
                 indexes = table_data.get('indexes', {})
                 table_data = table_data.get('rows', [])
-            tables_by_name[table_name] = MockTableData(table_data, indexes)
+            tables_by_name[table_name] = MockTableData(
+                table_name, table_data, indexes
+            )
         dbs_by_name[db_name] = MockDbData(tables_by_name)
     return MockDb(dbs_by_name)
 

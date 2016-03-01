@@ -136,7 +136,7 @@ class Get(BinExp):
 class GetAll(BinExp):
     def do_run(self, left, right, arg, scope):
         if 'index' in self.optargs and self.optargs['index'] != 'id':
-            index_func = self.find_index_func_for_scope(
+            index_func, is_multi = self.find_index_func_for_scope(
                 self.optargs['index'],
                 arg
             )
@@ -144,12 +144,28 @@ class GetAll(BinExp):
                 map_fn = lambda d: index_func.run([d], scope)
             else:
                 map_fn = index_func
+
             result = []
             left = list(left)
-            for elem in left:
-                if map_fn(elem) in right:
-                    result.append(elem)
+            if is_multi:
+                seen_ids = set([])
+                for elem in left:
+                    indexed = map_fn(elem)
+                    if not isinstance(indexed, (tuple, list)):
+                        indexed = [indexed]
+                    indexed = set(indexed)
+                    for match_item in right:
+                        if match_item in indexed:
+                            if elem['id'] not in seen_ids:
+                                seen_ids.add(elem['id'])
+                                result.append(elem)
+                            break
+            else:
+                for elem in left:
+                    if map_fn(elem) in right:
+                        result.append(elem)
             return result
+
         else:
             return filter(util.match_attr_multi('id', right), left)
 
@@ -438,7 +454,13 @@ class Prepend(BinExp):
     def do_run(self, sequence, value, arg, scope):
         return util.prepend(value, sequence)
 
-class OrderBy(BinExp):
+class OrderByFunc(ByFuncBase):
+    def do_run(self, sequence, func, arg, scope):
+        tups = [(item, func(item)) for item in sequence]
+        tups.sort(key=lambda x: x[1])
+        return [item[0] for item in tups]
+
+class OrderByKeys(BinExp):
     def do_run(self, sequence, keys, arg, scope):
         return util.sort_by_many(keys, sequence)
 
@@ -471,15 +493,13 @@ class Sample(BinExp):
     def do_run(self, sequence, sample_n, arg, scope):
         return random.sample(list(sequence), sample_n)
 
-class IndexesOfValue(BinExp):
+class OffsetsOfValue(BinExp):
     def do_run(self, sequence, test_val, arg, scope):
         return util.indices_of_passing(util.eq(test_val), list(sequence))
 
-class IndexesOfFunc(ByFuncBase):
+class OffsetsOfFunc(ByFuncBase):
     def do_run(self, sequence, test_fn, arg, scope):
         return util.indices_of_passing(test_fn, list(sequence))
-
-
 
 class SetInsert(BinExp):
     def do_run(self, left, right, arg, scope):
@@ -605,18 +625,21 @@ class IndexCreateByField(BinExp):
         index_func = util.getter(field_name)
         current_db = self.find_db_scope()
         current_table = self.find_table_scope()
+        multi = self.optargs.get('multi', False)
         return arg.create_index_in_table_in_db(
             current_db,
             current_table,
             field_name,
-            index_func
+            index_func,
+            multi=multi
         )
 
 class IndexCreateByFunc(RBase):
-    def __init__(self, left, middle, right, optargs={}):
+    def __init__(self, left, middle, right, optargs=None):
         self.left = left
         self.middle = middle
         self.right = right
+        self.optargs = optargs or {} 
 
     def run(self, arg, scope):
         sequence = self.left.run(arg, scope)
@@ -624,11 +647,13 @@ class IndexCreateByFunc(RBase):
         index_func = self.right
         current_db = self.find_db_scope()
         current_table = self.find_table_scope()
+        multi = self.optargs.get('multi', False)
         return arg.create_index_in_table_in_db(
             current_db,
             current_table,
             index_name,
-            index_func
+            index_func,
+            multi=multi
         )
 
 class IndexRename(Ternary):
@@ -758,7 +783,7 @@ class Between(Ternary):
         if options['index'] == 'id':
             map_fn = util.getter('id')
         else:
-            map_fn = self.find_index_func_for_scope(
+            map_fn, _ = self.find_index_func_for_scope(
                 options['index'],
                 arg
             )
@@ -917,8 +942,10 @@ class ForEach(RBase):
 
 class RDefault(BinExp):
     def do_run(self, left, right, arg, scope):
-        if self.left.do_run(arg, scope) is None:
+        result = self.left.run(arg, scope)
+        if result is None:
             return self.right.run(arg, scope)
+        return result
 
 class RExpr(RBase):
     pass
@@ -928,8 +955,8 @@ class Js(RBase):
 
 class CoerceTo(BinExp):
     def do_run(self, left, right, arg, scope):
-        res = self.left.do_run(arg, scope)
-        rname = self.right.do_run(arg, scope)
+        res = self.left.run(arg, scope)
+        rname = self.right.run(arg, scope)
         if rname.upper() == 'ARRAY':
             if isinstance(res, dict):
                 return list(res.items())

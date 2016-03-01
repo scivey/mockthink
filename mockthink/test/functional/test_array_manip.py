@@ -117,7 +117,7 @@ class TestIndexesOf(MockTest):
         ]
         return as_db_and_table('scrumptious', 'cake', things)
 
-    def test_indexes_of_val(self, conn):
+    def test_offsets_of_val(self, conn):
         expected = [
             [],
             [1, 4],
@@ -125,13 +125,13 @@ class TestIndexesOf(MockTest):
             [2]
         ]
         result = r.db('scrumptious').table('cake').map(
-            lambda doc: doc['letters'].indexes_of('b')
+            lambda doc: doc['letters'].offsets_of('b')
         ).run(conn)
         result = list(result)
         pprint(result)
         self.assertEqUnordered(expected, result)
 
-    def test_indexes_of_array_val(self, conn):
+    def test_offsets_of_array_val(self, conn):
         expected = [
             [],
             [3],
@@ -139,11 +139,11 @@ class TestIndexesOf(MockTest):
             [4]
         ]
         result = r.db('scrumptious').table('cake').map(
-            lambda doc: doc['letters'].indexes_of(['q', 'q'])
+            lambda doc: doc['letters'].offsets_of(['q', 'q'])
         ).run(conn)
         self.assertEqUnordered(expected, list(result))
 
-    def test_indexes_of_func(self, conn):
+    def test_offsets_of_func(self, conn):
         expected = [
             [],
             [1, 4],
@@ -151,7 +151,7 @@ class TestIndexesOf(MockTest):
             [2]
         ]
         result = r.db('scrumptious').table('cake').map(
-            lambda doc: doc['letters'].indexes_of(
+            lambda doc: doc['letters'].offsets_of(
                 lambda letter: letter == 'b'
             )
         ).run(conn)

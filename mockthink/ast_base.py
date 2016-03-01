@@ -46,11 +46,17 @@ class RBase(object):
     def find_index_func_for_scope(self, index_name, db_arg):
         table = self.find_table_scope()
         db = self.find_db_scope()
-        return db_arg.get_index_func_in_table_in_db(
-            self.find_db_scope(),
-            self.find_table_scope(),
+        db_scope = self.find_db_scope()
+        table_scope = self.find_table_scope()
+        func = db_arg.get_index_func_in_table_in_db(
+            db_scope,
+            table_scope,
             index_name
         )
+        is_multi = db_arg.is_multi_index(
+            db_scope, table_scope, index_name
+        )
+        return func, is_multi
 
     def raise_rql_runtime_error(self, msg):
         from rethinkdb import RqlRuntimeError

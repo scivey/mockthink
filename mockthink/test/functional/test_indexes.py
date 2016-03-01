@@ -128,3 +128,68 @@ class TestIndexes(MockTest):
         ).run(conn)
         self.assertEqual(expected, list(result))
 
+
+class TestIndexUpdating(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'bob', 'first_name': 'Bob', 'last_name': 'Builder'},
+            {'id': 'joe', 'first_name': 'Joseph', 'last_name': 'Smith'},
+            {'id': 'tom', 'first_name': 'Tom', 'last_name': 'Generic'}
+        ]
+        return as_db_and_table('s', 'people', data)
+
+    def test_index_update(self, conn):
+        people = r.db('s').table('people')
+        people.index_create(
+            'last_name'
+        ).run(conn)
+        people.index_wait().run(conn)
+        people.insert({
+            'id': 'someone',
+            'first_name': 'Some',
+            'last_name': 'One'
+        }).run(conn)
+        result = list(people
+            .get_all('One', index='last_name')
+            .run(conn)
+        )
+        self.assertEqual(1, len(result))
+        result = result[0]
+        self.assertEqual('someone', result['id'])
+
+
+class TestMoreIndices(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'a-id', 'name': 'a', 'parent': None, 'parents': []},
+            {'id': 'b-id', 'name': 'b', 'parent': 'a-id', 'parents': ['a-id']},
+            {'id': 'c-id', 'name': 'c', 'parent': 'a-id', 'parents': ['a-id']},
+            {'id': 'd-id', 'name': 'd', 'parent': 'c-id', 'parents': ['c-id', 'a-id']},
+            {'id': 'e-id', 'name': 'e', 'parent': 'b-id', 'parents': ['b-id', 'a-id']}
+        ]
+        return as_db_and_table('s', 'spaces', data)
+
+    def test_basic(self, conn):
+        spaces = r.db('s').table('spaces')
+        spaces.index_create('parents', multi=True).run(conn)
+        spaces.index_wait().run(conn)
+        children = list(spaces.get_all('a-id', index='parents').run(conn))
+        self.assertEqual(4, len(children))
+
+    # def test_query_against(self, conn):
+    #     spaces = r.db('s').table('spaces')
+    #     spaces.index_create('parents', multi=True).run(conn)
+    #     spaces.index_wait().run(conn)
+    #     query = spaces.get_all('b-id', index='parents')\
+    #         .distinct()\
+    #         .order_by(lambda doc: doc['parents'].count())\
+    #         .map(lambda doc: doc['id'])
+    #     result = list(query.run(conn))
+    #     pprint(result)
+    #     self.assertEqual(True, False)
+    #         # for parent_id in (rethinkdb.table(Workspace.plural())
+    #         #                            .get_all(*workspace_ids, index='parents')
+    #         #                            .distinct()
+    #         #                            .order_by(lambda doc: doc['parents'].count())
+    #         #                            .map(lambda doc: doc['id'])
+    #         #                            .run(Model.connection.local())):

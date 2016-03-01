@@ -3,6 +3,7 @@ import rethinkdb as r
 from pprint import pprint
 
 from rethinkdb import RqlCompileError, RqlDriverError
+from rethinkdb.errors import ReqlDriverCompileError
 from rethinkdb.ast import RqlTzinfo
 
 from mockthink.test.common import as_db_and_table
@@ -188,7 +189,7 @@ class TestTime(MockTest):
             query = r.db('unimportant').table('very').update({
                 'update_time': date
             }).run(conn)
-        except RqlDriverError as e:
+        except ReqlDriverCompileError as e:
             err = e
         assert('datetime' in err.message.lower())
         assert('timezone' in err.message.lower())
@@ -197,8 +198,8 @@ class TestTime(MockTest):
 class TestDuring(MockTest):
     def get_data(self):
         data = [
-            {'id': 'joe', 'last_updated': rtime.make_time(2014, 6, 3)},
-            {'id': 'sam', 'last_updated': rtime.make_time(2014, 8, 25)}
+            {'id': 'joe', 'last_updated': r.time(2014, 6, 3, 'Z')},
+            {'id': 'sam', 'last_updated': r.time(2014, 8, 25, 'Z')}
         ]
         return as_db_and_table('d', 'people', data)
 
@@ -249,14 +250,13 @@ class TestDuring(MockTest):
 
     def test_during_closed_right(self, conn):
         expected = [
-            {'id': 'joe', 'is_during': True},
-            {'id': 'sam', 'is_during': True}
+            {'id': 'joe', 'is_during': True}
         ]
         result = r.db('d').table('people').map(
             lambda doc: {
                 'id': doc['id'],
                 'is_during': doc['last_updated'].during(
-                    r.time(2014, 6, 3, 'Z'),
+                    r.time(2014, 6, 2, 'Z'),
                     r.time(2014, 8, 25, 'Z'),
                     right_bound='closed'
                 )
@@ -298,3 +298,25 @@ class TestDuring(MockTest):
             }
         ).run(conn)
         self.assertEqUnordered(expected, list(result))
+
+class TestDuring2(MockTest):
+    def get_data(self):
+        data = [
+            {'id': 'joe', 'last_updated': rtime.make_time(2014, 6, 3)},
+            {'id': 'sam', 'last_updated': rtime.make_time(2014, 7, 25)},
+            {'id': 'bob', 'last_updated': rtime.make_time(2014, 6, 17)},
+            {'id': 'sam', 'last_updated': rtime.make_time(2014, 5, 1)}
+        ]
+        return as_db_and_table('d', 'people', data)
+
+    def test_filter_during(self, conn):
+        table = r.db('d').table('people')
+        result = table.filter(
+            lambda doc: doc['last_updated'].during(
+                r.time(2014, 6, 1, 'Z'),
+                r.time(2014, 6, 30, 'Z')
+            )
+        ).run(conn)
+        result = list(result)
+        self.assertEqual(2, len(result))
+

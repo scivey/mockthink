@@ -240,7 +240,6 @@ SPLATTED_BINOPS = {
     r_ast.HasFields: mt_ast.HasFields,
     r_ast.Without: mt_ast.WithoutPoly,
     r_ast.GetAll: mt_ast.GetAll,
-    r_ast.OrderBy: mt_ast.OrderBy,
     r_ast.DeleteAt: mt_ast.DeleteAt
 }
 
@@ -381,22 +380,25 @@ def handle_order_by(node):
             accepted = (r_ast.Desc, r_ast.Asc, r_ast.Func)
             assert(elem.__class__ in accepted)
             right.append(type_dispatch(elem))
+    if isinstance(right[0], mt_ast.RFunc):
+        right = right[0]
+        return mt_ast.OrderByFunc(left, right, optargs=optargs)
     right = mt_ast.MakeArray(right)
-    return mt_ast.OrderBy(left, right, optargs=optargs)
+    return mt_ast.OrderByKeys(left, right, optargs=optargs)
 
-# @handles_type(r_ast.IndexesOf)
-# def handle_indexes_of(node):
-#     optargs = process_optargs(node)
-#     left = type_dispatch(node.args[0])
-#     right = type_dispatch(node.args[1])
-#     if isinstance(node.args[1], r_ast.Func):
-#         return mt_ast.IndexesOfFunc(
-#             left, right, optargs=optargs
-#         )
-#     else:
-#         return mt_ast.IndexesOfValue(
-#             left, right, optargs=optargs
-#         )
+@handles_type(r_ast.OffsetsOf)
+def handle_offsets_of(node):
+    optargs = process_optargs(node)
+    left = type_dispatch(node.args[0])
+    right = type_dispatch(node.args[1])
+    if isinstance(node.args[1], r_ast.Func):
+        return mt_ast.OffsetsOfFunc(
+            left, right, optargs=optargs
+        )
+    else:
+        return mt_ast.OffsetsOfValue(
+            left, right, optargs=optargs
+        )
 
 @handles_type(r_ast.FunCall)
 def handle_funcall(node):

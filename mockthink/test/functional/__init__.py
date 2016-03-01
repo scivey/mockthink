@@ -8,6 +8,7 @@ from mockthink.test.functional import test_pluck, test_strings, test_time, test_
 from mockthink.test.functional import test_update_insert_delete, test_without
 from mockthink.test.functional import test_aggregation, test_logic, test_table_db_mod
 from mockthink.test.functional import test_distinct, test_contains
+from mockthink.test.functional import test_bracket_mapping
 
 
 from mockthink.test.functional.common import run_tests_with_rethink, run_tests_with_mockthink
