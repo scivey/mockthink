@@ -284,11 +284,6 @@ class Delete(MonExp):
             del report['changes']
         return result, report
 
-def ensure_id(elem):
-    if 'id' not in elem:
-        elem = util.extend(elem, {'id': unicode(uuid.uuid4())})
-    return elem
-
 class Insert(BinExp):
     def get_insert_settings(self):
         defaults = {
@@ -303,11 +298,21 @@ class Insert(BinExp):
         current_db = self.find_db_scope()
         if isinstance(to_insert, dict):
             to_insert = [to_insert]
+        generated_keys = list()
+
+        def ensure_id(elem):
+            if 'id' not in elem:
+                uid = unicode(uuid.uuid4())
+                elem = util.extend(elem, {'id': uid})
+                generated_keys.append(uid)
+            return elem
+
         to_insert = map(ensure_id, list(to_insert))
         settings = self.get_insert_settings()
         result, report = arg.insert_into_table_in_db(current_db, current_table, to_insert, conflict=settings['conflict'])
         if not settings['return_changes']:
             del report['changes']
+        report['generated_keys'] = generated_keys
         return result, report
 
 class FilterWithFunc(ByFuncBase):
