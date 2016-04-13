@@ -6,7 +6,8 @@ import unittest
 
 def real_stock_data_load(data, connection):
     for db in list(r.db_list().run(connection)):
-        r.db_drop(db).run(connection)
+        if db != "rethinkdb":
+            r.db_drop(db).run(connection)
     for db_name, db_data in data['dbs'].iteritems():
         r.db_create(db_name).run(connection)
         for table_name, table_data in db_data['tables'].iteritems():

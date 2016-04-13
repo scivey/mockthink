@@ -37,7 +37,19 @@ def run_tests(conn, grep):
             print 'skipping: %s' % test_name
 
 def run_tests_with_mockthink(grep):
-    think = MockThink(as_db_and_table('nothing', 'nothing', []))
+    data = {
+        'dbs': {
+            'nothing': {
+                'tables': {
+                    'nothing': []
+                }
+            },
+            'rethinkdb': {
+                'tables': {}
+            }
+        }
+    }
+    think = MockThink(data)
     run_tests(think.get_conn(), grep)
 
 def run_tests_with_rethink(grep):

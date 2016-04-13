@@ -1,10 +1,15 @@
-import rethinkdb
-import datetime
+from __future__ import print_function
 import contextlib
+from copy import copy
+import datetime
 from pprint import pprint
+
+import rethinkdb
+
 from . import util, ast, rtime
 from .rql_rewrite import rewrite_query
 from .scope import Scope
+from .stolen import cached_property
 
 def fill_missing_report_results(report):
     defaults = {
@@ -298,12 +303,25 @@ class MockThinkConn(object):
     def _start(self, rql_query, **global_optargs):
         return self.mockthink_parent.run_query(rewrite_query(rql_query))
 
+
+DEFAULT_DBS = {
+    'rethinkdb': {
+        'tables': {}
+    }
+}
+
 class MockThink(object):
     def __init__(self, initial_data):
         self._modify_initial_data(initial_data)
         self.tzinfo = rethinkdb.make_timezone('00:00')
 
     def _modify_initial_data(self, new_data):
+        new_data = copy(new_data)
+        if 'dbs' in new_data:
+            dbs = new_data['dbs']
+            for db_name, db_config in DEFAULT_DBS.iteritems():
+                if db_name not in dbs:
+                    dbs[db_name] = db_config
         self.initial_data = new_data
         self.reset()
 
@@ -335,8 +353,7 @@ class MockThink(object):
         return result
 
     def pprint_query_ast(self, query):
-        query = "%s" % query
-        print query
+        print(str(query))
 
     def reset(self):
         self.data = objects_from_pods(self.initial_data)

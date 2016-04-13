@@ -95,18 +95,18 @@ class TestDbMod(MockTest):
         }
 
     def test_db_list(self, conn):
-        expected = set(['db_one', 'db_two'])
+        expected = set(['db_one', 'db_two', 'rethinkdb'])
         result = r.db_list().run(conn)
         self.assertEqual(expected, set(list(result)))
 
     def test_db_create(self, conn):
-        expected = set(['db_one', 'db_two', 'db_three'])
+        expected = set(['db_one', 'db_two', 'db_three', 'rethinkdb'])
         r.db_create('db_three').run(conn)
         result = r.db_list().run(conn)
         self.assertEqual(expected, set(list(result)))
 
     def test_db_drop(self, conn):
-        expected = set(['db_one'])
+        expected = set(['db_one', 'rethinkdb'])
         r.db_drop('db_two').run(conn)
         result = r.db_list().run(conn)
         self.assertEqual(expected, set(list(result)))

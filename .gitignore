@@ -4,4 +4,4 @@ build
 tmp
 *.log
 *.tmp
-
+.env

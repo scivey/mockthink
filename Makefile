@@ -1,6 +1,6 @@
 WORKDIR=$(shell pwd)
 
-SET_PATH=export PYTHONPATH=$(WORKDIR)
+SET_PATH=. .env/bin/activate && export PYTHONPATH=$(WORKDIR)
 RUN=$(SET_PATH) && python
 GREP ?= ALL
 test-functional:
@@ -19,3 +19,6 @@ test-unit:
 	$(SET_PATH) && nosetests ./mockthink/test/unit
 
 test: test-unit test-integration test-functional
+
+clean:
+	find . -name "*.pyc" | xargs rm -f
