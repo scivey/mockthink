@@ -301,7 +301,7 @@ class Insert(BinExp):
         generated_keys = list()
 
         def ensure_id(elem):
-            if 'id' not in elem:
+            if 'id' not in elem or elem['id'] is None:
                 uid = unicode(uuid.uuid4())
                 elem = util.extend(elem, {'id': uid})
                 generated_keys.append(uid)
@@ -312,7 +312,8 @@ class Insert(BinExp):
         result, report = arg.insert_into_table_in_db(current_db, current_table, to_insert, conflict=settings['conflict'])
         if not settings['return_changes']:
             del report['changes']
-        report['generated_keys'] = generated_keys
+        if generated_keys:
+            report['generated_keys'] = generated_keys
         return result, report
 
 class FilterWithFunc(ByFuncBase):
