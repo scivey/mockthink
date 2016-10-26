@@ -1,9 +1,10 @@
 from __future__ import print_function
+
 import rethinkdb as r
-from mockthink.db import MockThink, MockThinkConn
-from mockthink.test.common import make_test_registry, AssertionMixin
-from mockthink.test.common import as_db_and_table
-from mockthink import util, rtime
+from future.utils import iteritems
+
+from mockthink.db import MockThink
+from mockthink.test.common import AssertionMixin, as_db_and_table, make_test_registry
 
 TESTS = {}
 register_test = make_test_registry(TESTS)

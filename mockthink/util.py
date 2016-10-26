@@ -332,8 +332,7 @@ def eq(x, y):
 
 def sorted_iteritems(a_dict):
     keys = a_dict.keys()
-    keys.sort()
-    for k in keys:
+    for k in sorted(keys):
         yield k, a_dict[k]
 
 def sorted_list(a_list):
