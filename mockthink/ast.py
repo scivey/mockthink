@@ -5,7 +5,7 @@ import uuid
 import json
 import dateutil.parser
 from pprint import pprint
-from future.utils import old_div
+from future.utils import old_div, iteritems
 
 from . import util, joins, rtime
 from .scope import Scope
@@ -530,7 +530,7 @@ class Do(ByFuncBase):
 
 class UnGroup(MonExp):
     def do_run(self, grouped_seq, arg, scope):
-        for group_name, group_vals in grouped_seq.iteritems():
+        for group_name, group_vals in iteritems(grouped_seq):
             yield {
                 'group': group_name,
                 'reduction': group_vals

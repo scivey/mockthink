@@ -1,11 +1,15 @@
 from __future__ import print_function
-import rethinkdb
-import datetime
+
 import contextlib
 from pprint import pprint
-from . import util, ast, rtime
+
+import rethinkdb
+from future.utils import iteritems
+
+from . import rtime, util
 from .rql_rewrite import rewrite_query
 from .scope import Scope
+from past.builtins import xrange
 
 def fill_missing_report_results(report):
     defaults = {
@@ -277,9 +281,9 @@ class MockDb(object):
 
 def objects_from_pods(data):
     dbs_by_name = {}
-    for db_name, db_data in data['dbs'].iteritems():
+    for db_name, db_data in iteritems(data['dbs']):
         tables_by_name = {}
-        for table_name, table_data in db_data['tables'].iteritems():
+        for table_name, table_data in iteritems(db_data['tables']):
             if isinstance(table_data, list):
                 indexes = {}
             else:

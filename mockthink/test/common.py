@@ -1,16 +1,21 @@
 from __future__ import print_function
-from pprint import pprint
-import rethinkdb as r
-from mockthink.db import MockThink, MockThinkConn
-import mockthink.util as util
+
 import unittest
+from pprint import pprint
+
+import rethinkdb as r
+from future.utils import iteritems
+
+import mockthink.util as util
+from mockthink.db import MockThinkConn
+
 
 def real_stock_data_load(data, connection):
     for db in list(r.db_list().run(connection)):
         r.db_drop(db).run(connection)
-    for db_name, db_data in data['dbs'].iteritems():
+    for db_name, db_data in iteritems(data['dbs']):
         r.db_create(db_name).run(connection)
-        for table_name, table_data in db_data['tables'].iteritems():
+        for table_name, table_data in iteritems(db_data['tables']):
             r.db(db_name).table_create(table_name).run(connection)
             r.db(db_name).table(table_name).insert(table_data).run(connection)
 

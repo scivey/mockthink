@@ -1,4 +1,4 @@
-from future.utils import PY2
+from future.utils import PY2, iteritems
 
 if PY2:
     import mock
@@ -178,7 +178,7 @@ class TestUtil(unittest.TestCase):
 
         class Thing(object):
             def __init__(self, a_dict):
-                for k, v in a_dict.iteritems():
+                for k, v in iteritems(a_dict):
                     setattr(self, k, v)
 
         thing = Thing({'x': 'x-val'})

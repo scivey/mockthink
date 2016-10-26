@@ -1,7 +1,8 @@
-import random
-import operator
 from collections import defaultdict
-from pprint import pprint
+
+from future.utils import iteritems
+
+
 def curry2(func):
     def out(x, *args):
         if len(args):
@@ -38,7 +39,7 @@ def clone(x):
 def deep_extend_pair(dict1, dict2):
     out = {}
     out.update(dict1)
-    for k, v in dict2.iteritems():
+    for k, v in iteritems(dict2):
         if k not in out:
             out[k] = clone(v)
         else:
@@ -90,14 +91,14 @@ def extend_with(a_dict, to_extend):
 
 @curry2
 def map_with(fn, a_list):
-    return map(fn, a_list)
+    return list(map(fn, a_list))
 
 @curry2
 def maybe_map(fn, thing):
     if isinstance(thing, dict):
         return fn(thing)
     elif is_iterable(thing):
-        return map(fn, thing)
+        return list(map(fn, thing))
     else:
         return fn(thing)
 
@@ -106,7 +107,7 @@ def maybe_filter(fn, thing):
     if isinstance(thing, dict):
         return fn(thing)
     elif is_iterable(thing):
-        return filter(fn, thing)
+        return list(filter(fn, thing))
     else:
         return fn(thing)
 
@@ -156,7 +157,7 @@ def ensure_list(x):
 @curry2
 def match_attrs(to_match, to_test):
     match = True
-    for k, v in to_match.iteritems():
+    for k, v in iteritems(to_match):
         if getter(k)(to_test) != v:
             match = False
             break
@@ -185,7 +186,7 @@ def pipeline(*funcs):
 
 def pluck_with(*attrs):
     def inner_pluck(thing):
-        return {k: v for k,v in thing.iteritems() if k in attrs}
+        return {k: v for k,v in iteritems(thing) if k in attrs}
     return inner_pluck
 
 def get_by_id(id):
@@ -199,10 +200,10 @@ def clone_array(x):
 
 @curry2
 def without(bad_attrs, thing):
-    return {k: v for k, v in thing.iteritems() if k not in bad_attrs}
+    return {k: v for k, v in iteritems(thing) if k not in bad_attrs}
 
 def obj_clone(a_dict):
-    return {k: v for k, v in a_dict.iteritems()}
+    return {k: v for k, v in iteritems(a_dict)}
 
 def is_iterable(x):
     return hasattr(x, '__iter__')

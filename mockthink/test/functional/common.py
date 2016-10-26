@@ -29,7 +29,7 @@ class MockTest(Base, AssertionMixin):
         }
 
 def run_tests(conn, grep):
-    for test_name, test_fn in TESTS.iteritems():
+    for test_name, test_fn in iteritems(TESTS):
         if not grep or grep == 'ALL':
             test_fn(conn)
         elif grep in test_name:

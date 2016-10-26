@@ -3,6 +3,8 @@ import argparse
 import sys
 from pprint import pprint
 import rethinkdb as r
+from future.utils import iteritems
+
 from mockthink.db import MockThink, MockThinkConn
 from mockthink.test.common import make_test_registry, AssertionMixin
 from mockthink.test.common import as_db_and_table
@@ -159,7 +161,7 @@ class TestThings(MockTest):
 
 
 def run_tests(conn, grep):
-    for test_name, test_fn in TESTS.iteritems():
+    for test_name, test_fn in iteritems(TESTS):
         if not grep or grep == 'ALL':
             test_fn(conn)
         elif grep in test_name:

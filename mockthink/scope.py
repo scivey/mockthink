@@ -25,7 +25,7 @@ class Scope(object):
         return scope
 
     def get_flattened(self):
-        vals = {k: v for k, v in self.values.iteritems()}
+        vals = {k: v for k, v in iteritems(self.values)}
         if not hasattr(self, 'parent'):
             return vals
         parent_vals = self.parent.get_flattened()
