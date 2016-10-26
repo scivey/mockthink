@@ -1,3 +1,4 @@
+from __future__ import print_function
 from pprint import pprint
 import rethinkdb as r
 from mockthink.db import MockThink, MockThinkConn
@@ -28,7 +29,7 @@ def make_test_registry(test_dict):
             instance = Constructor()
             for one_test in tests:
                 load_stock_data(instance.get_data(), connection)
-                print '%s: %s' % (class_name, one_test)
+                print('%s: %s' % (class_name, one_test))
                 test_func = getattr(instance, one_test)
                 test_func(connection)
         test_dict[class_name] = test
@@ -38,7 +39,7 @@ def assertEqUnordered(x, y, msg=''):
     for x_elem in x:
         if x_elem not in y:
             msg = 'assertEqUnordered: match not found for %s' % x_elem
-            print 'AssertionError: %s' % msg
+            print('AssertionError: %s' % msg)
             raise AssertionError(msg)
 
 
@@ -48,7 +49,7 @@ class AssertionMixin(object):
         try:
             assert(x == y)
         except AssertionError as e:
-            print 'AssertionError: expected %r to equal %r' % (x, y)
+            print('AssertionError: expected %r to equal %r' % (x, y))
             pprint(x)
             pprint(y)
             raise e

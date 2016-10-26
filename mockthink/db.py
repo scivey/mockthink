@@ -1,3 +1,4 @@
+from __future__ import print_function
 import rethinkdb
 import datetime
 import contextlib
@@ -336,7 +337,7 @@ class MockThink(object):
 
     def pprint_query_ast(self, query):
         query = "%s" % query
-        print query
+        print(query)
 
     def reset(self):
         self.data = objects_from_pods(self.initial_data)

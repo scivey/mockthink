@@ -1,3 +1,4 @@
+from __future__ import print_function
 import rethinkdb as r
 from mockthink.db import MockThink, MockThinkConn
 from mockthink.test.common import make_test_registry, AssertionMixin
@@ -34,7 +35,7 @@ def run_tests(conn, grep):
         elif grep in test_name:
             test_fn(conn)
         else:
-            print 'skipping: %s' % test_name
+            print('skipping: %s' % test_name)
 
 def run_tests_with_mockthink(grep):
     think = MockThink(as_db_and_table('nothing', 'nothing', []))

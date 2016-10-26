@@ -1,6 +1,7 @@
+from __future__ import print_function
 class NotInScopeErr(Exception):
     def __init__(self, msg):
-        print msg
+        print(msg)
         self.msg = msg
 
 class Scope(object):
