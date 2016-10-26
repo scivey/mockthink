@@ -5,4 +5,4 @@ tmp
 *.log
 *.tmp
 .tox/
-
+.idea/
