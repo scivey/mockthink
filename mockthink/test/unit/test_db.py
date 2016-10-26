@@ -1,8 +1,6 @@
-import mock
-import unittest
-from pprint import pprint
 from ..common import TestCase
-from ... import db, util
+from ... import db
+
 
 def db_insert_starting_data():
     return [

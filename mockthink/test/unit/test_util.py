@@ -1,4 +1,9 @@
-import mock
+from future.utils import PY2
+
+if PY2:
+    import mock
+else:
+    from unittest import mock
 import unittest
 from pprint import pprint
 from ... import util

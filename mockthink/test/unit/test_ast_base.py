@@ -1,7 +1,7 @@
-import mock
 import unittest
-from pprint import pprint
+
 from ... import ast_base
+
 
 class TestAst(unittest.TestCase):
     def test_rql_merge_with(self):
