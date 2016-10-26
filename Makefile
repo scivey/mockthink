@@ -16,6 +16,6 @@ test-integration-rethink:
 	$(RUN) ./mockthink/test/integration/__init__.py --run rethink --grep $(GREP)
 
 test-unit:
-	$(SET_PATH) && nosetests ./mockthink/test/unit
+	$(SET_PATH) && py.test ./mockthink/test/unit
 
 test: test-unit test-integration test-functional
