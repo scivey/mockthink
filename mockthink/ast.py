@@ -5,13 +5,13 @@ import uuid
 import json
 import dateutil.parser
 from pprint import pprint
+from future.utils import old_div
 
 from . import util, joins, rtime
 from .scope import Scope
 
 from . import ast_base
 from .ast_base import RBase, MonExp, BinExp, Ternary, ByFuncBase
-from .ast_base import LITERAL_OBJECT, LITERAL_LIST, RDatum, RFunc, MakeObj, MakeArray
 from .ast_base import LITERAL_OBJECT, LITERAL_LIST, RDatum, RFunc, MakeObj, MakeArray
 
 
@@ -201,7 +201,7 @@ class Mul(BinOp):
     binop = operator.mul
 
 class Div(BinOp):
-    binop = operator.div
+    binop = old_div
 
 class Mod(BinOp):
     binop = operator.mod
@@ -645,7 +645,7 @@ class IndexCreateByFunc(RBase):
         self.left = left
         self.middle = middle
         self.right = right
-        self.optargs = optargs or {} 
+        self.optargs = optargs or {}
 
     def run(self, arg, scope):
         sequence = self.left.run(arg, scope)
