@@ -1,11 +1,12 @@
 import rethinkdb as r
-from mockthink.test.common import as_db_and_table
+from mockthink.test.common import as_db_and_table, assertEqual, assertEqUnordered
 from mockthink.test.functional.common import MockTest
 from pprint import pprint
 
 
 class TestGroup(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'joe', 'type': 'bro'},
             {'id': 'bill', 'type': 'hipster'},
@@ -24,9 +25,9 @@ class TestGroup(MockTest):
             ]
         }
         result = r.db('x').table('people').group('type').run(conn)
-        self.assertEqual(expected['bro'], result['bro'])
-        self.assertEqUnordered(expected['hipster'], result['hipster'])
-        self.assertEqual(set(['bro', 'hipster']), set(result.keys()))
+        assertEqual(expected['bro'], result['bro'])
+        assertEqUnordered(expected['hipster'], result['hipster'])
+        assertEqual(set(['bro', 'hipster']), set(result.keys()))
 
     def test_group_by_func(self, conn):
         expected = {
@@ -39,13 +40,14 @@ class TestGroup(MockTest):
             ]
         }
         result = r.db('x').table('people').group(lambda d: d['type']).run(conn)
-        self.assertEqual(expected['bro'], result['bro'])
-        self.assertEqUnordered(expected['hipster'], result['hipster'])
-        self.assertEqual(set(['bro', 'hipster']), set(result.keys()))
+        assertEqual(expected['bro'], result['bro'])
+        assertEqUnordered(expected['hipster'], result['hipster'])
+        assertEqual(set(['bro', 'hipster']), set(result.keys()))
 
 
 class TestUngroup(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'joe', 'type': 'bro'},
             {'id': 'bill', 'type': 'hipster'},
@@ -80,13 +82,13 @@ class TestUngroup(MockTest):
         ]
         result = r.db('x').table('people').group('type').ungroup().run(conn)
         result = list(result)
-        self.assertEqual(3, len(result))
-        self.assertEqual(set(['bro', 'hipster', 'unknown']), set([doc['group'] for doc in result]))
+        assertEqual(3, len(result))
+        assertEqual(set(['bro', 'hipster', 'unknown']), set([doc['group'] for doc in result]))
         is_group = lambda group: lambda doc: doc['group'] == group
         for group in ('bro', 'hipster', 'unknown'):
             result_group = filter(is_group(group), result)[0]
             expected_group = filter(is_group(group), expected)[0]
-            self.assertEqUnordered(expected_group['reduction'], result_group['reduction'])
+            assertEqUnordered(expected_group['reduction'], result_group['reduction'])
 
     def test_ungroup_grouped_by_func(self, conn):
         expected = [
@@ -113,10 +115,10 @@ class TestUngroup(MockTest):
         ]
         result = r.db('x').table('people').group(lambda d: d['type']).ungroup().run(conn)
         result = list(result)
-        self.assertEqual(3, len(result))
-        self.assertEqual(set(['bro', 'hipster', 'unknown']), set([doc['group'] for doc in result]))
+        assertEqual(3, len(result))
+        assertEqual(set(['bro', 'hipster', 'unknown']), set([doc['group'] for doc in result]))
         is_group = lambda group: lambda doc: doc['group'] == group
         for group in ('bro', 'hipster', 'unknown'):
             result_group = filter(is_group(group), result)[0]
             expected_group = filter(is_group(group), expected)[0]
-            self.assertEqUnordered(expected_group['reduction'], result_group['reduction'])
+            assertEqUnordered(expected_group['reduction'], result_group['reduction'])

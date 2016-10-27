@@ -47,20 +47,8 @@ def assertEqUnordered(x, y, msg=''):
             print('AssertionError: %s' % msg)
             raise AssertionError(msg)
 
-
-
-class AssertionMixin(object):
-    def assertEqual(self, x, y, msg=''):
-        try:
-            assert(x == y)
-        except AssertionError as e:
-            print('AssertionError: expected %r to equal %r' % (x, y))
-            pprint(x)
-            pprint(y)
-            raise e
-
-    def assertEqUnordered(self, x, y, msg=''):
-        return assertEqUnordered(x, y, msg)
+def assertEqual(x, y, msg=''):
+    assert x == y
 
 def as_db_and_table(db_name, table_name, data):
     return {
@@ -79,4 +67,4 @@ class TestCase(unittest.TestCase):
 
     def assert_key_equality(self, keys, dict1, dict2):
         pluck = util.pluck_with(*keys)
-        self.assertEqual(pluck(dict1), pluck(dict2))
+        assertEqual(pluck(dict1), pluck(dict2))

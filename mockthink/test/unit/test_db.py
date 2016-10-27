@@ -1,4 +1,4 @@
-from ..common import TestCase
+from ..common import TestCase, assertEqual
 from ... import db
 
 
@@ -39,7 +39,7 @@ class TestDbInsertWithConflictSettings(TestCase):
             to_insert,
             conflict='error'
         )
-        self.assertEqual(expected_result, result)
+        assertEqual(expected_result, result)
         keys = ('replaced', 'inserted', 'errors', 'changes')
         self.assert_key_equality(keys, expected_report, report)
 
@@ -74,7 +74,7 @@ class TestDbInsertWithConflictSettings(TestCase):
             to_insert,
             conflict='update'
         )
-        self.assertEqual(expected_result, result)
+        assertEqual(expected_result, result)
         keys = ('replaced', 'inserted', 'errors', 'changes')
         self.assert_key_equality(keys, expected_report, report)
 
@@ -109,7 +109,7 @@ class TestDbInsertWithConflictSettings(TestCase):
             to_insert,
             conflict='replace'
         )
-        self.assertEqual(expected_result, result)
+        assertEqual(expected_result, result)
         keys = ('replaced', 'inserted', 'errors', 'changes')
         self.assert_key_equality(keys, expected_report, report)
 

@@ -1,10 +1,11 @@
 import rethinkdb as r
-from mockthink.test.common import as_db_and_table
+from mockthink.test.common import as_db_and_table, assertEqUnordered
 from mockthink.test.functional.common import MockTest
 from pprint import pprint
 
 class TestPlucking(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'joe-id', 'name': 'joe', 'hobby': 'guitar'},
             {'id': 'bob-id', 'name': 'bob', 'hobby': 'pseudointellectualism'},
@@ -21,7 +22,7 @@ class TestPlucking(MockTest):
             {'id': 'kimye-id', 'hobby': 'being kimye'}
         ]
         result = r.db('x').table('people').pluck('id', 'hobby').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_pluck_missing_attr_list(self, conn):
         expected = [
@@ -31,7 +32,7 @@ class TestPlucking(MockTest):
             {'id': 'kimye-id', 'hobby': 'being kimye'}
         ]
         result = r.db('x').table('people').pluck(['id', 'hobby']).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_sub_pluck(self, conn):
         expected = [
@@ -41,10 +42,11 @@ class TestPlucking(MockTest):
             {'id': 'kimye-id', 'hobby': 'being kimye'}
         ]
         result = r.db('x').table('people').map(lambda p: p.pluck('id', 'hobby')).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
 class TestPlucking2(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {
                 'id': 'thing-1',
@@ -73,7 +75,7 @@ class TestPlucking2(MockTest):
             {'a': 'a-2', 'd': 'd-2'}
         ]
         result = r.db('some_db').table('things').map(lambda t: t['values'].pluck('a', 'd')).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_sub_sub_list(self, conn):
         expected = [
@@ -81,4 +83,4 @@ class TestPlucking2(MockTest):
             {'a': 'a-2', 'd': 'd-2'}
         ]
         result = r.db('some_db').table('things').map(lambda t: t['values'].pluck('a', 'd')).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))

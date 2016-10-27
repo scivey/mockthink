@@ -1,5 +1,7 @@
 from future.utils import PY2, iteritems
 
+from mockthink.test.common import assertEqual
+
 if PY2:
     import mock
 else:
@@ -12,34 +14,34 @@ class TestUtil(unittest.TestCase):
     def test_curry2(self):
         fun = lambda x, y: x + y
         curried = util.curry2(fun)
-        self.assertEqual(8, curried(5, 3))
-        self.assertEqual(8, curried(5)(3))
+        assertEqual(8, curried(5, 3))
+        assertEqual(8, curried(5)(3))
 
     def test_curry3(self):
         fun = lambda x, y, z: x + y + z
         curried = util.curry3(fun)
-        self.assertEqual(15, curried(3, 5, 7))
-        self.assertEqual(15, curried(3, 5)(7))
-        self.assertEqual(15, curried(3)(5, 7))
-        self.assertEqual(15, curried(3)(5)(7))
+        assertEqual(15, curried(3, 5, 7))
+        assertEqual(15, curried(3, 5)(7))
+        assertEqual(15, curried(3)(5, 7))
+        assertEqual(15, curried(3)(5)(7))
 
     def test_extend(self):
         dict_1 = {'x': 'x1-val', 'y': 'y1-val'}
         dict_2 = {'x': 'x2-val', 'z': 'z2-val'}
 
         extended = util.extend(dict_1, dict_2)
-        self.assertEqual({
+        assertEqual({
             'x': 'x2-val',
             'y': 'y1-val',
             'z': 'z2-val'
         }, extended)
 
-        self.assertEqual({
+        assertEqual({
             'x': 'x1-val',
             'y': 'y1-val'
         }, dict_1)
 
-        self.assertEqual({
+        assertEqual({
             'x': 'x2-val',
             'z': 'z2-val'
         }, dict_2)
@@ -48,9 +50,9 @@ class TestUtil(unittest.TestCase):
         list_1 = [1, 2, 3]
         list_2 = [7, 8, 9]
         result = util.cat(list_1, list_2)
-        self.assertEqual([1, 2, 3, 7, 8, 9], result)
-        self.assertEqual([1, 2, 3], list_1)
-        self.assertEqual([7, 8, 9], list_2)
+        assertEqual([1, 2, 3, 7, 8, 9], result)
+        assertEqual([1, 2, 3], list_1)
+        assertEqual([7, 8, 9], list_2)
 
 
     def test_extend_with(self):
@@ -68,8 +70,8 @@ class TestUtil(unittest.TestCase):
         add_1 = lambda x: x + 1
         nums = [10, 20, 30]
         map_fn = util.map_with(add_1)
-        self.assertEqual([11, 21, 31], util.map_with(add_1)(nums))
-        self.assertEqual([11, 21, 31], util.map_with(add_1, nums))
+        assertEqual([11, 21, 31], util.map_with(add_1)(nums))
+        assertEqual([11, 21, 31], util.map_with(add_1, nums))
 
     def test_has_attrs(self):
         thing1 = {'a': 'a-val', 'b': 'b-val'}
@@ -81,8 +83,8 @@ class TestUtil(unittest.TestCase):
 
     def test_nth(self):
         nums = [10, 20, 30, 40, 50]
-        self.assertEqual(20, util.nth(1)(nums))
-        self.assertEqual(40, util.nth(3)(nums))
+        assertEqual(20, util.nth(1)(nums))
+        assertEqual(40, util.nth(3)(nums))
 
     def test_as_obj(self):
         expected = {
@@ -93,7 +95,7 @@ class TestUtil(unittest.TestCase):
             ['x', 'x-val'],
             ['y', 'y-val']
         ]
-        self.assertEqual(expected, util.as_obj(pairs))
+        assertEqual(expected, util.as_obj(pairs))
 
     def test_without(self):
         obj = {
@@ -101,11 +103,11 @@ class TestUtil(unittest.TestCase):
             'y': 'y-val',
             'z': 'z-val'
         }
-        self.assertEqual({
+        assertEqual({
             'z': 'z-val'
         }, util.without(['x', 'y'], obj))
 
-        self.assertEqual({
+        assertEqual({
             'x': 'x-val',
             'y': 'y-val'
         }, util.without(['z'], obj))
@@ -116,10 +118,10 @@ class TestUtil(unittest.TestCase):
             'y': 'y-val',
             'z': 'z-val'
         }
-        self.assertEqual({
+        assertEqual({
             'x': 'x-val',
         }, util.pluck_with('x')(obj))
-        self.assertEqual({
+        assertEqual({
             'x': 'x-val',
             'y': 'y-val',
         }, util.pluck_with('x', 'y')(obj))
@@ -128,8 +130,8 @@ class TestUtil(unittest.TestCase):
         add_5 = lambda x: x + 5
         mul_2 = lambda x: x * 2
 
-        self.assertEqual(24, util.pipeline(add_5, mul_2)(7))
-        self.assertEqual(19, util.pipeline(mul_2, add_5)(7))
+        assertEqual(24, util.pipeline(add_5, mul_2)(7))
+        assertEqual(19, util.pipeline(mul_2, add_5)(7))
 
     def test_match_attrs_matching(self):
         to_match = {
@@ -171,8 +173,8 @@ class TestUtil(unittest.TestCase):
         a_dict = {
             'x': 'x-val'
         }
-        self.assertEqual('x-val', util.getter('x')(a_dict))
-        self.assertEqual(None, util.getter('y')(a_dict))
+        assertEqual('x-val', util.getter('x')(a_dict))
+        assertEqual(None, util.getter('y')(a_dict))
 
     def test_getter_obj(self):
 
@@ -183,23 +185,23 @@ class TestUtil(unittest.TestCase):
 
         thing = Thing({'x': 'x-val'})
 
-        self.assertEqual('x-val', util.getter('x')(thing))
-        self.assertEqual(None, util.getter('y')(thing))
+        assertEqual('x-val', util.getter('x')(thing))
+        assertEqual(None, util.getter('y')(thing))
 
     def test_maybe_map_simple(self):
         add_5 = lambda x: x + 5
-        self.assertEqual(13, util.maybe_map(add_5, 8))
-        self.assertEqual([5, 10, 15], util.maybe_map(add_5, [0, 5, 10]))
+        assertEqual(13, util.maybe_map(add_5, 8))
+        assertEqual([5, 10, 15], util.maybe_map(add_5, [0, 5, 10]))
 
     def test_maybe_map_dict(self):
         def set_y_by_x(thing):
             return {'x': thing['x'], 'y': thing['x'] + 1}
 
-        self.assertEqual(
+        assertEqual(
             {'x': 5, 'y': 6},
             util.maybe_map(set_y_by_x, {'x': 5})
         )
-        self.assertEqual(
+        assertEqual(
             [{'x': 5, 'y': 6}, {'x': 10, 'y': 11}],
             util.maybe_map(set_y_by_x, [{'x': 5}, {'x': 10}])
         )
@@ -207,16 +209,16 @@ class TestUtil(unittest.TestCase):
     def test_splice(self):
         nums = [1, 2, 3, 4]
         result = util.splice_at([10, 20], 2, nums)
-        self.assertEqual([1, 2, 10, 20, 3, 4], result)
+        assertEqual([1, 2, 10, 20, 3, 4], result)
 
     def test_insert(self):
         nums = [1, 2, 3, 4]
         result = util.insert_at(10, 2, nums)
-        self.assertEqual([1, 2, 10, 3, 4], result)
+        assertEqual([1, 2, 10, 3, 4], result)
 
     def test_change_at(self):
         nums = [1, 2, 3, 4]
-        self.assertEqual([1, 10, 3, 4], util.change_at(10, 1, nums))
+        assertEqual([1, 10, 3, 4], util.change_at(10, 1, nums))
 
     def test_sort_by_one(self):
         people = [
@@ -231,7 +233,7 @@ class TestUtil(unittest.TestCase):
         ]
         result = util.sort_by_one('age', people)
         for index in range(0, len(expected)):
-            self.assertEqual(expected[index], result[index])
+            assertEqual(expected[index], result[index])
 
     def test_sort_by_many_1(self):
         people = [
@@ -246,7 +248,7 @@ class TestUtil(unittest.TestCase):
         ]
         result = util.sort_by_many([('age', 'ASC')], people)
         for index in range(0, len(expected)):
-            self.assertEqual(expected[index], result[index])
+            assertEqual(expected[index], result[index])
 
     def test_sort_by_many_2(self):
         people = [
@@ -266,7 +268,7 @@ class TestUtil(unittest.TestCase):
         result = util.sort_by_many([('age', 'ASC'), ('score', 'ASC')], people)
         pprint({'RESULT': result})
         for index in range(0, len(expected)):
-            self.assertEqual(expected[index], result[index])
+            assertEqual(expected[index], result[index])
 
     def test_sort_by_many_3(self):
         people = [
@@ -286,7 +288,7 @@ class TestUtil(unittest.TestCase):
         result = util.sort_by_many([('age', 'ASC'), ('score', 'DESC')], people)
         pprint({'RESULT': result})
         for index in range(0, len(expected)):
-            self.assertEqual(expected[index], result[index])
+            assertEqual(expected[index], result[index])
 
     def test_min_mapped(self):
         sequence = [
@@ -298,7 +300,7 @@ class TestUtil(unittest.TestCase):
             {'val': 8}
         ]
         get_val = lambda doc: doc['val']
-        self.assertEqual({'val': 2}, util.min_mapped(get_val, sequence))
+        assertEqual({'val': 2}, util.min_mapped(get_val, sequence))
 
     def test_max_mapped(self):
         sequence = [
@@ -310,7 +312,7 @@ class TestUtil(unittest.TestCase):
             {'val': 8}
         ]
         get_val = lambda doc: doc['val']
-        self.assertEqual({'val': 28}, util.max_mapped(get_val, sequence))
+        assertEqual({'val': 28}, util.max_mapped(get_val, sequence))
 
     def test_deep_extend_pair(self):
         obj = {
@@ -351,7 +353,7 @@ class TestUtil(unittest.TestCase):
             'a_list': 'new-a-list-val'
         }
         result = util.deep_extend_pair(obj, ext_with)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
 
 class TestDictableSet(unittest.TestCase):

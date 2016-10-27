@@ -1,10 +1,11 @@
 import rethinkdb as r
-from mockthink.test.common import as_db_and_table
+from mockthink.test.common import as_db_and_table, assertEqUnordered, assertEqual
 from mockthink.test.functional.common import MockTest
 from pprint import pprint
 
 class TestIndexes(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'bob', 'first_name': 'Bob', 'last_name': 'Builder'},
             {'id': 'joe', 'first_name': 'Joseph', 'last_name': 'Smith'},
@@ -17,7 +18,7 @@ class TestIndexes(MockTest):
         r.db('s').table('people').index_create('first_name').run(conn)
         result = r.db('s').table('people').index_list().run(conn)
 
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_field_index_create_works(self, conn):
         expected = [
@@ -29,7 +30,7 @@ class TestIndexes(MockTest):
         result = r.db('s').table('people').get_all('Bob', index='first_name').run(conn)
         result = list(result)
         pprint(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_func_index_create(self, conn):
         expected = ['first_and_last']
@@ -39,7 +40,7 @@ class TestIndexes(MockTest):
         ).run(conn)
         result = r.db('s').table('people').index_list().run(conn)
 
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_func_index_create_works(self, conn):
         expected = [
@@ -54,19 +55,19 @@ class TestIndexes(MockTest):
             'BobBuilder', 'TomGeneric',
             index='first_and_last'
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_index_drop_works(self, conn):
         r.db('s').table('people').index_create(
             'last_name'
         ).run(conn)
         indexes = list(r.db('s').table('people').index_list().run(conn))
-        self.assertEqual(['last_name'], indexes)
+        assertEqual(['last_name'], indexes)
         r.db('s').table('people').index_drop(
             'last_name'
         ).run(conn)
         indexes = list(r.db('s').table('people').index_list().run(conn))
-        self.assertEqual([], indexes)
+        assertEqual([], indexes)
 
 
     def test_index_rename_works(self, conn):
@@ -74,12 +75,12 @@ class TestIndexes(MockTest):
             'last_name'
         ).run(conn)
         indexes = list(r.db('s').table('people').index_list().run(conn))
-        self.assertEqual(['last_name'], indexes)
+        assertEqual(['last_name'], indexes)
         r.db('s').table('people').index_rename(
             'last_name', 'new_last_name'
         ).run(conn)
         indexes = list(r.db('s').table('people').index_list().run(conn))
-        self.assertEqual(['new_last_name'], indexes)
+        assertEqual(['new_last_name'], indexes)
 
 
     def test_index_rename_works_2(self, conn):
@@ -90,7 +91,7 @@ class TestIndexes(MockTest):
             'last_name'
         ).run(conn)
         indexes = list(r.db('s').table('people').index_list().run(conn))
-        self.assertEqual(['last_name'], indexes)
+        assertEqual(['last_name'], indexes)
         r.db('s').table('people').index_rename(
             'last_name', 'new_last_name'
         ).run(conn)
@@ -98,7 +99,7 @@ class TestIndexes(MockTest):
             'Generic',
             index='new_last_name'
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_index_wait_one_works(self, conn):
         expected = [
@@ -112,7 +113,7 @@ class TestIndexes(MockTest):
         result = r.db('s').table('people').get_all(
             'Builder', index='last_name'
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_index_wait_all_works(self, conn):
         expected = [
@@ -126,11 +127,12 @@ class TestIndexes(MockTest):
         result = r.db('s').table('people').get_all(
             'Builder', index='last_name'
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
 
 class TestIndexUpdating(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'bob', 'first_name': 'Bob', 'last_name': 'Builder'},
             {'id': 'joe', 'first_name': 'Joseph', 'last_name': 'Smith'},
@@ -153,13 +155,14 @@ class TestIndexUpdating(MockTest):
             .get_all('One', index='last_name')
             .run(conn)
         )
-        self.assertEqual(1, len(result))
+        assertEqual(1, len(result))
         result = result[0]
-        self.assertEqual('someone', result['id'])
+        assertEqual('someone', result['id'])
 
 
 class TestMoreIndices(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'a-id', 'name': 'a', 'parent': None, 'parents': []},
             {'id': 'b-id', 'name': 'b', 'parent': 'a-id', 'parents': ['a-id']},
@@ -174,7 +177,7 @@ class TestMoreIndices(MockTest):
         spaces.index_create('parents', multi=True).run(conn)
         spaces.index_wait().run(conn)
         children = list(spaces.get_all('a-id', index='parents').run(conn))
-        self.assertEqual(4, len(children))
+        assertEqual(4, len(children))
 
     # def test_query_against(self, conn):
     #     spaces = r.db('s').table('spaces')
@@ -186,7 +189,7 @@ class TestMoreIndices(MockTest):
     #         .map(lambda doc: doc['id'])
     #     result = list(query.run(conn))
     #     pprint(result)
-    #     self.assertEqual(True, False)
+    #     assertEqual(True, False)
     #         # for parent_id in (rethinkdb.table(Workspace.plural())
     #         #                            .get_all(*workspace_ids, index='parents')
     #         #                            .distinct()

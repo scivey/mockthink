@@ -2,12 +2,13 @@ import rethinkdb as r
 from rethinkdb import RqlRuntimeError
 
 from mockthink import util
-from mockthink.test.common import as_db_and_table
+from mockthink.test.common import as_db_and_table, assertEqual
 from mockthink.test.functional.common import MockTest
 
 
 class TestMax(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {
                 'id': 'joe',
@@ -38,7 +39,7 @@ class TestMax(MockTest):
     def test_max_of_table_field(self, conn):
         expected = {'id': 'bill', 'age': 52, 'hobbies': ['watermelon']}
         result = r.db('x').table('people').max('age').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_max_of_sequence_field(self, conn):
         expected = [{'val': 110}]
@@ -47,14 +48,14 @@ class TestMax(MockTest):
         }).map(
             lambda doc: doc['nums2'].max('val')
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_max_of_table_func(self, conn):
         expected = {'id': 'bill', 'age': 52, 'hobbies': ['watermelon']}
         result = r.db('x').table('people').max(
             lambda d: d['age']
         ).run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_max_of_sequence_func(self, conn):
         expected = [{'val': 110}]
@@ -65,7 +66,7 @@ class TestMax(MockTest):
                 lambda num: num['val']
             )
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_max_of_left_seq_no_args(self, conn):
         expected = [900]
@@ -74,11 +75,12 @@ class TestMax(MockTest):
         ).map(
             lambda doc: doc['nums'].max()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
 
 class TestMin(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {
                 'id': 'joe',
@@ -107,7 +109,7 @@ class TestMin(MockTest):
     def test_min_of_table_field(self, conn):
         expected = {'id': 'joe', 'age': 26, 'hobbies': ['sand',  'water',  'cats']}
         result = r.db('x').table('people').min('age').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_min_of_sequence_field(self, conn):
         expected = [{'val': 17}]
@@ -116,14 +118,14 @@ class TestMin(MockTest):
         }).map(
             lambda doc: doc['nums2'].min('val')
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_min_of_table_func(self, conn):
         expected = {'id': 'joe', 'age': 26, 'hobbies': ['sand',  'water',  'cats']}
         result = r.db('x').table('people').min(
             lambda doc: doc['age']
         ).run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_min_of_sequence_func(self, conn):
         expected = [{'val': 17}]
@@ -134,7 +136,7 @@ class TestMin(MockTest):
                 lambda num: num['val']
             )
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_min_of_left_seq_no_args(self, conn):
         expected = [40]
@@ -143,11 +145,12 @@ class TestMin(MockTest):
         ).map(
             lambda doc: doc['nums'].min()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
 
 class TestSum(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {
                 'id': 'joe',
@@ -175,7 +178,7 @@ class TestSum(MockTest):
     def test_sum_of_table_field(self, conn):
         expected = 113
         result = r.db('x').table('people').sum('age').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_sum_of_seq_field(self, conn):
         expected = [93]
@@ -184,14 +187,14 @@ class TestSum(MockTest):
         }).map(
             lambda doc: doc['nums2'].sum('val')
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_sum_of_table_func(self, conn):
         expected = 113
         result = r.db('x').table('people').sum(
             lambda doc: doc['age']
         ).run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_sum_of_seq_func(self, conn):
         expected = [93]
@@ -202,7 +205,7 @@ class TestSum(MockTest):
                 lambda num: num['val']
             )
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_sum_of_seq_no_args(self, conn):
         expected = [559]
@@ -211,11 +214,12 @@ class TestSum(MockTest):
         ).map(
             lambda doc: doc['nums'].sum()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
 
 class TestAverage(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {
                 'id': 'joe',
@@ -243,7 +247,7 @@ class TestAverage(MockTest):
     def test_avg_of_table_field(self, conn):
         expected = 40
         result = r.db('x').table('people').avg('age').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_avg_of_sequence_field(self, conn):
         expected = [15]
@@ -252,14 +256,14 @@ class TestAverage(MockTest):
         ).map(
             lambda doc: doc['nums2'].avg('val')
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_avg_of_table_func(self, conn):
         expected = 40
         result = r.db('x').table('people').avg(
             lambda doc: doc['age']
         ).run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_avg_of_sequence_func(self, conn):
         expected = [15]
@@ -270,7 +274,7 @@ class TestAverage(MockTest):
                 lambda num: num['val']
             )
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_avg_of_left_seq_no_args(self, conn):
         expected = [254]
@@ -279,11 +283,12 @@ class TestAverage(MockTest):
         ).map(
             lambda doc: doc['nums'].avg()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
 
 class TestCount(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {
                 'id': 'joe',
@@ -307,7 +312,7 @@ class TestCount(MockTest):
     def test_table_count(self, conn):
         expected = 3
         result = r.db('x').table('people').count().run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_sequence_count(self, conn):
         expected = [5]
@@ -316,7 +321,7 @@ class TestCount(MockTest):
         ).map(
             lambda doc: doc['nums'].count()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_table_eq_elem_count(self, conn):
         expected = 1
@@ -325,7 +330,7 @@ class TestCount(MockTest):
             'age': 48,
             'hobbies': ['watermelon']
         }).run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_sequence_eq_elem_count(self, conn):
         expected = [2]
@@ -334,14 +339,14 @@ class TestCount(MockTest):
         ).map(
             lambda doc: doc['nums'].count(40)
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_table_func_count(self, conn):
         expected = 2
         result = r.db('x').table('people').count(
             lambda doc: doc['age'] > 40
         ).run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_sequence_func_count(self, conn):
         expected = [3]
@@ -352,4 +357,4 @@ class TestCount(MockTest):
                 lambda num: num > 40
             )
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))

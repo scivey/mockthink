@@ -1,4 +1,6 @@
 import rethinkdb as r
+
+from mockthink.test.common import assertEqUnordered
 from mockthink.test.functional.common import MockTest
 
 def common_join_data():
@@ -31,7 +33,8 @@ def common_join_data():
     return data
 
 class TestEqJoin(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         return common_join_data()
 
     def test_eq_join_1(self, conn):
@@ -60,10 +63,12 @@ class TestEqJoin(MockTest):
             }
         ]
         result = r.db('jezebel').table('employees').eq_join('person', r.db('jezebel').table('people')).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
+
 
 class TestInnerJoin(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         return common_join_data()
 
     def test_inner_join_1(self, conn):
@@ -95,10 +100,11 @@ class TestInnerJoin(MockTest):
             r.db('jezebel').table('people'),
             lambda employee, person: employee['person'] == person['id']
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
 class TestOuterJoin(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         people = [
             {'id': 'sam-id', 'name': 'Sam'},
             {'id': 'miguel-id', 'name': 'Miguel'},
@@ -166,11 +172,12 @@ class TestOuterJoin(MockTest):
             r.db('awesomesauce').table('pets'),
             lambda person, pet: pet['owner'] == person['id']
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
 
 class TestZip(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         left = [
             {
                 'id': 'one',
@@ -224,4 +231,4 @@ class TestZip(MockTest):
         result = r.db('x').table('ltab').eq_join(
             'rval', r.db('x').table('rtab')
         ).zip().run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))

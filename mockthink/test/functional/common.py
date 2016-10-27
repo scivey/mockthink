@@ -1,10 +1,10 @@
 from __future__ import print_function
 
 import rethinkdb as r
-from future.utils import iteritems
+from future.utils import iteritems, with_metaclass
 
 from mockthink.db import MockThink
-from mockthink.test.common import AssertionMixin, as_db_and_table, make_test_registry
+from mockthink.test.common import as_db_and_table, make_test_registry
 
 TESTS = {}
 register_test = make_test_registry(TESTS)
@@ -16,11 +16,12 @@ class Meta(type):
         register_test(result, result.__name__, tests)
         return result
 
-class Base(object):
-    __metaclass__ = Meta
+class Base(with_metaclass(Meta, object)):
+    pass
 
-class MockTest(Base, AssertionMixin):
-    def get_data(self):
+class MockTest(Base):
+    @staticmethod
+    def get_data():
         return {
             'dbs': {
                 'default': {

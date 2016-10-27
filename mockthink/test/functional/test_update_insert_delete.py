@@ -1,12 +1,13 @@
 import rethinkdb as r
 from rethinkdb import RqlRuntimeError
-from mockthink.test.common import as_db_and_table
+from mockthink.test.common import as_db_and_table, assertEqual, assertEqUnordered
 from mockthink.test.functional.common import MockTest
 from pprint import pprint
 
 
 class TestReplace(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
@@ -20,7 +21,7 @@ class TestReplace(MockTest):
         ]
         r.db('things').table('muppets').get('kermit-id').replace({'id': 'kermit-id', 'name': 'Just Kermit'}).run(conn)
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_replace_one_from_table(self, conn):
         expected = [
@@ -29,7 +30,7 @@ class TestReplace(MockTest):
         ]
         r.db('things').table('muppets').replace({'id': 'kermit-id', 'name': 'Just Kermit'}).run(conn)
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_replace_one_from_sequence(self, conn):
         expected = [
@@ -40,12 +41,13 @@ class TestReplace(MockTest):
             lambda doc: True
         ).replace({'id': 'kermit-id', 'name': 'Just Kermit'}).run(conn)
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
 
 
 class TestInsert(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
@@ -64,7 +66,7 @@ class TestInsert(MockTest):
             'name': 'Elmo'
         }).run(conn)
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_insert_array(self, conn):
         expected = [
@@ -86,7 +88,7 @@ class TestInsert(MockTest):
             }
         ]).run(conn)
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_insert_one_no_id(self, conn):
         r.db('things').table('muppets').insert({
@@ -96,7 +98,7 @@ class TestInsert(MockTest):
             'name': 'joe'
         }).run(conn)
         result = list(result)
-        self.assertEqual(1, len(result))
+        assertEqual(1, len(result))
         joe = result[0]
         assert(isinstance(joe['id'], unicode))
 
@@ -115,13 +117,14 @@ class TestInsert(MockTest):
             'wanted': True
         }).run(conn)
         result = list(result)
-        self.assertEqual(2, len(result))
+        assertEqual(2, len(result))
         assert(isinstance(result[0]['id'], unicode))
         assert(isinstance(result[1]['id'], unicode))
 
 
 class TestInsertDurability(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
@@ -140,7 +143,7 @@ class TestInsertDurability(MockTest):
             'name': 'Elmo'
         }, durability='hard').run(conn)
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
 
     # this isn't effectively testing the mock, since the point is that table.sync() doesn't do anything
@@ -158,11 +161,12 @@ class TestInsertDurability(MockTest):
         }, durability='soft').run(conn)
         r.db('things').table('muppets').sync().run(conn)
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
 
 class TestInsertConflicts(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
@@ -179,13 +183,13 @@ class TestInsertConflicts(MockTest):
         result_obj = r.db('things').table('muppets').insert({
                 'id': 'kermit-id',
         }, conflict='error').run(conn)
-        self.assertEqual(1, result_obj['errors'])
-        self.assertEqual(0, result_obj['inserted'])
-        self.assertEqual(0, result_obj['replaced'])
+        assertEqual(1, result_obj['errors'])
+        assertEqual(0, result_obj['inserted'])
+        assertEqual(0, result_obj['replaced'])
 
         # ensure the table really is unchanged.
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_conflict_has_error_as_default(self, conn):
         expected = [
@@ -197,13 +201,13 @@ class TestInsertConflicts(MockTest):
         result_obj = r.db('things').table('muppets').insert({
                 'id': 'kermit-id',
         }, conflict='error').run(conn)
-        self.assertEqual(1, result_obj['errors'])
-        self.assertEqual(0, result_obj['inserted'])
-        self.assertEqual(0, result_obj['replaced'])
+        assertEqual(1, result_obj['errors'])
+        assertEqual(0, result_obj['inserted'])
+        assertEqual(0, result_obj['replaced'])
 
         # ensure the table really is unchanged.
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_conflict_replace(self, conn):
         expected = [
@@ -216,12 +220,12 @@ class TestInsertConflicts(MockTest):
             'x-key': 'x-val',
             'name': 'New Kermit'
         }, conflict='replace').run(conn)
-        self.assertEqual(1, result_obj['replaced'])
-        self.assertEqual(0, result_obj['inserted'])
-        self.assertEqual(0, result_obj['errors'])
+        assertEqual(1, result_obj['replaced'])
+        assertEqual(0, result_obj['inserted'])
+        assertEqual(0, result_obj['errors'])
 
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_conflict_update(self, conn):
         expected = [
@@ -233,13 +237,14 @@ class TestInsertConflicts(MockTest):
             'x-key': 'x-val',
             'name': 'Updated Kermit'
         }, conflict='update').run(conn)
-        self.assertEqual(1, result_obj['replaced'])
-        self.assertEqual(0, result_obj['inserted'])
-        self.assertEqual(0, result_obj['errors'])
+        assertEqual(1, result_obj['replaced'])
+        assertEqual(0, result_obj['inserted'])
+        assertEqual(0, result_obj['errors'])
 
 
 class TestInsertReturnChanges(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
@@ -267,10 +272,10 @@ class TestInsertReturnChanges(MockTest):
             elmo_doc, return_changes=True
         ).run(conn)
 
-        self.assertEqual(result_obj['changes'], expected_changes)
+        assertEqual(result_obj['changes'], expected_changes)
 
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_insert_array(self, conn):
         expected = [
@@ -307,10 +312,10 @@ class TestInsertReturnChanges(MockTest):
             to_insert, return_changes=True
         ).run(conn)
 
-        self.assertEqUnordered(expected_changes, result_obj['changes'])
+        assertEqUnordered(expected_changes, result_obj['changes'])
 
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_insert_array_with_update(self, conn):
         expected = [
@@ -355,16 +360,15 @@ class TestInsertReturnChanges(MockTest):
             to_insert, return_changes=True, conflict='update'
         ).run(conn)
 
-        self.assertEqUnordered(expected_changes, result_obj['changes'])
+        assertEqUnordered(expected_changes, result_obj['changes'])
 
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
-
-
+        assertEqUnordered(expected, list(result))
 
 
 class TestUpdate(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
@@ -375,7 +379,7 @@ class TestUpdate(MockTest):
         expected = {'id': 'kermit-id', 'species': 'green frog', 'name': 'Kermit'}
         r.db('things').table('muppets').get('kermit-id').update({'species': 'green frog'}).run(conn)
         result = r.db('things').table('muppets').get('kermit-id').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_update_sequence(self, conn):
         expected = [
@@ -384,11 +388,12 @@ class TestUpdate(MockTest):
         ]
         r.db('things').table('muppets').update({'is_muppet': 'very'}).run(conn)
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
 
 class TestUpdateNestedQuery(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
@@ -406,7 +411,7 @@ class TestUpdateNestedQuery(MockTest):
             non_atomic=True
         ).run(conn)
         result = r.db('things').table('muppets').get('kermit-id').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_update_nonatomic_error(self, conn):
         err = None
@@ -430,7 +435,8 @@ class TestUpdateNestedQuery(MockTest):
         assert(isinstance(err, RqlRuntimeError))
 
 class TestUpdateReturnChanges(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
@@ -454,11 +460,11 @@ class TestUpdateReturnChanges(MockTest):
             return_changes=True
         ).run(conn)
 
-        self.assertEqual(expected_changes, result_obj['changes'])
-        self.assertEqual(1, result_obj['replaced'])
-        self.assertEqual(0, result_obj['inserted'])
+        assertEqual(expected_changes, result_obj['changes'])
+        assertEqual(1, result_obj['replaced'])
+        assertEqual(0, result_obj['inserted'])
         result = r.db('things').table('muppets').get('kermit-id').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_update_many(self, conn):
         expected = [
@@ -479,17 +485,18 @@ class TestUpdateReturnChanges(MockTest):
             'new_key': 'new_key_val'
         }, return_changes=True).run(conn)
 
-        self.assertEqUnordered(expected_changes, result_obj['changes'])
-        self.assertEqual(2, result_obj['replaced'])
-        self.assertEqual(0, result_obj['inserted'])
-        self.assertEqual(0, result_obj['errors'])
+        assertEqUnordered(expected_changes, result_obj['changes'])
+        assertEqual(2, result_obj['replaced'])
+        assertEqual(0, result_obj['inserted'])
+        assertEqual(0, result_obj['errors'])
 
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
 
 class TestUpdateRql(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'kermit-id', 'species': 'frog', 'name': 'Kermit'},
             {'id': 'piggy-id', 'species': 'pig', 'name': 'Ms. Piggy'}
@@ -505,7 +512,7 @@ class TestUpdateRql(MockTest):
             r.row.merge({'species': 'unknown'})
         ).run(conn)
         result = r.db('things').table('muppets').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_update_one(self, conn):
         expected = {'id': 'kermit-id', 'species': 'unknown', 'name': 'Kermit'}
@@ -513,10 +520,11 @@ class TestUpdateRql(MockTest):
             r.row.merge({'species': 'unknown'})
         ).run(conn)
         result = r.db('things').table('muppets').get('kermit-id').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
 class TestNestedUpdateNotLit(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {
                 'id': 'one',
@@ -561,7 +569,7 @@ class TestNestedUpdateNotLit(MockTest):
             r.row.merge({'points': {'pt1': {'z': 'z-1'}}})
         ).run(conn)
         result = r.db('things').table('points').get('one').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_update_no_merge(self, conn):
         expected = {
@@ -579,7 +587,7 @@ class TestNestedUpdateNotLit(MockTest):
             {'points': {'pt1': {'z': 'z-1'}}}
         ).run(conn)
         result = r.db('things').table('points').get('one').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_update_merge_deep(self, conn):
         # this behavior is pretty weird, but it's what rethink does
@@ -603,7 +611,7 @@ class TestNestedUpdateNotLit(MockTest):
         ).run(conn)
         result = r.db('things').table('points').get('one').run(conn)
         pprint({'merge_deep': result})
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     def test_update_merge_array(self, conn):
         expected = {
@@ -617,7 +625,7 @@ class TestNestedUpdateNotLit(MockTest):
         ).run(conn)
         result = r.db('things').table('points').get('three').run(conn)
         pprint(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_update_no_merge_array(self, conn):
         expected = {
@@ -631,7 +639,7 @@ class TestNestedUpdateNotLit(MockTest):
         ).run(conn)
         result = r.db('things').table('points').get('three').run(conn)
         pprint(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_update_merge_array_deep(self, conn):
         expected = {
@@ -646,11 +654,12 @@ class TestNestedUpdateNotLit(MockTest):
         ).run(conn)
         result = r.db('things').table('points').get('three').run(conn)
         pprint(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
 
 class TestLiteral(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {
                 'id': 'one',
@@ -694,7 +703,7 @@ class TestLiteral(MockTest):
         result = r.db('things').table('points').filter({'id': 'one'}).map(
             lambda doc: doc.merge({'points': {'pt1': {'z': 'z-1'}}})
         ).run(conn)
-        self.assertEqual(expected, list(result)[0])
+        assertEqual(expected, list(result)[0])
 
     def test_map_merge_literal(self, conn):
         expected = {
@@ -708,7 +717,7 @@ class TestLiteral(MockTest):
         result = r.db('things').table('points').filter({'id': 'one'}).map(
             lambda doc: doc.merge({'points': {'pt1': r.literal({'z': 'z-1'})}})
         ).run(conn)
-        self.assertEqual(expected, list(result)[0])
+        assertEqual(expected, list(result)[0])
 
     def test_top_level_literal_throws_merge(self, conn):
         err = None
@@ -746,7 +755,7 @@ class TestLiteral(MockTest):
             {'points': r.literal({'pt1': {'z': 'z-1'}})}
         ).run(conn)
         result = r.db('things').table('points').get('one').run(conn)
-        self.assertEqual(expected, result)
+        assertEqual(expected, result)
 
     # def test_top_level_literal_on_update_does_nothing(self, conn):
     #     expected = {
@@ -762,7 +771,7 @@ class TestLiteral(MockTest):
     #         r.literal({'points': {'pt1': {'z': 'z-1'}}})
     #     ).run(conn)
     #     result = r.db('things').table('points').get('one').run(conn)
-    #     self.assertEqual(expected, result)
+    #     assertEqual(expected, result)
 
     # def test_nested_literal_throws_update(self, conn):
     #     err = None
@@ -776,7 +785,8 @@ class TestLiteral(MockTest):
 
 
 class TestDelete(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'sam-id', 'name': 'sam'},
             {'id': 'joe-id', 'name': 'joe'},
@@ -793,7 +803,7 @@ class TestDelete(MockTest):
         ]
         r.db('ephemeral').table('people').get('joe-id').delete().run(conn)
         result = r.db('ephemeral').table('people').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_delete_one_from_sequence(self, conn):
         expected = [
@@ -805,7 +815,7 @@ class TestDelete(MockTest):
             'id': 'joe-id'
         }).delete().run(conn)
         result = r.db('ephemeral').table('people').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_delete_get_all(self, conn):
         expected = [
@@ -814,16 +824,17 @@ class TestDelete(MockTest):
         ]
         r.db('ephemeral').table('people').get_all('sam-id', 'tom-id').delete().run(conn)
         result = r.db('ephemeral').table('people').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_delete_all_table_rows(self, conn):
         expected = []
         r.db('ephemeral').table('people').delete().run(conn)
         result = r.db('ephemeral').table('people').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
 class TestDeleteReturnChanges(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'sam-id', 'name': 'sam'},
             {'id': 'joe-id', 'name': 'joe'},
@@ -848,10 +859,10 @@ class TestDeleteReturnChanges(MockTest):
             return_changes=True
         ).run(conn)
         pprint(report)
-        self.assertEqual(expected_changes, report['changes'])
-        self.assertEqual(1, report['deleted'])
+        assertEqual(expected_changes, report['changes'])
+        assertEqual(1, report['deleted'])
         result = r.db('ephemeral').table('people').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_delete_multiple(self, conn):
         expected = [
@@ -871,8 +882,8 @@ class TestDeleteReturnChanges(MockTest):
         report = r.db('ephemeral').table('people').get_all(
             'sam-id', 'tom-id'
         ).delete(return_changes=True).run(conn)
-        self.assertEqUnordered(expected_changes, report['changes'])
-        self.assertEqual(2, report['deleted'])
+        assertEqUnordered(expected_changes, report['changes'])
+        assertEqual(2, report['deleted'])
         result = r.db('ephemeral').table('people').run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 

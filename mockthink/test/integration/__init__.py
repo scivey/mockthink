@@ -1,14 +1,13 @@
 from __future__ import print_function
+
 import argparse
-import sys
-from pprint import pprint
+
 import rethinkdb as r
-from future.utils import iteritems
+import sys
+from future.utils import iteritems, with_metaclass
 
-from mockthink.db import MockThink, MockThinkConn
-from mockthink.test.common import make_test_registry, AssertionMixin
-from mockthink.test.common import as_db_and_table
-
+from mockthink.db import MockThink
+from mockthink.test.common import as_db_and_table, make_test_registry, assertEqual, assertEqUnordered
 
 TESTS = {}
 register_test = make_test_registry(TESTS)
@@ -20,11 +19,12 @@ class Meta(type):
         register_test(result, result.__name__, tests)
         return result
 
-class Base(object):
-    __metaclass__ = Meta
+class Base(with_metaclass(Meta, object)):
+    pass
 
-class MockTest(Base, AssertionMixin):
-    def get_data(self):
+class MockTest(Base):
+    @staticmethod
+    def get_data():
         return {
             'dbs': {
                 'default': {
@@ -34,7 +34,8 @@ class MockTest(Base, AssertionMixin):
         }
 
 class TestThings(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         people_data = [
             {'id': 'joe-id', 'name': 'joe', 'age': 26},
             {'id': 'bob-id', 'name': 'bob', 'age': 19},
@@ -85,7 +86,7 @@ class TestThings(MockTest):
             }
         ]
 
-        self.assertEqUnordered(expected, list(query.run(conn)))
+        assertEqUnordered(expected, list(query.run(conn)))
 
     def test_index_getall_map_orderby(self, conn):
         r.db('x').table('people').index_create(
@@ -123,7 +124,7 @@ class TestThings(MockTest):
                 'age_times_2': 106
             }
         ]
-        self.assertEqual(expected, list(query.run(conn)))
+        assertEqual(expected, list(query.run(conn)))
 
     def test_multi_join(self, conn):
         query = r.db('x').table('employees').eq_join(
@@ -157,12 +158,12 @@ class TestThings(MockTest):
                 'job': 'Lawyer'
             }
         ]
-        self.assertEqUnordered(expected, list(query.run(conn)))
+        assertEqUnordered(expected, list(query.run(conn)))
 
 
 def run_tests(conn, grep):
     for test_name, test_fn in iteritems(TESTS):
-        if not grep or grep == 'ALL':
+        if not grep or grep == u'ALL':
             test_fn(conn)
         elif grep in test_name:
             test_fn(conn)
@@ -188,5 +189,6 @@ if __name__ == '__main__':
     parser.add_argument('--run', default='mockthink')
     parser.add_argument('--grep', default=None)
     args = parser.parse_args(sys.argv[1:])
+    print(repr(args.grep))
     runners[args.run](args.grep)
 

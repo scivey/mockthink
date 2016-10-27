@@ -1,5 +1,6 @@
 import unittest
 
+from mockthink.test.common import assertEqual
 from ... import ast_base
 
 
@@ -47,7 +48,7 @@ class TestAst(unittest.TestCase):
             'nums1': [1, 3, 5, 7, 9],
             'nums2': [7, 9]
         }
-        self.assertEqual(expected, ast_base.rql_merge_with(ext_with, to_ext))
+        assertEqual(expected, ast_base.rql_merge_with(ext_with, to_ext))
 
     def test_contains_literals_obj(self):
         thing = {
