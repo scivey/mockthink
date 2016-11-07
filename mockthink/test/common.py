@@ -40,15 +40,15 @@ def make_test_registry(test_dict):
         test_dict[class_name] = test
     return register_test
 
+
 def assertEqUnordered(x, y, msg=''):
     for x_elem in x:
-        if x_elem not in y:
-            msg = 'assertEqUnordered: match not found for %s' % x_elem
-            print('AssertionError: %s' % msg)
-            raise AssertionError(msg)
+        assert x_elem in y
+
 
 def assertEqual(x, y, msg=''):
     assert x == y
+
 
 def as_db_and_table(db_name, table_name, data):
     return {
