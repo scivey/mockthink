@@ -21,7 +21,10 @@ def conn(request):
     cfg = request.config
     conn_type = cfg.getvalue("conn_type")
     if conn_type == "rethink":
-        conn = rethinkdb.connect('localhost', 30000)  # TODO add config
+        try:
+            conn = rethinkdb.connect('localhost', 30000)  # TODO add config
+        except rethinkdb.errors.ReqlDriverError:
+            pytest.exit("Unable to connect to rethink")
     elif conn_type == "mockthink":
         conn = MockThink(as_db_and_table('nothing', 'nothing', [])).get_conn()
     else:
