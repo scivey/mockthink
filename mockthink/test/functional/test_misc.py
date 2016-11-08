@@ -5,6 +5,7 @@ from mockthink import util
 from mockthink.test.common import as_db_and_table, assertEqUnordered, assertEqual
 from mockthink.test.functional.common import MockTest
 
+
 class TestGet(MockTest):
     @staticmethod
     def get_data():
@@ -17,6 +18,7 @@ class TestGet(MockTest):
     def test_get_one_by_id(self, conn):
         result = r.db('x').table('people').get('bob-id').run(conn)
         assertEqual({'id': 'bob-id', 'name': 'bob'}, result)
+
 
 class TestGetAll(MockTest):
     @staticmethod
@@ -42,7 +44,7 @@ class TestGetAll(MockTest):
             {'id': 'bob-id', 'name': 'bob'},
         ]
         result = r.db('x').table('people').get_all('bob-id').run(conn)
-        assertEqual(expected, result)
+        assertEqual(expected, list(result))
 
 class TestFiltering(MockTest):
     @staticmethod

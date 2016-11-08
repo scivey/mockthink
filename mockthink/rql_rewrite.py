@@ -1,5 +1,6 @@
 import rethinkdb.ast as r_ast
 from future.utils import iteritems
+from past.builtins import map
 
 from . import ast as mt_ast
 from . import util

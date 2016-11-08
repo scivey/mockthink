@@ -1,7 +1,7 @@
 import unittest
 
+from mockthink import ast_base
 from mockthink.test.common import assertEqual
-from ... import ast_base
 
 
 class TestAst(unittest.TestCase):

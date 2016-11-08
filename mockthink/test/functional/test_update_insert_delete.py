@@ -1,8 +1,11 @@
+from pprint import pprint
+
+import pytest
 import rethinkdb as r
 from rethinkdb import RqlRuntimeError
-from mockthink.test.common import as_db_and_table, assertEqual, assertEqUnordered
+
+from mockthink.test.common import as_db_and_table, assertEqUnordered, assertEqual
 from mockthink.test.functional.common import MockTest
-from pprint import pprint
 
 
 class TestReplace(MockTest):
@@ -720,27 +723,16 @@ class TestLiteral(MockTest):
         assertEqual(expected, list(result)[0])
 
     def test_top_level_literal_throws_merge(self, conn):
-        err = None
-        try:
-            result = r.db('things').table('points').filter({'id': 'one'}).map(
+        with pytest.raises(RqlRuntimeError):
+            r.db('things').table('points').filter({'id': 'one'}).map(
                 lambda doc: doc.merge(r.literal({'points': {'pt1': {'z': 'z-1'}}}))
             ).run(conn)
-        except RqlRuntimeError as e:
-            err = e
-        assert(isinstance(err, RqlRuntimeError))
 
     def test_nested_literal_throws_merge(self, conn):
-        err = None
-        result = None
-        try:
-            result = r.db('things').table('points').filter({'id': 'one'}).map(
+        with pytest.raises(RqlRuntimeError):
+            r.db('things').table('points').filter({'id': 'one'}).map(
                 lambda doc: doc.merge({'points': r.literal({'pt1': r.literal({'z': 'z-1'})})})
             ).run(conn)
-        except RqlRuntimeError as e:
-            err = e
-        pprint(err)
-        pprint(result)
-        assert(isinstance(err, RqlRuntimeError))
 
     def test_update_literal(self, conn):
         expected = {

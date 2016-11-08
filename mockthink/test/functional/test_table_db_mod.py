@@ -98,17 +98,21 @@ class TestDbMod(MockTest):
 
     def test_db_list(self, conn):
         expected = set(['db_one', 'db_two'])
-        result = r.db_list().run(conn)
-        assertEqual(expected, set(list(result)))
+        result = self.db_list(conn)
+        assertEqual(expected, result)
 
     def test_db_create(self, conn):
         expected = set(['db_one', 'db_two', 'db_three'])
         r.db_create('db_three').run(conn)
-        result = r.db_list().run(conn)
-        assertEqual(expected, set(list(result)))
+        result = self.db_list(conn)
+        assertEqual(expected, result)
 
     def test_db_drop(self, conn):
         expected = set(['db_one'])
         r.db_drop('db_two').run(conn)
-        result = r.db_list().run(conn)
-        assertEqual(expected, set(list(result)))
+        result = self.db_list(conn)
+        assertEqual(expected, result)
+
+    def db_list(self, conn):
+        # rethinkdb is special and always present; we don't care, for these tests
+        return set(r.db_list().run(conn)) - {u'rethinkdb'}
