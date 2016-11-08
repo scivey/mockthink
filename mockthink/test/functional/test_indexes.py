@@ -51,6 +51,7 @@ class TestIndexes(MockTest):
             'first_and_last',
             lambda doc: doc['first_name'] + doc['last_name']
         ).run(conn)
+        r.db('s').table('people').index_wait('first_and_last').run(conn)
         result = r.db('s').table('people').get_all(
             'BobBuilder', 'TomGeneric',
             index='first_and_last'
@@ -82,7 +83,6 @@ class TestIndexes(MockTest):
         indexes = list(r.db('s').table('people').index_list().run(conn))
         assertEqual(['new_last_name'], indexes)
 
-
     def test_index_rename_works_2(self, conn):
         expected = [
             {'id': 'tom', 'first_name': 'Tom', 'last_name': 'Generic'}
@@ -95,6 +95,7 @@ class TestIndexes(MockTest):
         r.db('s').table('people').index_rename(
             'last_name', 'new_last_name'
         ).run(conn)
+        r.db('s').table('people').index_wait('new_last_name').run(conn)
         result = r.db('s').table('people').get_all(
             'Generic',
             index='new_last_name'

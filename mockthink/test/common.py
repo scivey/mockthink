@@ -1,7 +1,6 @@
-from __future__ import print_function
+from __future__ import print_function, absolute_import, division, unicode_literals
 
 import unittest
-from pprint import pprint
 
 import rethinkdb as r
 from future.utils import iteritems
@@ -12,6 +11,9 @@ from mockthink.db import MockThinkConn
 
 def real_stock_data_load(data, connection):
     for db in list(r.db_list().run(connection)):
+        if db == u"rethinkdb":
+            # This db is special and can't be deleted.
+            continue
         r.db_drop(db).run(connection)
     for db_name, db_data in iteritems(data['dbs']):
         r.db_create(db_name).run(connection)
