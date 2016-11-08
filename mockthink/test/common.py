@@ -30,18 +30,6 @@ def load_stock_data(data, connection):
     elif isinstance(connection, r.net.Connection):
         return real_stock_data_load(data, connection)
 
-def make_test_registry(test_dict):
-    def register_test(Constructor, class_name, tests):
-        def test(connection):
-            instance = Constructor()
-            for one_test in tests:
-                load_stock_data(instance.get_data(), connection)
-                print('%s: %s' % (class_name, one_test))
-                test_func = getattr(instance, one_test)
-                test_func(connection)
-        test_dict[class_name] = test
-    return register_test
-
 
 def assertEqUnordered(x, y, msg=''):
     for x_elem in x:
