@@ -1,3 +1,5 @@
+from __future__ import unicode_literals, absolute_import, print_function, division
+
 from rethinkdb import RqlRuntimeError, RqlDriverError, RqlCompileError
 import operator
 import random
@@ -5,7 +7,7 @@ import uuid
 import json
 import dateutil.parser
 from pprint import pprint
-from future.utils import iteritems
+from future.utils import iteritems, text_type
 from past.utils import old_div
 
 from . import util, joins, rtime
@@ -14,6 +16,7 @@ from .scope import Scope
 from . import ast_base
 from .ast_base import RBase, MonExp, BinExp, Ternary, ByFuncBase
 from .ast_base import LITERAL_OBJECT, LITERAL_LIST, RDatum, RFunc, MakeObj, MakeArray
+from past.builtins import filter
 
 
 
@@ -302,13 +305,13 @@ class Insert(BinExp):
         generated_keys = list()
 
         def ensure_id(elem):
-            if 'id' not in elem or elem['id'] is None:
-                uid = unicode(uuid.uuid4())
+            if (u'id' not in elem) or (elem[u'id'] is None):
+                uid = text_type(uuid.uuid4())
                 elem = util.extend(elem, {'id': uid})
                 generated_keys.append(uid)
             return elem
 
-        to_insert = map(ensure_id, list(to_insert))
+        to_insert = list(map(ensure_id, list(to_insert)))
         settings = self.get_insert_settings()
         result, report = arg.insert_into_table_in_db(current_db, current_table, to_insert, conflict=settings['conflict'])
         if not settings['return_changes']:
@@ -328,9 +331,9 @@ class FilterWithObj(BinExp):
 class MapWithRFunc(ByFuncBase):
     def do_run(self, sequence, map_fn, arg, scope):
         try:
-            result = map(map_fn, sequence)
+            result = list(map(map_fn, sequence))
         except KeyError as k:
-            message = "Missing field '%s'" % k.message
+            message = "Missing field '%s'" % text_type(k)
             self.raise_rql_runtime_error(message)
         return result
 

@@ -1,7 +1,10 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from pprint import pprint
 
 import pytest
 import rethinkdb as r
+from future.utils import text_type
 from rethinkdb import RqlRuntimeError
 
 from mockthink.test.common import as_db_and_table, assertEqUnordered, assertEqual
@@ -103,7 +106,7 @@ class TestInsert(MockTest):
         result = list(result)
         assertEqual(1, len(result))
         joe = result[0]
-        assert(isinstance(joe['id'], unicode))
+        assert(isinstance(joe['id'], text_type))
 
     def test_insert_array_no_ids(self, conn):
         r.db('things').table('muppets').insert([
@@ -121,8 +124,8 @@ class TestInsert(MockTest):
         }).run(conn)
         result = list(result)
         assertEqual(2, len(result))
-        assert(isinstance(result[0]['id'], unicode))
-        assert(isinstance(result[1]['id'], unicode))
+        assert(isinstance(result[0]['id'], text_type))
+        assert(isinstance(result[1]['id'], text_type))
 
 
 class TestInsertDurability(MockTest):

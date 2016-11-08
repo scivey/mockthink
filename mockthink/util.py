@@ -1,6 +1,8 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from collections import defaultdict
 
-from future.utils import iteritems
+from future.utils import iteritems, old_div
 
 
 def curry2(func):
@@ -252,8 +254,8 @@ def safe_sum(nums):
     return sum(filter(is_num, nums))
 
 def safe_average(nums):
-    actual_nums = filter(is_num, nums)
-    return sum(actual_nums) / (len(actual_nums) + 0.0)
+    actual_nums = list(filter(is_num, nums))
+    return old_div(sum(actual_nums), (len(actual_nums) + 0.0))
 
 def safe_max(nums):
     return max(filter(is_num, nums))

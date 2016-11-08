@@ -86,8 +86,8 @@ class TestUngroup(MockTest):
         assertEqual(set(['bro', 'hipster', 'unknown']), set([doc['group'] for doc in result]))
         is_group = lambda group: lambda doc: doc['group'] == group
         for group in ('bro', 'hipster', 'unknown'):
-            result_group = filter(is_group(group), result)[0]
-            expected_group = filter(is_group(group), expected)[0]
+            result_group = list(filter(is_group(group), result))[0]
+            expected_group = list(filter(is_group(group), expected))[0]
             assertEqUnordered(expected_group['reduction'], result_group['reduction'])
 
     def test_ungroup_grouped_by_func(self, conn):
@@ -119,6 +119,6 @@ class TestUngroup(MockTest):
         assertEqual(set(['bro', 'hipster', 'unknown']), set([doc['group'] for doc in result]))
         is_group = lambda group: lambda doc: doc['group'] == group
         for group in ('bro', 'hipster', 'unknown'):
-            result_group = filter(is_group(group), result)[0]
-            expected_group = filter(is_group(group), expected)[0]
+            result_group = list(filter(is_group(group), result))[0]
+            expected_group = list(filter(is_group(group), expected))[0]
             assertEqUnordered(expected_group['reduction'], result_group['reduction'])
