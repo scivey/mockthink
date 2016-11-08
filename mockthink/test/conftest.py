@@ -16,7 +16,7 @@ def pytest_addoption(parser):
                      help="Select whether tests are run on a mockthink connection or rethink connection or both")
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def conn(request):
     cfg = request.config
     conn_type = cfg.getvalue("conn_type")
@@ -29,5 +29,7 @@ def conn(request):
         conn = MockThink(as_db_and_table('nothing', 'nothing', [])).get_conn()
     else:
         pytest.exit("Unknown mockthink test connection type: " + conn_type)
-    load_stock_data(request.cls.get_data(), conn)
+    data = request.instance.get_data()
+    load_stock_data(data, conn)
+    # request.cls.addCleanup(load_stock_data, data, conn)
     return conn
