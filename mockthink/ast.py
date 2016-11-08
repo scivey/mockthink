@@ -5,7 +5,8 @@ import uuid
 import json
 import dateutil.parser
 from pprint import pprint
-from future.utils import old_div, iteritems
+from future.utils import iteritems
+from past.utils import old_div
 
 from . import util, joins, rtime
 from .scope import Scope
@@ -201,7 +202,7 @@ class Mul(BinOp):
     binop = operator.mul
 
 class Div(BinOp):
-    binop = old_div
+    binop = staticmethod(old_div)
 
 class Mod(BinOp):
     binop = operator.mod

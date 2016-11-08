@@ -146,6 +146,7 @@ class BinExp(RBase):
         right = self.right.run(arg, scope)
         return self.do_run(left, right, arg, scope)
 
+
 class Ternary(RBase):
     def __init__(self, left, middle, right, optargs={}):
         self.left = left
