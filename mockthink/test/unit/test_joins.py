@@ -1,5 +1,6 @@
-import mock
 import unittest
+
+from mockthink.test.common import assertEqual
 from ... import joins
 
 class TestJoins(unittest.TestCase):
@@ -54,7 +55,7 @@ class TestJoins(unittest.TestCase):
                 }
             }
         ]
-        self.assertEqual(
+        assertEqual(
             expected,
             joins.do_eq_join('rel_field', left, 'name', right)
         )
@@ -71,7 +72,7 @@ class TestJoins(unittest.TestCase):
             {'left': 4, 'right': 3}
         ]
         pred = lambda x, y: x > y
-        self.assertEqual(
+        assertEqual(
             expected,
             joins.do_inner_join(pred, left, right)
         )
@@ -92,7 +93,7 @@ class TestJoins(unittest.TestCase):
         ]
         def pred(x, y):
             return (x % 2 == 1) and (x > y)
-        self.assertEqual(
+        assertEqual(
             expected,
             joins.do_outer_join(pred, left, right)
         )

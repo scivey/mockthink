@@ -1,11 +1,12 @@
 import rethinkdb as r
-from mockthink.test.common import as_db_and_table
+from mockthink.test.common import as_db_and_table, assertEqUnordered, assertEqual
 from mockthink.test.functional.common import MockTest
 from mockthink.util import DictableSet
 from pprint import pprint
 
 class TestDistinctTop(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'bob-id', 'first_name': 'Bob', 'last_name': 'Sanders', 'age': 35},
             {'id': 'sam-id', 'first_name': 'Sam', 'last_name': 'Fudd', 'age': 17},
@@ -21,7 +22,7 @@ class TestDistinctTop(MockTest):
         ]
 
         result = r.db('d').table('people').distinct().run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_distinct_secondary_index(self, conn):
         r.db('d').table('people').index_create('last_name').run(conn)
@@ -29,12 +30,13 @@ class TestDistinctTop(MockTest):
         result = r.db('d').table('people').distinct(index='last_name').run(conn)
         result = list(result)
         pprint({'result': result})
-        self.assertEqual(2, len(result))
-        self.assertEqual(set(['Sanders', 'Fudd']), set(result))
+        assertEqual(2, len(result))
+        assertEqual(set(['Sanders', 'Fudd']), set(result))
 
 
 class TestDistinctNested(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'x-id', 'nums': [1, 5, 2, 5, 3, 2]},
             {'id': 'y-id', 'nums': [{'val': 1}, {'val': 5}, {'val': 2}, {'val': 5}, {'val': 3}, {'val': 2}]}
@@ -53,4 +55,4 @@ class TestDistinctNested(MockTest):
                 for dict_elem in elem:
                     assert(ex2.has(dict_elem))
             else:
-                self.assertEqual(ex1, set(elem))
+                assertEqual(ex1, set(elem))

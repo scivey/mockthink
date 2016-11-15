@@ -1,10 +1,11 @@
 import rethinkdb as r
-from mockthink.test.common import as_db_and_table
+from mockthink.test.common import as_db_and_table, assertEqual
 from mockthink.test.functional.common import MockTest
 from pprint import pprint
 
 class TestTypeOf(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {
                 'id': 'one',
@@ -23,7 +24,7 @@ class TestTypeOf(MockTest):
         result = r.db('a_db').table('types').map(
             lambda doc: doc['null_attr'].type_of()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
 
     def test_num(self, conn):
@@ -31,33 +32,33 @@ class TestTypeOf(MockTest):
         result = r.db('a_db').table('types').map(
             lambda doc: doc['num_attr'].type_of()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_obj(self, conn):
         expected = ['OBJECT']
         result = r.db('a_db').table('types').map(
             lambda doc: doc['dict_attr'].type_of()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_bool(self, conn):
         expected = ['BOOL']
         result = r.db('a_db').table('types').map(
             lambda doc: doc['bool_attr'].type_of()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_array(self, conn):
         expected = ['ARRAY']
         result = r.db('a_db').table('types').map(
             lambda doc: doc['list_attr'].type_of()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 
     def test_string(self, conn):
         expected = ['STRING']
         result = r.db('a_db').table('types').map(
             lambda doc: doc['str_attr'].type_of()
         ).run(conn)
-        self.assertEqual(expected, list(result))
+        assertEqual(expected, list(result))
 

@@ -1,8 +1,6 @@
-import mock
-import unittest
-from pprint import pprint
-from ..common import TestCase
-from ... import db, util
+from ..common import TestCase, assertEqual
+from ... import db
+
 
 def db_insert_starting_data():
     return [
@@ -41,7 +39,7 @@ class TestDbInsertWithConflictSettings(TestCase):
             to_insert,
             conflict='error'
         )
-        self.assertEqual(expected_result, result)
+        assertEqual(expected_result, result)
         keys = ('replaced', 'inserted', 'errors', 'changes')
         self.assert_key_equality(keys, expected_report, report)
 
@@ -76,7 +74,7 @@ class TestDbInsertWithConflictSettings(TestCase):
             to_insert,
             conflict='update'
         )
-        self.assertEqual(expected_result, result)
+        assertEqual(expected_result, result)
         keys = ('replaced', 'inserted', 'errors', 'changes')
         self.assert_key_equality(keys, expected_report, report)
 
@@ -111,7 +109,7 @@ class TestDbInsertWithConflictSettings(TestCase):
             to_insert,
             conflict='replace'
         )
-        self.assertEqual(expected_result, result)
+        assertEqual(expected_result, result)
         keys = ('replaced', 'inserted', 'errors', 'changes')
         self.assert_key_equality(keys, expected_report, report)
 

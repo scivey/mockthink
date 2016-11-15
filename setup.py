@@ -14,5 +14,5 @@ setup(
     maintainer_email="scott.ivey@gmail.com",
     packages=['mockthink'],
     package_dir={'mockthink': 'mockthink'},
-    install_requires=['rethinkdb>=2.2.0', 'dateutils']
+    install_requires=['rethinkdb>=2.2.0,<2.3.0', 'dateutils', 'future']
 )

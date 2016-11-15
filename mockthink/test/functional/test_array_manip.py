@@ -1,10 +1,11 @@
 import rethinkdb as r
-from mockthink.test.common import as_db_and_table
+from mockthink.test.common import as_db_and_table, assertEqUnordered
 from mockthink.test.functional.common import MockTest
 from pprint import pprint
 
 class TestArrayManip(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 1, 'animals': ['frog', 'cow']},
             {'id': 2, 'animals': ['horse']}
@@ -19,7 +20,7 @@ class TestArrayManip(MockTest):
         result = r.db('x').table('farms').map(
             lambda d: d['animals'].insert_at(1, 'pig')
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_splice_at(self, conn):
         expected = [
@@ -29,7 +30,7 @@ class TestArrayManip(MockTest):
         result = r.db('x').table('farms').map(
             lambda d: d['animals'].splice_at(1, ['pig', 'chicken'])
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_prepend(self, conn):
         expected = [
@@ -39,7 +40,7 @@ class TestArrayManip(MockTest):
         result = r.db('x').table('farms').map(
             lambda d: d['animals'].prepend('pig')
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_append(self, conn):
         expected = [
@@ -49,7 +50,7 @@ class TestArrayManip(MockTest):
         result = r.db('x').table('farms').map(
             lambda d: d['animals'].append('pig')
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_change_at(self, conn):
         expected = [
@@ -59,7 +60,7 @@ class TestArrayManip(MockTest):
         result = r.db('x').table('farms').map(
             lambda d: d['animals'].change_at(0, 'wombat')
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_delete_at(self, conn):
         expected = [
@@ -70,10 +71,11 @@ class TestArrayManip(MockTest):
             lambda d: d['animals'].delete_at(0)
         ).run(conn)
         res = list(result)
-        self.assertEqUnordered(expected, res)
+        assertEqUnordered(expected, res)
 
 class TestUnion(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         things_1 = [
             {'id': 'thing1-1'},
             {'id': 'thing1-2'}
@@ -104,11 +106,12 @@ class TestUnion(MockTest):
         result = r.db('x').table('things_1').union(
             r.db('x').table('things_2')
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
 
 class TestIndexesOf(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         things = [
             {'id': 'one', 'letters': ['c', 'c']},
             {'id': 'two', 'letters': ['a', 'b', 'a', ['q', 'q'], 'b']},
@@ -129,7 +132,7 @@ class TestIndexesOf(MockTest):
         ).run(conn)
         result = list(result)
         pprint(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_offsets_of_array_val(self, conn):
         expected = [
@@ -141,7 +144,7 @@ class TestIndexesOf(MockTest):
         result = r.db('scrumptious').table('cake').map(
             lambda doc: doc['letters'].offsets_of(['q', 'q'])
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_offsets_of_func(self, conn):
         expected = [
@@ -155,10 +158,11 @@ class TestIndexesOf(MockTest):
                 lambda letter: letter == 'b'
             )
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
 class TestSample(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'one', 'data': range(10, 20)},
             {'id': 'two', 'data': range(20, 30)},

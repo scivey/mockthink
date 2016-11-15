@@ -1,9 +1,10 @@
 import rethinkdb as r
-from mockthink.test.common import as_db_and_table
+from mockthink.test.common import as_db_and_table, assertEqUnordered
 from mockthink.test.functional.common import MockTest
 
 class TestBetween(MockTest):
-    def get_data(self):
+    @staticmethod
+    def get_data():
         data = [
             {'id': 'bob', 'first_name': 'Bob', 'last_name': 'Builder'},
             {'id': 'joe', 'first_name': 'Joseph', 'last_name': 'Smith'},
@@ -22,7 +23,7 @@ class TestBetween(MockTest):
         result = r.db('s').table('people').between(
             'bob', 'zuul'
         ).run(conn)
-        self.assertEqUnordered(expected, list(result))
+        assertEqUnordered(expected, list(result))
 
     def test_between_id_closed_right(self, conn):
         expected = [
@@ -34,7 +35,7 @@ class TestBetween(MockTest):
             'bob', 'tom', right_bound='closed'
         ).run(conn)
         result = list(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_between_id_open_left(self, conn):
         expected = [
@@ -44,7 +45,7 @@ class TestBetween(MockTest):
             'bob', 'tom', left_bound='open'
         ).run(conn)
         result = list(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_between_id_open_left_closed_right(self, conn):
         expected = [
@@ -55,7 +56,7 @@ class TestBetween(MockTest):
             'bob', 'tom', left_bound='open', right_bound='closed'
         ).run(conn)
         result = list(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_between_index_default_range(self, conn):
         expected = [
@@ -70,7 +71,7 @@ class TestBetween(MockTest):
             'Builder', 'Smith', index='last_name'
         ).run(conn)
         result = list(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_between_index_closed_right(self, conn):
         expected = [
@@ -86,7 +87,7 @@ class TestBetween(MockTest):
             'Builder', 'Smith', index='last_name', right_bound='closed'
         ).run(conn)
         result = list(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
 
     def test_between_index_open_left(self, conn):
         expected = [
@@ -105,4 +106,4 @@ class TestBetween(MockTest):
             right_bound='closed'
         ).run(conn)
         result = list(result)
-        self.assertEqUnordered(expected, result)
+        assertEqUnordered(expected, result)
