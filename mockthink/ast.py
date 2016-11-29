@@ -9,6 +9,7 @@ import dateutil.parser
 from pprint import pprint
 from future.utils import iteritems, text_type
 from past.utils import old_div
+from past.builtins import basestring
 
 from . import util, joins, rtime
 from .scope import Scope
